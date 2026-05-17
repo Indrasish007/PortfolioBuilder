@@ -15,4 +15,7 @@ export default defineConfig({
       projects: ["./tsconfig.json"],
     }),
   ],
+  server: {
+    host: true,
+  }
 });

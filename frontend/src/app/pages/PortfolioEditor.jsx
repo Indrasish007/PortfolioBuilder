@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, Reorder, AnimatePresence } from "framer-motion";
-import { Undo2, Redo2, Save, Eye, Smartphone, Tablet, Monitor, Plus, GripVertical, Image as ImageIcon, Sparkles, Trash2, Github, Globe, Linkedin, Twitter, Facebook, Instagram, Type, Palette, Settings2, CheckCircle2, Loader2, ChevronDown, ChevronUp, ArrowUp, ArrowDown, FileText } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Undo2, Redo2, Save, Eye, EyeOff, Smartphone, Tablet, Monitor, Plus, GripVertical, Image as ImageIcon, Sparkles, Trash2, Github, Globe, Linkedin, Twitter, Facebook, Instagram, Type, Palette, Settings2, CheckCircle2, Loader2, ChevronDown, ChevronUp, ArrowUp, ArrowDown, FileText, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import GlassCard from "../components/GlassCard.jsx";
 import Button from "../components/Button.jsx";
 import Badge from "../components/Badge.jsx";
@@ -18,6 +18,8 @@ export default function PortfolioEditor() {
   const [device, setDevice] = useState("desktop");
   const [tab, setTab] = useState("content");
   const [activeSection, setActiveSection] = useState(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const hasFetched = useRef(false);
   const defaultSections = ["About", "Skills", "Experience", "Projects", "Education", "Testimonials", "Contact"];
   const sections = portfolio?.sections || defaultSections;
   const setSections = (newSections) => updateField("sections", newSections);
@@ -41,13 +43,69 @@ export default function PortfolioEditor() {
     }
   };
 
+  // Only fetch once — prevents re-fetching (and overwriting unsaved edits) when navigating back
   useEffect(() => {
-    fetchPortfolio();
-  }, [fetchPortfolio]);
+    if (!hasFetched.current && !portfolio?.id) {
+      hasFetched.current = true;
+      fetchPortfolio();
+    } else {
+      hasFetched.current = true;
+    }
+  }, []);
+
+  // Close preview overlay on Escape key
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === "Escape") setPreviewOpen(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const widths = { desktop: "100%", tablet: "768px", mobile: "390px" };
 
   return (
+    <>
+    {/* Full-screen live preview overlay */}
+    <AnimatePresence>
+      {previewOpen && (
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 24 }}
+          transition={{ duration: 0.2 }}
+          className="fixed inset-0 z-[100] bg-background flex flex-col"
+        >
+          {/* Preview top bar */}
+          <div className="flex-shrink-0 flex items-center justify-between px-4 h-11 border-b border-border/60 bg-background/90 backdrop-blur-md">
+            <div className="flex items-center gap-3">
+              <button onClick={() => setPreviewOpen(false)} className="inline-flex items-center gap-1.5 text-sm font-medium hover:text-brand transition">
+                <X className="w-4 h-4" /> Close Preview
+              </button>
+              <span className="text-xs px-2 py-0.5 rounded-full bg-brand/10 border border-brand/20 text-brand font-medium">Live Preview</span>
+            </div>
+            <div className="flex items-center gap-1">
+              {[{ id: "desktop", i: Monitor }, { id: "tablet", i: Tablet }, { id: "mobile", i: Smartphone }].map((d) => (
+                <button key={d.id} onClick={() => setDevice(d.id)}
+                  className={`w-8 h-8 rounded-md inline-flex items-center justify-center transition ${
+                    device === d.id ? "bg-accent text-foreground" : "text-muted-foreground hover:bg-accent/40"
+                  }`}>
+                  <d.i className="w-4 h-4" />
+                </button>
+              ))}
+            </div>
+          </div>
+          {/* Preview content */}
+          <div className="flex-1 overflow-auto flex items-start justify-center bg-muted/30">
+            <motion.div
+              animate={{ width: { desktop: "100%", tablet: "768px", mobile: "390px" }[device] }}
+              transition={{ duration: 0.25 }}
+              className="min-h-full bg-background shadow-2xl"
+            >
+              <LivePortfolio portfolio={portfolio} template={template} themeName={themeName} />
+            </motion.div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
     <div className="grid lg:grid-cols-[400px_1fr] gap-4 h-[calc(100vh-120px)]">
       <div className="flex flex-col gap-3 min-h-0">
         <BackButton fallback="/dashboard" className="mb-0 w-max" />
@@ -261,7 +319,7 @@ export default function PortfolioEditor() {
               </button>
             ))}
           </div>
-          <Button size="sm" variant="outline" as={Link} to={`/u/${username}?back=1`}><Eye className="w-4 h-4" /> Preview</Button>
+          <Button size="sm" variant="outline" onClick={() => setPreviewOpen(true)}><Eye className="w-4 h-4" /> Preview</Button>
           <Button size="sm" onClick={() => { handleSave(); navigate("/settings"); }}>Publish</Button>
         </GlassCard>
 
@@ -276,6 +334,7 @@ export default function PortfolioEditor() {
         </div>
       </div>
     </div>
+    </>
   );
 }
 

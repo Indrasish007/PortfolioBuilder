@@ -4,15 +4,13 @@ import { Mail, MapPin, Github, Twitter, Linkedin, Facebook, Instagram, Globe, Do
 import { useState, useEffect } from "react";
 import api from "../services/api.js";
 import Button from "../components/Button.jsx";
-import BackButton from "../components/BackButton.jsx";
 
 export default function PublicPortfolio() {
   const { username } = useParams();
   const [searchParams] = useSearchParams();
   const [p, setP] = useState(null);
   const [loading, setLoading] = useState(true);
-  // Show back button if came from editor (via ?back=1) or if there's browser history
-  const showBackBtn = searchParams.get('back') === '1' || window.history.length > 2;
+  const isPreview = searchParams.get('back') === '1';
 
   useEffect(() => {
     async function fetchPortfolio() {
@@ -33,14 +31,26 @@ export default function PublicPortfolio() {
 
   return (
     <div className="relative bg-background min-h-screen">
-      {showBackBtn && <BackButton fixed={true} fallback="/editor" />}
+      {isPreview && (
+        <div className="sticky top-0 z-50 w-full flex items-center justify-between px-4 h-11 bg-brand/10 border-b border-brand/30 backdrop-blur-sm">
+          <Link
+            to="/editor"
+            className="inline-flex items-center gap-2 text-sm font-medium text-foreground hover:text-brand transition"
+          >
+            <ArrowLeft className="w-4 h-4" /> Back to Editor
+          </Link>
+          <span className="text-xs text-muted-foreground px-2 py-0.5 rounded-full border border-border bg-background/60">Preview Mode</span>
+        </div>
+      )}
       <div className="absolute inset-0 hero-bg pointer-events-none" />
       <div className="absolute inset-0 grid-pattern opacity-50 pointer-events-none" />
 
       <div className="relative max-w-4xl mx-auto px-5 py-16 md:py-24">
-        <Link to="/" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1 mb-8">
-          <ArrowLeft className="w-3 h-3" /> Built with PortfolioAI
-        </Link>
+        {!isPreview && (
+          <Link to="/" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1 mb-8">
+            <ArrowLeft className="w-3 h-3" /> Built with PortfolioAI
+          </Link>
+        )}
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
           <div className="flex items-center gap-5">
@@ -74,7 +84,11 @@ export default function PublicPortfolio() {
         {p.skills?.length > 0 && (
           <Section title="Skills">
             <div className="flex flex-wrap gap-2">
-              {p.skills.map((s) => <span key={s} className="text-xs px-3 py-1.5 rounded-full glass">{s}</span>)}
+              {p.skills.map((s) => (
+                <span key={typeof s === 'object' ? s.id : s} className="text-xs px-3 py-1.5 rounded-full glass">
+                  {typeof s === 'object' ? s.name : s}
+                </span>
+              ))}
             </div>
           </Section>
         )}
