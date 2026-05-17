@@ -1,0 +1,141 @@
+# ============================================================
+#  PortfolioBuilder — Root .gitignore
+#  Django (Python) backend + Vite / React / TypeScript frontend
+# ============================================================
+
+# ------------------------------------------------------------
+# Python / Django
+# ------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
+backend/venv/
+venv/
+env/
+.env/
+.venv/
+ENV/
+
+# Django
+backend/db.sqlite3
+backend/*.log
+backend/error.log
+backend/media/
+backend/staticfiles/
+backend/static_collected/
+
+# Django migrations (keep __init__.py, ignore actual migrations if preferred)
+# Uncomment the next two lines if you want to ignore generated migrations:
+# **/migrations/*.py
+# !**/migrations/__init__.py
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Python packaging
+*.egg
+*.egg-info/
+dist/
+build/
+*.whl
+.eggs/
+
+# Coverage / testing
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.pytest_cache/
+nosetests.xml
+coverage.xml
+*.cover
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# ------------------------------------------------------------
+# Node.js / npm / bun
+# ------------------------------------------------------------
+node_modules/
+frontend/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+bun.lockb          # generated; commit bun.lock instead if desired
+
+# ------------------------------------------------------------
+# Vite / React / TypeScript frontend
+# ------------------------------------------------------------
+frontend/dist/
+frontend/dist-ssr/
+frontend/.output/
+frontend/.vinxi/
+frontend/.nitro/
+
+# TanStack / Wrangler / Cloudflare
+frontend/.tanstack/
+frontend/.wrangler/
+frontend/.dev.vars
+.wrangler/
+.dev.vars
+
+# TypeScript build cache
+*.tsbuildinfo
+
+# ------------------------------------------------------------
+# Logs
+# ------------------------------------------------------------
+logs/
+*.log
+
+# ------------------------------------------------------------
+# OS-generated files
+# ------------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ------------------------------------------------------------
+# Editor / IDE
+# ------------------------------------------------------------
+# VS Code (keep shared settings if you want)
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/launch.json
+
+# JetBrains IDEs
+.idea/
+*.iml
+
+# Vim / Emacs swap files
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*~
+
+# ------------------------------------------------------------
+# Miscellaneous
+# ------------------------------------------------------------
+*.local
+*.bak
+*.tmp
+.cache/
