@@ -1,13 +1,14 @@
-import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
-import { Eye, MousePointerClick, Download, Plus, ExternalLink, MoreHorizontal, ArrowUp, ArrowDown, Sparkles, Globe } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { Eye, MousePointerClick, Download, Plus, ExternalLink, MoreHorizontal, ArrowUp, ArrowDown, Sparkles, Globe, Pencil, Trash2 } from "lucide-react";
 import GlassCard from "../components/GlassCard.jsx";
 import Button from "../components/Button.jsx";
 import Badge from "../components/Badge.jsx";
 import BackButton from "../components/BackButton.jsx";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import api from "../services/api.js";
 import { useAuthStore } from "../store/authStore.js";
+
 const stats = [
   { label: "Total views", value: "12,483", delta: "+18.2%", up: true, icon: Eye },
   { label: "Unique visitors", value: "4,219", delta: "+9.4%", up: true, icon: MousePointerClick },
@@ -15,10 +16,80 @@ const stats = [
   { label: "Avg. session", value: "2m 14s", delta: "+5.0%", up: true, icon: Sparkles },
 ];
 
+function PortfolioMenu({ portfolio, onDelete }) {
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef(null);
+  const navigate = useNavigate();
+
+  // Close on outside click
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    }
+    if (open) document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open]);
+
+  const username = portfolio.user?.username;
+
+  return (
+    <div className="relative" ref={menuRef}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="text-muted-foreground hover:text-foreground p-2 rounded-lg hover:bg-accent/40 transition"
+        title="More options"
+      >
+        <MoreHorizontal className="w-4 h-4" />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.92, y: -4 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.92, y: -4 }}
+            transition={{ duration: 0.12 }}
+            className="absolute right-0 top-full mt-1 z-50 min-w-[160px] rounded-xl border border-border bg-card/90 backdrop-blur-md shadow-xl overflow-hidden"
+          >
+            <button
+              onClick={() => { setOpen(false); navigate(`/editor/${portfolio.id}`); }}
+              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-accent/50 transition text-left"
+            >
+              <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+              Edit
+            </button>
+            {username && (
+              <button
+                onClick={() => { setOpen(false); window.open(`/u/${username}`, "_blank"); }}
+                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-accent/50 transition text-left"
+              >
+                <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
+                Preview
+              </button>
+            )}
+            <div className="border-t border-border/50 my-0.5" />
+            <button
+              onClick={() => { setOpen(false); onDelete(portfolio.id); }}
+              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-red-500/10 text-red-400 transition text-left"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Delete portfolio
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const user = useAuthStore((s) => s.user);
   const [portfolios, setPortfolios] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deleteConfirm, setDeleteConfirm] = useState(null); // id to confirm
+
   useEffect(() => {
     async function load() {
       try {
@@ -32,6 +103,22 @@ export default function Dashboard() {
     }
     load();
   }, []);
+
+  async function handleDelete(id) {
+    setDeleteConfirm(id);
+  }
+
+  async function confirmDelete() {
+    if (!deleteConfirm) return;
+    try {
+      await api.delete(`/portfolios/${deleteConfirm}/`);
+      setPortfolios((prev) => prev.filter((p) => p.id !== deleteConfirm));
+    } catch (err) {
+      console.error("Delete failed:", err);
+    } finally {
+      setDeleteConfirm(null);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -70,21 +157,53 @@ export default function Dashboard() {
             <Button as={Link} to="/templates" size="sm" variant="ghost">Browse templates →</Button>
           </div>
           <div className="divide-y divide-border/50">
-            {loading ? <div className="p-4">Loading portfolios...</div> : portfolios.map((p) => (
-              <div key={p.id} className="p-4 flex items-center gap-4 hover:bg-accent/30 transition">
-                <div className="w-12 h-12 rounded-lg gradient-bg shadow-glow shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium truncate">{p.name}</span>
-                    <Badge variant={p.status === "Published" ? "success" : "warn"}>{p.status}</Badge>
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-0.5">{p.template} · {p.views || 0} views · Updated {new Date(p.updated_at).toLocaleDateString()}</div>
-                </div>
-                <Button as={Link} to={`/editor/${p.id}`} size="sm" variant="outline">Edit</Button>
-                <Button as={Link} to="/u/alexcarter" size="sm" variant="ghost"><ExternalLink className="w-3.5 h-3.5" /></Button>
-                <button className="text-muted-foreground hover:text-foreground p-2"><MoreHorizontal className="w-4 h-4" /></button>
+            {loading ? (
+              <div className="p-6 text-center text-muted-foreground text-sm">Loading portfolios...</div>
+            ) : portfolios.length === 0 ? (
+              <div className="p-6 text-center text-muted-foreground text-sm">
+                No portfolios yet.{" "}
+                <Link to="/editor" className="text-brand hover:underline">Create one →</Link>
               </div>
-            ))}
+            ) : portfolios.map((p) => {
+              const username = p.user?.username;
+              return (
+                <div key={p.id} className="p-4 flex items-center gap-4 hover:bg-accent/30 transition">
+                  <div className="w-12 h-12 rounded-lg gradient-bg shadow-glow shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium truncate">{p.name}</span>
+                      <Badge variant={p.status === "Published" ? "success" : "warn"}>{p.status}</Badge>
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {p.template} · {p.views || 0} views · Updated {new Date(p.updated_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <Button as={Link} to={`/editor/${p.id}`} size="sm" variant="outline">Edit</Button>
+                  {username ? (
+                    <Button
+                      as="a"
+                      href={`/u/${username}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      size="sm"
+                      variant="ghost"
+                      title="Preview portfolio"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </Button>
+                  ) : (
+                    <button
+                      disabled
+                      className="text-muted-foreground/40 p-2 cursor-not-allowed"
+                      title="Set a username in Settings to preview"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  <PortfolioMenu portfolio={p} onDelete={handleDelete} />
+                </div>
+              );
+            })}
           </div>
         </GlassCard>
 
@@ -124,6 +243,50 @@ export default function Dashboard() {
           </GlassCard>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {deleteConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+            onClick={() => setDeleteConfirm(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ duration: 0.18 }}
+              onClick={(e) => e.stopPropagation()}
+              className="glass rounded-2xl p-6 max-w-sm w-full mx-4 border border-border shadow-xl"
+            >
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
+                  <Trash2 className="w-5 h-5 text-red-400" />
+                </div>
+                <div>
+                  <div className="font-semibold">Delete portfolio</div>
+                  <div className="text-xs text-muted-foreground">This action cannot be undone.</div>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground mb-5">
+                Are you sure you want to delete this portfolio? All its data will be permanently removed.
+              </p>
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" size="sm" onClick={() => setDeleteConfirm(null)}>Cancel</Button>
+                <button
+                  onClick={confirmDelete}
+                  className="px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-medium transition"
+                >
+                  Delete
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

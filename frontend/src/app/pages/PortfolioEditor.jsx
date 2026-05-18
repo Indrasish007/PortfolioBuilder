@@ -450,7 +450,37 @@ function ProjectsEditor({ projects, updateField }) {
 function AboutEditor({ bio, resume, updateField }) {
   return (
     <div>
-      <Field label="Resume URL (PDF)" value={resume || ""} onChange={(v) => updateField("user.resume_link", v)} />
+      <div className="mb-3">
+        <div className="text-xs text-muted-foreground mb-1">Upload CV (PDF)</div>
+        <label className="w-full h-24 rounded-lg border border-dashed border-border flex flex-col items-center justify-center text-xs text-muted-foreground hover:bg-accent/40 transition cursor-pointer overflow-hidden relative group">
+          {resume ? (
+            <>
+              <div className="flex flex-col items-center justify-center">
+                <FileText className="w-5 h-5 mb-1 text-brand" />
+                <span className="text-brand font-medium">CV Uploaded</span>
+              </div>
+              <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <span className="text-white">Change PDF</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <FileText className="w-5 h-5 mb-1" /> Drop PDF or click to upload
+            </>
+          )}
+          <input type="file" className="hidden" accept="application/pdf" onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) {
+              const reader = new FileReader();
+              reader.onloadend = () => updateField("user.resume_link", reader.result);
+              reader.readAsDataURL(file);
+            }
+          }} />
+        </label>
+        {resume && (
+          <button onClick={() => updateField("user.resume_link", "")} className="text-[10px] text-destructive hover:underline mt-1">Remove CV</button>
+        )}
+      </div>
       <Field label="Bio" multiline value={bio || ""} onChange={(v) => updateField("user.bio", v)} />
       <button className="mt-2 text-xs inline-flex items-center gap-1 text-brand hover:underline">
         <Sparkles className="w-3 h-3" /> Rewrite with AI

@@ -21,8 +21,23 @@ export const usePortfolioStore = create((set, get) => ({
           data.skills = data.skills.map(s => typeof s === 'object' ? s.name : s);
         }
 
+        // Deep merge user to avoid losing nested structures
+        const mergedUser = { ...defaultPortfolio.user, ...(data.user || {}) };
+        
+        // Unflatten social fields
+        if (data.user) {
+          mergedUser.social = {
+            github: data.user.github || "",
+            twitter: data.user.twitter || "",
+            linkedin: data.user.linkedin || "",
+            facebook: data.user.facebook || "",
+            instagram: data.user.instagram || "",
+            website: data.user.website || "",
+          };
+        }
+        
         set({
-          portfolio: data,
+          portfolio: { ...defaultPortfolio, ...data, user: mergedUser },
           template: data.template || "developer",
           themeName: data.theme || "midnight",
         });
@@ -44,11 +59,36 @@ export const usePortfolioStore = create((set, get) => ({
         payload.skills = payload.skills.map(s => typeof s === 'string' ? { name: s } : s);
       }
 
+      // Flatten user.social for API
+      if (payload.user && payload.user.social) {
+        payload.user = { ...payload.user, ...payload.user.social };
+        delete payload.user.social;
+      }
+
+      const restoreData = (data) => {
+        if (data.skills) {
+          data.skills = data.skills.map(s => typeof s === 'object' ? s.name : s);
+        }
+        const mergedUser = { ...state.portfolio.user, ...(data.user || {}) };
+        if (data.user) {
+          mergedUser.social = {
+            github: data.user.github || state.portfolio.user?.social?.github || "",
+            twitter: data.user.twitter || state.portfolio.user?.social?.twitter || "",
+            linkedin: data.user.linkedin || state.portfolio.user?.social?.linkedin || "",
+            facebook: data.user.facebook || state.portfolio.user?.social?.facebook || "",
+            instagram: data.user.instagram || state.portfolio.user?.social?.instagram || "",
+            website: data.user.website || state.portfolio.user?.social?.website || "",
+          };
+        }
+        set({ portfolio: { ...state.portfolio, ...data, user: mergedUser, contact: state.portfolio.contact } });
+      };
+
       if (state.portfolio.id) {
-        await api.put(`/portfolios/${state.portfolio.id}/`, payload);
+        const response = await api.put(`/portfolios/${state.portfolio.id}/`, payload);
+        restoreData(response.data);
       } else {
         const response = await api.post('/portfolios/', payload);
-        set({ portfolio: response.data });
+        restoreData(response.data);
       }
     } catch (error) {
       console.error("Failed to save portfolio", error);

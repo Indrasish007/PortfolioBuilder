@@ -16,7 +16,7 @@ class Profile(models.Model):
     title = models.CharField(max_length=150, blank=True)
     location = models.CharField(max_length=150, blank=True)
     bio = models.TextField(blank=True)
-    avatar = models.URLField(blank=True, null=True) # Using URL since we upload to Cloudinary and store URL
+    avatar = models.TextField(blank=True, null=True) # Changed to TextField to support base64 strings
     
     # Social links
     github = models.URLField(blank=True, null=True)
@@ -26,7 +26,7 @@ class Profile(models.Model):
     instagram = models.URLField(blank=True, null=True)
     website = models.URLField(blank=True, null=True)
     calendly = models.URLField(blank=True, null=True)
-    resume_link = models.URLField(blank=True, null=True)
+    resume_link = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return f"{self.user.email} Profile"

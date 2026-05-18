@@ -30,8 +30,24 @@ export default function Signup() {
       navigate("/dashboard");
     } catch (error) {
       if (error.response?.status === 400) {
-        toast({ title: "Account already exists", description: "Redirecting to login..." });
-        setTimeout(() => navigate("/login"), 2000);
+        const data = error.response.data;
+        let errorMessage = "Invalid input.";
+        
+        if (data && typeof data === 'object') {
+          const firstKey = Object.keys(data)[0];
+          if (Array.isArray(data[firstKey])) {
+            errorMessage = data[firstKey][0];
+          } else if (typeof data[firstKey] === 'string') {
+            errorMessage = data[firstKey];
+          }
+        }
+
+        if (errorMessage.toLowerCase().includes("exist")) {
+          toast({ title: "Account already exists", description: "Redirecting to login..." });
+          setTimeout(() => navigate("/login"), 2000);
+        } else {
+          toast({ title: "Signup failed", description: errorMessage, variant: "destructive" });
+        }
       } else {
         toast({ title: "Signup failed", description: "An error occurred during signup.", variant: "destructive" });
       }

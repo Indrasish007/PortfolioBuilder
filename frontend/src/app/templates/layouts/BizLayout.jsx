@@ -1,0 +1,205 @@
+import { Mail, Github, ExternalLink, TrendingUp, Users, Star } from "lucide-react";
+import { Soc, Tags, FAQList, SectionLabel } from "./shared.jsx";
+
+// classic, startup, forest, oceanic
+export default function BizLayout({ p, t, id }) {
+  const u = p.user || {};
+
+  const cfg = {
+    classic: { ac:"#10b981", bg:"#0a1a12", header:"#061009", radius:"4px",  font:"Inter,sans-serif" },
+    startup: { ac:"#3b82f6", bg:"#05111f", header:"#030c18", radius:"8px",  font:"Inter,sans-serif" },
+    forest:  { ac:"#84cc16", bg:"#0a150a", header:"#060e06", radius:"4px",  font:"Inter,sans-serif" },
+    oceanic: { ac:"#06b6d4", bg:"#021420", header:"#010c16", radius:"8px",  font:"Inter,sans-serif" },
+  }[id] || { ac:t.ac, bg:"#0a1020", header:"#060c18", radius:"6px", font:"Inter,sans-serif" };
+
+  const { ac, bg, header, radius, font } = cfg;
+  const fg = "#f0f8ff";
+
+  const lbl = (txt) => <SectionLabel text={txt} style={{ color:ac, opacity:1 }} />;
+
+  // Mock metrics to showcase SaaS-style layout
+  const metrics = [
+    { label:"Years Experience", value: p.experience?.length ? `${p.experience.length}+` : "3+", icon: TrendingUp },
+    { label:"Projects Built", value: p.projects?.length ? `${p.projects.length}+` : "10+", icon: Star },
+    { label:"Skills Mastered", value: p.skills?.length ? `${p.skills.length}+` : "15+", icon: Users },
+  ];
+
+  return (
+    <div style={{ background:bg, color:fg, fontFamily:font, minHeight:"100%" }}>
+
+      {/* ── Header bar ── */}
+      <div style={{ background:header, borderBottom:`1px solid ${ac}20`, padding:"16px 48px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+        <div style={{ fontWeight:800, fontSize:18, color:ac }}>{u.name?.split(" ")[0] || "Portfolio"}</div>
+        <div style={{ display:"flex", gap:24 }}>
+          {["About","Projects","Experience","Contact"].map(s => (
+            <a key={s} href={`#${s.toLowerCase()}`} style={{ fontSize:13, color:fg, opacity:0.5, textDecoration:"none" }}
+              onMouseEnter={e=>e.currentTarget.style.opacity=1}
+              onMouseLeave={e=>e.currentTarget.style.opacity=0.5}>{s}</a>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Hero ── */}
+      <div style={{ padding:"80px 48px 56px" }} id="about">
+        <div style={{ maxWidth:800, margin:"0 auto" }}>
+          <div style={{ display:"flex", gap:40, alignItems:"center", flexWrap:"wrap" }}>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:12, color:ac, letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:12 }}>{u.title}</div>
+              <h1 style={{ fontSize:52, fontWeight:900, lineHeight:1.05, letterSpacing:"-0.03em", margin:"0 0 20px" }}>{u.name}</h1>
+              <p style={{ opacity:0.7, lineHeight:1.85, fontSize:15, maxWidth:480, marginBottom:28 }}>{u.bio}</p>
+              <div style={{ display:"flex", gap:12, flexWrap:"wrap", marginBottom:24 }}>
+                {u.email && (
+                  <a href={`mailto:${u.email}`} style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 24px",
+                    background:ac, color:"#000", borderRadius:radius, fontSize:13, textDecoration:"none", fontWeight:700 }}>
+                    <Mail size={14}/> Get in touch
+                  </a>
+                )}
+                {u.resume_link && (
+                  <a href={u.resume_link} style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 24px",
+                    border:`1px solid ${ac}50`, color:ac, borderRadius:radius, fontSize:13, textDecoration:"none", fontWeight:600 }}>
+                    Resume
+                  </a>
+                )}
+              </div>
+              <Soc user={u} fg={fg} />
+            </div>
+            {u.avatar && (
+              <img src={u.avatar} alt="" style={{ width:120, height:120, borderRadius: id==="classic"?"4px":"50%",
+                objectFit:"cover", border:`3px solid ${ac}50`, flexShrink:0 }} />
+            )}
+          </div>
+
+          {/* Metrics row */}
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:16, marginTop:48 }}>
+            {metrics.map((m,i) => (
+              <div key={i} style={{ background:`${ac}10`, border:`1px solid ${ac}25`, borderRadius:radius, padding:20, textAlign:"center" }}>
+                <m.icon size={18} style={{ color:ac, marginBottom:8 }} />
+                <div style={{ fontSize:28, fontWeight:900, color:ac }}>{m.value}</div>
+                <div style={{ fontSize:12, opacity:0.5, marginTop:4 }}>{m.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ padding:"0 48px 80px", maxWidth:896, margin:"0 auto", boxSizing:"border-box" }}>
+
+        {/* Skills */}
+        {p.skills?.length > 0 && (
+          <div style={{ marginBottom:56 }}>
+            {lbl("Skills & Technologies")}
+            <div style={{ display:"flex", flexWrap:"wrap", gap:10 }}>
+              {p.skills.map((s,i) => (
+                <span key={i} style={{ padding:"6px 16px", background:`${ac}12`, border:`1px solid ${ac}30`,
+                  color:ac, borderRadius:radius, fontSize:13 }}>
+                  {typeof s==="object"?s.name:s}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Projects */}
+        {p.projects?.length > 0 && (
+          <div style={{ marginBottom:56 }} id="projects">
+            {lbl("Featured Work")}
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))", gap:16 }}>
+              {p.projects.map((proj,i) => (
+                <div key={i} style={{ background:`${ac}07`, border:`1px solid ${ac}20`, borderRadius:radius, padding:24,
+                  transition:"border-color 0.2s,transform 0.2s" }}
+                  onMouseEnter={e=>{e.currentTarget.style.borderColor=`${ac}60`;e.currentTarget.style.transform="translateY(-2px)"}}
+                  onMouseLeave={e=>{e.currentTarget.style.borderColor=`${ac}20`;e.currentTarget.style.transform="translateY(0)"}}>
+                  <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
+                    <div style={{ fontWeight:700, fontSize:15 }}>{proj.title}</div>
+                    <div style={{ display:"flex", gap:8, opacity:0.45 }}>
+                      {proj.github && <a href={proj.github} target="_blank" rel="noreferrer" style={{ color:fg }}><Github size={13}/></a>}
+                      {proj.live   && <a href={proj.live}   target="_blank" rel="noreferrer" style={{ color:fg }}><ExternalLink size={13}/></a>}
+                    </div>
+                  </div>
+                  <p style={{ fontSize:13, opacity:0.65, lineHeight:1.65, marginBottom:12 }}>{proj.description}</p>
+                  <Tags items={proj.tech||[]} bg={`${ac}12`} fg={ac} radius={radius} />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Experience - two-column timeline */}
+        {p.experience?.length > 0 && (
+          <div style={{ marginBottom:56 }} id="experience">
+            {lbl("Experience")}
+            <div style={{ display:"flex", flexDirection:"column", gap:0 }}>
+              {p.experience.map((e,i) => (
+                <div key={i} style={{ display:"grid", gridTemplateColumns:"160px 1fr", gap:24, padding:"24px 0", borderTop:`1px solid ${ac}15` }}>
+                  <div>
+                    <div style={{ fontSize:12, opacity:0.4 }}>{e.period}</div>
+                    <div style={{ fontSize:13, color:ac, marginTop:4, fontWeight:600 }}>{e.company}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontWeight:700, fontSize:16, marginBottom:6 }}>{e.role}</div>
+                    <p style={{ fontSize:13, opacity:0.65, lineHeight:1.75 }}>{e.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Education */}
+        {p.education?.length > 0 && (
+          <div style={{ marginBottom:56 }}>
+            {lbl("Education")}
+            {p.education.map((e,i) => (
+              <div key={i} style={{ display:"grid", gridTemplateColumns:"160px 1fr", gap:24, padding:"20px 0", borderTop:`1px solid ${ac}15` }}>
+                <div style={{ fontSize:12, opacity:0.4 }}>{e.period}</div>
+                <div>
+                  <div style={{ fontWeight:600 }}>{e.school}</div>
+                  <div style={{ fontSize:13, color:ac }}>{e.degree}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Services */}
+        {p.services?.length > 0 && (
+          <div style={{ marginBottom:56 }}>
+            {lbl("Services")}
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))", gap:14 }}>
+              {p.services.map((s,i) => (
+                <div key={i} style={{ background:`${ac}08`, border:`1px solid ${ac}20`, borderRadius:radius, padding:20 }}>
+                  <div style={{ fontWeight:700, fontSize:14, marginBottom:4 }}>{s.name}</div>
+                  {s.price && <div style={{ color:ac, fontSize:13, marginBottom:8 }}>{s.price}</div>}
+                  <p style={{ fontSize:13, opacity:0.6, lineHeight:1.65 }}>{s.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Testimonials */}
+        {p.testimonials?.length > 0 && (
+          <div style={{ marginBottom:56 }}>
+            {lbl("Testimonials")}
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))", gap:14 }}>
+              {p.testimonials.map((tt,i) => (
+                <blockquote key={i} style={{ background:`${ac}06`, border:`1px solid ${ac}18`, borderRadius:radius, padding:20, margin:0, fontSize:14, lineHeight:1.8, fontStyle:"italic" }}>
+                  "{tt.quote}"
+                  <div style={{ marginTop:10, fontStyle:"normal", color:ac, fontSize:12 }}>— {tt.name}, {tt.role}</div>
+                </blockquote>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* FAQ */}
+        {p.faqs?.length > 0 && (
+          <div style={{ marginBottom:56 }}>
+            {lbl("FAQ")}
+            <FAQList faqs={p.faqs} fg={fg} />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

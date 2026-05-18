@@ -56,7 +56,7 @@ class PortfolioSerializer(serializers.ModelSerializer):
     certifications = CertificationSerializer(many=True, required=False)
     testimonials = TestimonialSerializer(many=True, required=False)
     blogs = BlogSerializer(many=True, required=False)
-    user = ProfileSerializer(source='user.profile', read_only=True)
+    user = ProfileSerializer(source='user.profile', required=False)
 
     class Meta:
         model = Portfolio
@@ -74,8 +74,15 @@ class PortfolioSerializer(serializers.ModelSerializer):
         certifications_data = validated_data.pop('certifications', [])
         testimonials_data = validated_data.pop('testimonials', [])
         blogs_data = validated_data.pop('blogs', [])
+        user_data = validated_data.pop('user', None)
 
         portfolio = Portfolio.objects.create(**validated_data)
+        
+        if user_data and 'profile' in user_data:
+            profile = portfolio.user.profile
+            for attr, value in user_data['profile'].items():
+                setattr(profile, attr, value)
+            profile.save()
         
         for item in skills_data:
             Skill.objects.create(portfolio=portfolio, **item)
@@ -95,6 +102,13 @@ class PortfolioSerializer(serializers.ModelSerializer):
         return portfolio
 
     def update(self, instance, validated_data):
+        user_data = validated_data.pop('user', None)
+        if user_data and 'profile' in user_data:
+            profile = instance.user.profile
+            for attr, value in user_data['profile'].items():
+                setattr(profile, attr, value)
+            profile.save()
+
         # Update flat fields
         instance.name = validated_data.get('name', instance.name)
         instance.template = validated_data.get('template', instance.template)
