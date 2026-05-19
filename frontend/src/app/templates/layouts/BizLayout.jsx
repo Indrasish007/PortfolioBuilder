@@ -1,8 +1,8 @@
-import { Mail, Github, ExternalLink, TrendingUp, Users, Star } from "lucide-react";
-import { Soc, Tags, FAQList, SectionLabel } from "./shared.jsx";
+import { Mail, Github, ExternalLink, TrendingUp, Users, Star, Phone } from "lucide-react";
+import { Soc, Tags, FAQList, SectionLabel, VideoEmbed, MusicEmbed, GalleryAlbum } from "./shared.jsx";
 
 // classic, startup, forest, oceanic
-export default function BizLayout({ p, t, id }) {
+export default function BizLayout({ p, t, id, portfolioId }) {
   const u = p.user || {};
 
   const cfg = {
@@ -46,7 +46,7 @@ export default function BizLayout({ p, t, id }) {
             <div style={{ flex:1 }}>
               <div style={{ fontSize:12, color:ac, letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:12 }}>{u.title}</div>
               <h1 style={{ fontSize:52, fontWeight:900, lineHeight:1.05, letterSpacing:"-0.03em", margin:"0 0 20px" }}>{u.name}</h1>
-              <p style={{ opacity:0.7, lineHeight:1.85, fontSize:15, maxWidth:480, marginBottom:28 }}>{u.bio}</p>
+              <p style={{ opacity:0.7, lineHeight:1.85, fontSize:15, maxWidth:480, marginBottom:28, whiteSpace: "pre-wrap" }}>{u.bio}</p>
               <div style={{ display:"flex", gap:12, flexWrap:"wrap", marginBottom:24 }}>
                 {u.email && (
                   <a href={`mailto:${u.email}`} style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 24px",
@@ -61,10 +61,10 @@ export default function BizLayout({ p, t, id }) {
                   </a>
                 )}
               </div>
-              <Soc user={u} fg={fg} />
+              <Soc user={u} fg={fg} portfolioId={portfolioId} />
             </div>
             {u.avatar && (
-              <img src={u.avatar} alt="" style={{ width:120, height:120, borderRadius: id==="classic"?"4px":"50%",
+              <img src={u.avatar} alt="" style={{ width:150, height:150, borderRadius: id==="classic"?"10px":"50%",
                 objectFit:"cover", border:`3px solid ${ac}50`, flexShrink:0 }} />
             )}
           </div>
@@ -197,6 +197,66 @@ export default function BizLayout({ p, t, id }) {
           <div style={{ marginBottom:56 }}>
             {lbl("FAQ")}
             <FAQList faqs={p.faqs} fg={fg} />
+          </div>
+        )}
+        {/* Gallery */}
+        {p.gallery?.length > 0 && (
+          <div style={{ marginBottom:56 }}>
+            {lbl("Gallery")}
+            <div style={{ background:`${ac}07`, border:`1px solid ${ac}20`, borderRadius:radius, padding:24 }}>
+              <GalleryAlbum images={p.gallery} fg={fg} />
+            </div>
+          </div>
+        )}
+
+        {/* Videos */}
+        {p.videos?.length > 0 && (
+          <div style={{ marginBottom:56 }}>
+            {lbl("Videos")}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
+              {p.videos.map((v, i) => (
+                <div key={i} style={{ background:`${ac}07`, border:`1px solid ${ac}20`, borderRadius:radius, padding:24 }}>
+                  <VideoEmbed url={v} />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Music */}
+        {p.music?.length > 0 && (
+          <div style={{ marginBottom:56 }}>
+            {lbl("Music")}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
+              {p.music.map((m, i) => (
+                <div key={i} style={{ background:`${ac}07`, border:`1px solid ${ac}20`, borderRadius:radius, padding:24 }}>
+                  <MusicEmbed url={m} />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Contact */}
+        {(p.sections||[]).includes("Contact") && (u.email || u.phone) && (
+          <div id="contact">
+            {lbl("Contact")}
+            <div style={{ display:"flex", gap:16, flexWrap:"wrap" }}>
+              {u.email && (
+                <a href={`mailto:${u.email}`}
+                  style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"12px 28px",
+                    background:ac, color:"#000", borderRadius:radius, fontSize:14, textDecoration:"none", fontWeight:700 }}>
+                  <Mail size={16}/> {u.email}
+                </a>
+              )}
+              {u.phone && (
+                <a href={`tel:${u.phone}`}
+                  style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"12px 28px",
+                    background:"transparent", color:ac, border:`1px solid ${ac}50`, borderRadius:radius, fontSize:14, textDecoration:"none", fontWeight:700 }}>
+                  <Phone size={16}/> {u.phone}
+                </a>
+              )}
+            </div>
           </div>
         )}
       </div>

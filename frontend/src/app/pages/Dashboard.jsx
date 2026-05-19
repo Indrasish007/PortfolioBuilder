@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Eye, MousePointerClick, Download, Plus, ExternalLink, MoreHorizontal, ArrowUp, ArrowDown, Sparkles, Globe, Pencil, Trash2 } from "lucide-react";
+import { Eye, MousePointerClick, Download, Plus, ExternalLink, MoreHorizontal, ArrowUp, Sparkles, Globe, Pencil, Trash2 } from "lucide-react";
 import GlassCard from "../components/GlassCard.jsx";
 import Button from "../components/Button.jsx";
 import Badge from "../components/Badge.jsx";
@@ -9,12 +9,7 @@ import { useState, useEffect, useRef } from "react";
 import api from "../services/api.js";
 import { useAuthStore } from "../store/authStore.js";
 
-const stats = [
-  { label: "Total views", value: "12,483", delta: "+18.2%", up: true, icon: Eye },
-  { label: "Unique visitors", value: "4,219", delta: "+9.4%", up: true, icon: MousePointerClick },
-  { label: "Resume downloads", value: "482", delta: "-2.1%", up: false, icon: Download },
-  { label: "Avg. session", value: "2m 14s", delta: "+5.0%", up: true, icon: Sparkles },
-];
+// stats will be fetched from backend
 
 function PortfolioMenu({ portfolio, onDelete }) {
   const [open, setOpen] = useState(false);
@@ -32,7 +27,7 @@ function PortfolioMenu({ portfolio, onDelete }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [open]);
 
-  const username = portfolio.user?.username;
+  const pId = portfolio.id;
 
   return (
     <div className="relative" ref={menuRef}>
@@ -60,15 +55,13 @@ function PortfolioMenu({ portfolio, onDelete }) {
               <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
               Edit
             </button>
-            {username && (
-              <button
-                onClick={() => { setOpen(false); window.open(`/u/${username}`, "_blank"); }}
-                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-accent/50 transition text-left"
-              >
-                <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
-                Preview
-              </button>
-            )}
+            <button
+              onClick={() => { setOpen(false); window.open(`/p/${pId}`, "_blank"); }}
+              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-accent/50 transition text-left"
+            >
+              <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
+              Preview
+            </button>
             <div className="border-t border-border/50 my-0.5" />
             <button
               onClick={() => { setOpen(false); onDelete(portfolio.id); }}
@@ -90,11 +83,17 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [deleteConfirm, setDeleteConfirm] = useState(null); // id to confirm
 
+  const [statsData, setStatsData] = useState({ total_views: 0, unique_visitors: 0, resume_downloads: 0, avg_session: 0 });
+
   useEffect(() => {
     async function load() {
       try {
-        const res = await api.get('/portfolios/');
-        setPortfolios(res.data);
+        const [portRes, statsRes] = await Promise.all([
+          api.get('/portfolios/'),
+          api.get('/portfolios/stats/dashboard/')
+        ]);
+        setPortfolios(portRes.data);
+        setStatsData(statsRes.data);
       } catch (err) {
         console.error(err);
       } finally {
@@ -134,7 +133,12 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((s, i) => (
+        {[
+          { label: "Total views", value: statsData.total_views, delta: "--", up: true, icon: Eye },
+          { label: "Unique visitors", value: statsData.unique_visitors, delta: "--", up: true, icon: MousePointerClick },
+          { label: "Resume downloads", value: statsData.resume_downloads, delta: "--", up: true, icon: Download },
+          { label: "Avg. session", value: `${Math.floor(statsData.avg_session / 60)}m ${statsData.avg_session % 60}s`, delta: "--", up: true, icon: Sparkles },
+        ].map((s, i) => (
           <motion.div key={s.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
             <GlassCard className="p-5">
               <div className="flex items-center justify-between">
@@ -143,7 +147,7 @@ export default function Dashboard() {
               </div>
               <div className="text-2xl font-bold mt-2">{s.value}</div>
               <div className={`text-xs mt-1 inline-flex items-center gap-1 ${s.up ? "text-emerald-400" : "text-red-400"}`}>
-                {s.up ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />} {s.delta} vs last week
+                <ArrowUp className="w-3 h-3" /> {s.delta}
               </div>
             </GlassCard>
           </motion.div>
@@ -179,27 +183,17 @@ export default function Dashboard() {
                     </div>
                   </div>
                   <Button as={Link} to={`/editor/${p.id}`} size="sm" variant="outline">Edit</Button>
-                  {username ? (
-                    <Button
-                      as="a"
-                      href={`/u/${username}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      size="sm"
-                      variant="ghost"
-                      title="Preview portfolio"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </Button>
-                  ) : (
-                    <button
-                      disabled
-                      className="text-muted-foreground/40 p-2 cursor-not-allowed"
-                      title="Set a username in Settings to preview"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </button>
-                  )}
+                  <Button
+                    as="a"
+                    href={`/p/${p.id}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    size="sm"
+                    variant="ghost"
+                    title="Preview portfolio"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </Button>
                   <PortfolioMenu portfolio={p} onDelete={handleDelete} />
                 </div>
               );

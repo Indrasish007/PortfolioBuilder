@@ -1,8 +1,8 @@
-import { Mail, Github, ExternalLink } from "lucide-react";
-import { Soc, Tags, FAQList, SectionLabel } from "./shared.jsx";
+import { Mail, Github, ExternalLink, Phone } from "lucide-react";
+import { Soc, Tags, FAQList, SectionLabel, VideoEmbed, MusicEmbed, GalleryAlbum } from "./shared.jsx";
 
 // brutalist, monochrome
-export default function BrutalistLayout({ p, t, id }) {
+export default function BrutalistLayout({ p, t, id, portfolioId }) {
   const u = p.user || {};
   const isMono = id === "monochrome";
 
@@ -29,9 +29,9 @@ export default function BrutalistLayout({ p, t, id }) {
         <div style={{ position:"relative", zIndex:1 }}>
           <div style={{ display:"flex", alignItems:"flex-start", gap:32, flexWrap:"wrap" }}>
             {u.avatar
-              ? <img src={u.avatar} alt="" style={{ width:isMono?80:100, height:isMono?80:100,
+              ? <img src={u.avatar} alt="" style={{ width:isMono?130:150, height:isMono?130:150,
                   objectFit:"cover", border:border, filter:isMono?"grayscale(100%)":"none", flexShrink:0 }} />
-              : <div style={{ width:isMono?80:100, height:isMono?80:100, background:isMono?"#222":"#facc15", border:border, flexShrink:0 }} />
+              : <div style={{ width:isMono?130:150, height:isMono?130:150, background:isMono?"#222":"#facc15", border:border, flexShrink:0 }} />
             }
             <div>
               <div style={{ fontSize:isMono?11:13, opacity:0.5, marginBottom:8, letterSpacing:"0.15em", textTransform:"uppercase", fontFamily:"Inter,sans-serif" }}>{u.title}</div>
@@ -44,8 +44,8 @@ export default function BrutalistLayout({ p, t, id }) {
               {u.email    && <div style={{ fontSize:12, opacity:0.45, fontFamily:"Inter,sans-serif" }}>✉ {u.email}</div>}
             </div>
           </div>
-          <p style={{ marginTop:24, opacity:0.7, lineHeight:1.8, fontSize:15, maxWidth:600, fontFamily:"Inter,sans-serif" }}>{u.bio}</p>
-          <div style={{ marginTop:20 }}><Soc user={u} fg={fg} /></div>
+          <p style={{ marginTop:24, opacity:0.7, lineHeight:1.8, fontSize:15, maxWidth:600, fontFamily:"Inter,sans-serif", whiteSpace: "pre-wrap" }}>{u.bio}</p>
+          <div style={{ marginTop:20 }}><Soc user={u} fg={fg} portfolioId={portfolioId} /></div>
         </div>
       </div>
 
@@ -170,17 +170,68 @@ export default function BrutalistLayout({ p, t, id }) {
           </div>
         )}
 
+        {/* Gallery */}
+        {p.gallery?.length > 0 && (
+          <div style={{ marginBottom:48 }}>
+            {lbl("Gallery")}
+            <div style={{ padding:isMono?20:0, border:isMono?"2px solid #111":"none" }}>
+              <GalleryAlbum images={p.gallery} fg={fg} />
+            </div>
+          </div>
+        )}
+
+        {/* Videos */}
+        {p.videos?.length > 0 && (
+          <div style={{ marginBottom:48 }}>
+            {lbl("Videos")}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
+              {p.videos.map((v, i) => (
+                <div key={i} style={{ padding:isMono?20:0, border:isMono?"2px solid #111":border }}>
+                  <VideoEmbed url={v} />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Music */}
+        {p.music?.length > 0 && (
+          <div style={{ marginBottom:48 }}>
+            {lbl("Music")}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
+              {p.music.map((m, i) => (
+                <div key={i} style={{ padding:isMono?20:0, border:isMono?"2px solid #111":border }}>
+                  <MusicEmbed url={m} />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Contact */}
-        {(p.sections||[]).includes("Contact") && u.email && (
+        {(p.sections||[]).includes("Contact") && (u.email || u.phone) && (
           <div style={{ borderTop:border, paddingTop:40 }}>
             {lbl("Contact")}
-            <a href={`mailto:${u.email}`}
-              style={{ display:"inline-flex", alignItems:"center", gap:10, padding:isMono?"12px 28px":"16px 40px",
-                background: isMono?"#111":"#facc15", color: isMono?"#fff":"#000",
-                fontWeight:900, fontSize: isMono?13:16, textDecoration:"none",
-                fontFamily:"Inter,sans-serif", textTransform:isMono?"none":"uppercase", letterSpacing:isMono?"0":"0.1em" }}>
-              <Mail size={14}/> {u.email}
-            </a>
+            <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>
+              {u.email && (
+                <a href={`mailto:${u.email}`}
+                  style={{ display:"inline-flex", alignItems:"center", gap:10, padding:isMono?"12px 28px":"16px 40px",
+                    background: isMono?"#111":"#facc15", color: isMono?"#fff":"#000",
+                    fontWeight:900, fontSize: isMono?13:16, textDecoration:"none",
+                    fontFamily:"Inter,sans-serif", textTransform:isMono?"none":"uppercase", letterSpacing:isMono?"0":"0.1em" }}>
+                  <Mail size={14}/> {u.email}
+                </a>
+              )}
+              {u.phone && (
+                <a href={`tel:${u.phone}`}
+                  style={{ display:"inline-flex", alignItems:"center", gap:10, padding:isMono?"12px 28px":"16px 40px",
+                    background: "transparent", color: isMono?"#111":"#facc15", border: isMono?"2px solid #111":`2px solid #facc15`,
+                    fontWeight:900, fontSize: isMono?13:16, textDecoration:"none",
+                    fontFamily:"Inter,sans-serif", textTransform:isMono?"none":"uppercase", letterSpacing:isMono?"0":"0.1em" }}>
+                  <Phone size={14}/> {u.phone}
+                </a>
+              )}
+            </div>
           </div>
         )}
       </div>

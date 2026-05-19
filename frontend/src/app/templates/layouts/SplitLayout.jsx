@@ -1,8 +1,8 @@
-import { Mail, Github, ExternalLink } from "lucide-react";
-import { Soc, Tags, FAQList, SectionLabel } from "./shared.jsx";
+import { Mail, Github, ExternalLink, Phone } from "lucide-react";
+import { Soc, Tags, FAQList, SectionLabel, VideoEmbed, MusicEmbed, GalleryAlbum } from "./shared.jsx";
 
 // creative, dusk, coral, sakura
-export default function SplitLayout({ p, t, id }) {
+export default function SplitLayout({ p, t, id, portfolioId }) {
   const u = p.user || {};
 
   const cfg = {
@@ -30,19 +30,29 @@ export default function SplitLayout({ p, t, id }) {
             backgroundImage:grad, WebkitBackgroundClip:"text", backgroundClip:"text", WebkitTextFillColor:"transparent" }}>
             {u.name}
           </h1>
-          <p style={{ opacity:0.7, lineHeight:1.85, fontSize:15, marginBottom:32, maxWidth:360 }}>{u.bio}</p>
+          <p style={{ opacity:0.7, lineHeight:1.85, fontSize:15, marginBottom:32, maxWidth:360, whiteSpace: "pre-wrap" }}>{u.bio}</p>
           <div style={{ display:"flex", gap:12, flexWrap:"wrap", marginBottom:28 }}>
             {u.location && <span style={{ fontSize:12, opacity:0.45 }}>📍 {u.location}</span>}
             {u.email    && <span style={{ fontSize:12, opacity:0.45 }}>✉ {u.email}</span>}
+            {u.phone    && <span style={{ fontSize:12, opacity:0.45 }}>📞 {u.phone}</span>}
           </div>
-          <Soc user={u} fg={fg} />
-          {u.email && (
-            <a href={`mailto:${u.email}`} style={{ marginTop:32, display:"inline-flex", alignItems:"center", gap:8,
-              padding:"12px 28px", backgroundImage:grad, color:"#fff", borderRadius:6, fontSize:13,
-              textDecoration:"none", fontWeight:700, width:"fit-content" }}>
-              <Mail size={14}/> Hire me
-            </a>
-          )}
+          <Soc user={u} fg={fg} portfolioId={portfolioId} />
+          <div style={{ display:"flex", gap:12, marginTop:32, flexWrap:"wrap" }}>
+            {u.email && (
+              <a href={`mailto:${u.email}`} style={{ display:"inline-flex", alignItems:"center", gap:8,
+                padding:"12px 28px", backgroundImage:grad, color:"#fff", borderRadius:6, fontSize:13,
+                textDecoration:"none", fontWeight:700, width:"fit-content" }}>
+                <Mail size={14}/> Hire me
+              </a>
+            )}
+            {u.phone && (
+              <a href={`tel:${u.phone}`} style={{ display:"inline-flex", alignItems:"center", gap:8,
+                padding:"12px 28px", border:`1px solid ${ac}`, color:"#fff", borderRadius:6, fontSize:13,
+                textDecoration:"none", fontWeight:700, width:"fit-content" }}>
+                <Phone size={14}/> {u.phone}
+              </a>
+            )}
+          </div>
         </div>
 
         {/* Right panel — skills + featured project */}
@@ -179,6 +189,33 @@ export default function SplitLayout({ p, t, id }) {
           <div style={{ marginBottom:56 }}>
             {lbl("FAQ")}
             <FAQList faqs={p.faqs} fg={fg} />
+          </div>
+        )}
+        {/* Gallery */}
+        {p.gallery?.length > 0 && (
+          <div style={{ marginBottom:56 }}>
+            {lbl("Gallery")}
+            <GalleryAlbum images={p.gallery} fg={fg} />
+          </div>
+        )}
+
+        {/* Videos */}
+        {p.videos?.length > 0 && (
+          <div style={{ marginBottom:56 }}>
+            {lbl("Videos")}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
+              {p.videos.map((v, i) => <VideoEmbed key={i} url={v} />)}
+            </div>
+          </div>
+        )}
+
+        {/* Music */}
+        {p.music?.length > 0 && (
+          <div style={{ marginBottom:56 }}>
+            {lbl("Music")}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
+              {p.music.map((m, i) => <MusicEmbed key={i} url={m} />)}
+            </div>
           </div>
         )}
       </div>

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Github, Twitter, Linkedin, Facebook, Instagram, Globe, FileText, ChevronDown, ChevronUp } from "lucide-react";
+import api from "../../services/api.js";
 
 export const TH = {
   midnight:    { bg:"#0b0f1a", fg:"#f8fafc", ac:"#7c3aed" },
@@ -14,7 +15,43 @@ export const TH = {
   neon:        { bg:"#0a0a0a", fg:"#ecfeff", ac:"#22d3ee" },
 };
 
-export function Soc({ user, fg, size = 15 }) {
+export const handleResumeDownload = (resumeLink, action, portfolioId = null) => {
+  if (!resumeLink) return;
+  try {
+    let url = resumeLink;
+    if (resumeLink.startsWith("data:application/pdf")) {
+      const byteCharacters = atob(resumeLink.split(',')[1]);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], {type: 'application/pdf'});
+      url = URL.createObjectURL(blob);
+    }
+    
+    if (action === 'view') {
+      window.open(url, '_blank');
+    } else if (action === 'download') {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'Resume.pdf';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+    
+    // Track analytics if we are in public view
+    if (portfolioId && window.location.pathname.startsWith('/p/')) {
+      let visitorId = localStorage.getItem("visitorId") || "anonymous";
+      api.post(`/portfolios/${portfolioId}/analytics/`, { event_type: 'resume_download', visitor_id: visitorId }).catch(()=> {});
+    }
+  } catch (err) {
+    console.error("Failed to handle resume", err);
+  }
+};
+
+export function Soc({ user, fg, size = 15, portfolioId }) {
   const links = [
     [user?.github || user?.social?.github, Github],
     [user?.twitter || user?.social?.twitter, Twitter],
@@ -23,37 +60,6 @@ export function Soc({ user, fg, size = 15 }) {
     [user?.instagram || user?.social?.instagram, Instagram],
     [user?.website || user?.social?.website, Globe],
   ];
-
-  const handleResume = (action) => {
-    const resumeLink = user?.resume_link;
-    if (!resumeLink) return;
-    try {
-      let url = resumeLink;
-      if (resumeLink.startsWith("data:application/pdf")) {
-        const byteCharacters = atob(resumeLink.split(',')[1]);
-        const byteNumbers = new Array(byteCharacters.length);
-        for (let i = 0; i < byteCharacters.length; i++) {
-            byteNumbers[i] = byteCharacters.charCodeAt(i);
-        }
-        const byteArray = new Uint8Array(byteNumbers);
-        const blob = new Blob([byteArray], {type: 'application/pdf'});
-        url = URL.createObjectURL(blob);
-      }
-      
-      if (action === 'view') {
-        window.open(url, '_blank');
-      } else if (action === 'download') {
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'Resume.pdf';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      }
-    } catch (err) {
-      console.error("Failed to handle resume", err);
-    }
-  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -69,10 +75,10 @@ export function Soc({ user, fg, size = 15 }) {
       </div>
       {user?.resume_link && (
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-          <button onClick={() => handleResume('view')} style={{ padding: '8px 16px', borderRadius: '6px', background: fg, color: 'var(--bg, #000)', border: 'none', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
+          <button onClick={() => handleResumeDownload(user?.resume_link, 'view', portfolioId)} style={{ padding: '8px 16px', borderRadius: '6px', background: fg, color: 'var(--bg, #000)', border: 'none', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
             <FileText size={14} /> View Resume
           </button>
-          <button onClick={() => handleResume('download')} style={{ padding: '8px 16px', borderRadius: '6px', background: 'transparent', color: fg, border: `1px solid ${fg}40`, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
+          <button onClick={() => handleResumeDownload(user?.resume_link, 'download', portfolioId)} style={{ padding: '8px 16px', borderRadius: '6px', background: 'transparent', color: fg, border: `1px solid ${fg}40`, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
             Download Resume
           </button>
         </div>
@@ -121,4 +127,63 @@ export function SectionLabel({ text, style = {} }) {
 
 export function sn(val) {
   return typeof val === "object" && val !== null ? val.name : val;
+}
+
+export function VideoEmbed({ url }) {
+  if (!url) return null;
+  let embedUrl = url;
+  if (url.includes("youtube.com/watch?v=")) {
+    embedUrl = `https://www.youtube.com/embed/${url.split("v=")[1].split("&")[0]}`;
+  } else if (url.includes("youtu.be/")) {
+    embedUrl = `https://www.youtube.com/embed/${url.split("youtu.be/")[1].split("?")[0]}`;
+  } else if (url.includes("vimeo.com/")) {
+    embedUrl = `https://player.vimeo.com/video/${url.split("vimeo.com/")[1].split("?")[0]}`;
+  }
+  return (
+    <div style={{ position: "relative", paddingBottom: "56.25%", height: 0, overflow: "hidden", borderRadius: "8px", background: "#000" }}>
+      <iframe src={embedUrl} style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: 0 }} allow="autoplay; fullscreen; picture-in-picture" allowFullScreen></iframe>
+    </div>
+  );
+}
+
+export function MusicEmbed({ url }) {
+  if (!url) return null;
+  let embedUrl = url;
+  if (url.includes("spotify.com")) {
+    const parts = url.split("spotify.com/")[1];
+    if (parts) {
+      embedUrl = `https://open.spotify.com/embed/${parts.split("?")[0]}`;
+      return <iframe src={embedUrl} width="100%" height="152" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" style={{ borderRadius: "12px" }}></iframe>;
+    }
+  } else if (url.includes("soundcloud.com")) {
+    return <iframe width="100%" height="166" scrolling="no" frameBorder="no" allow="autoplay" src={`https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true`} style={{ borderRadius: "12px" }}></iframe>;
+  }
+  return (
+    <a href={url} target="_blank" rel="noreferrer" style={{ display: "inline-block", padding: "12px 24px", background: "#1db954", color: "#fff", borderRadius: "30px", textDecoration: "none", fontWeight: 600 }}>
+      Listen on Music App
+    </a>
+  );
+}
+
+export function GalleryAlbum({ images, fg }) {
+  const [selected, setSelected] = useState(null);
+  if (!images || images.length === 0) return null;
+
+  return (
+    <>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: "12px" }}>
+        {images.map((img, i) => (
+          <div key={i} onClick={() => setSelected(img)} style={{ aspectRatio: "1/1", cursor: "pointer", borderRadius: "8px", overflow: "hidden", border: `1px solid ${fg}20` }}>
+            <img src={img} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.3s" }} onMouseEnter={(e) => e.currentTarget.style.transform="scale(1.05)"} onMouseLeave={(e) => e.currentTarget.style.transform="scale(1)"} />
+          </div>
+        ))}
+      </div>
+      {selected && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.9)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px" }} onClick={() => setSelected(null)}>
+          <button style={{ position: "absolute", top: "20px", right: "20px", background: "none", border: "none", color: "#fff", fontSize: "32px", cursor: "pointer" }} onClick={() => setSelected(null)}>&times;</button>
+          <img src={selected} alt="" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: "4px" }} />
+        </div>
+      )}
+    </>
+  );
 }

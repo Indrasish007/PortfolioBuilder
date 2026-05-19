@@ -6,12 +6,13 @@ class Portfolio(models.Model):
         ('Draft', 'Draft'),
         ('Published', 'Published'),
     ]
-    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='portfolio')
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='portfolios')
     name = models.CharField(max_length=255, default="Personal Portfolio")
     template = models.CharField(max_length=100, default="Developer")
     theme = models.CharField(max_length=100, default="Midnight")
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='Draft')
     slug = models.SlugField(unique=True, blank=True, null=True)
+    domain = models.CharField(max_length=255, blank=True, null=True)
     views = models.IntegerField(default=0)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -95,3 +96,15 @@ class Blog(models.Model):
 
     def __str__(self):
         return self.title
+
+class PortfolioEvent(models.Model):
+    portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE, related_name='events')
+    event_type = models.CharField(max_length=50) # 'view', 'resume_download', 'session_ping'
+    visitor_id = models.CharField(max_length=255) # hash for unique visitors
+    duration = models.IntegerField(default=0) # duration in seconds for session pings
+    device = models.CharField(max_length=50, default='Desktop') # 'Desktop', 'Mobile', 'Tablet'
+    country = models.CharField(max_length=100, default='United States')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.event_type} - {self.portfolio.id}"

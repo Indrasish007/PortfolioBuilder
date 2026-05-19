@@ -1,8 +1,8 @@
-import { Mail, Github, ExternalLink } from "lucide-react";
-import { Soc, Tags, FAQList, SectionLabel } from "./shared.jsx";
+import { Mail, Github, ExternalLink, Phone } from "lucide-react";
+import { Soc, Tags, FAQList, SectionLabel, VideoEmbed, MusicEmbed, GalleryAlbum } from "./shared.jsx";
 
 // bold, cyberpunk, space, retro, neon, quantum
-export default function BoldLayout({ p, t, id }) {
+export default function BoldLayout({ p, t, id, portfolioId }) {
   const u = p.user || {};
 
   const cfg = {
@@ -46,16 +46,16 @@ export default function BoldLayout({ p, t, id }) {
 
         <div style={{ position:"relative", zIndex:1 }}>
           {u.avatar && (
-            <img src={u.avatar} alt="" style={{ width:80, height:80, borderRadius:"50%", objectFit:"cover", marginBottom:24, border:`3px solid ${ac}`, boxShadow:`0 0 24px ${ac}60` }} />
+            <img src={u.avatar} alt="" style={{ width:140, height:140, borderRadius:"50%", objectFit:"cover", marginBottom:24, border:`4px solid ${ac}`, boxShadow:`0 0 32px ${ac}60` }} />
           )}
           <div style={{ fontSize:13, color:ac, marginBottom:10, letterSpacing:"0.12em", textTransform:"uppercase" }}>{u.title}</div>
           <h1 style={{ fontSize:heroSz, fontWeight:fw, lineHeight:0.95, letterSpacing:"-0.03em", margin:"0 0 24px", maxWidth:720, textShadow: id==="neon"?`0 0 40px ${ac}80`:"none" }}>{u.name}</h1>
-          <p style={{ opacity:0.75, maxWidth:520, lineHeight:1.75, fontSize:15, marginBottom:32 }}>{u.bio}</p>
+          <p style={{ opacity:0.75, maxWidth:520, lineHeight:1.75, fontSize:15, marginBottom:32, whiteSpace: "pre-wrap" }}>{u.bio}</p>
           <div style={{ display:"flex", gap:16, flexWrap:"wrap" }}>
             {u.location && <span style={{ fontSize:12, opacity:0.5 }}>📍 {u.location}</span>}
             {u.email    && <span style={{ fontSize:12, opacity:0.5 }}>✉ {u.email}</span>}
           </div>
-          <div style={{ marginTop:20 }}><Soc user={u} fg={t.fg} /></div>
+          <div style={{ marginTop:20 }}><Soc user={u} fg={t.fg} portfolioId={portfolioId} /></div>
         </div>
       </div>
 
@@ -181,16 +181,64 @@ export default function BoldLayout({ p, t, id }) {
           </div>
         )}
 
+        {/* Gallery */}
+        {p.gallery?.length > 0 && (
+          <div style={{ marginBottom:64 }}>
+            <SLabel>Gallery</SLabel>
+            <GalleryAlbum images={p.gallery} fg={t.fg} />
+          </div>
+        )}
+
+        {/* Videos */}
+        {p.videos?.length > 0 && (
+          <div style={{ marginBottom:64 }}>
+            <SLabel>Videos</SLabel>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
+              {p.videos.map((v, i) => (
+                <div key={i} style={{ border:`1px solid ${ac}30`, padding:20, background:`${ac}05` }}>
+                  <VideoEmbed url={v} />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Music */}
+        {p.music?.length > 0 && (
+          <div style={{ marginBottom:64 }}>
+            <SLabel>Music</SLabel>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
+              {p.music.map((m, i) => (
+                <div key={i} style={{ border:`1px solid ${ac}30`, padding:20, background:`${ac}05` }}>
+                  <MusicEmbed url={m} />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Contact */}
-        {(p.sections||[]).includes("Contact") && u.email && (
+        {(p.sections||[]).includes("Contact") && (u.email || u.phone) && (
           <div>
             <SLabel>Contact</SLabel>
-            <a href={`mailto:${u.email}`}
-              style={{ display:"inline-flex", alignItems:"center", gap:10, padding:"14px 36px",
-                background:ac, color:"#000", fontWeight:900, fontSize:15, textDecoration:"none",
-                letterSpacing:"0.05em", boxShadow: id==="neon"?`0 0 24px ${ac}60`:"none" }}>
-              <Mail size={16}/> {u.email}
-            </a>
+            <div style={{ display:"flex", gap:16, flexWrap:"wrap" }}>
+              {u.email && (
+                <a href={`mailto:${u.email}`}
+                  style={{ display:"inline-flex", alignItems:"center", gap:10, padding:"14px 36px",
+                    background:ac, color:"#000", fontWeight:900, fontSize:15, textDecoration:"none",
+                    letterSpacing:"0.05em", boxShadow: id==="neon"?`0 0 24px ${ac}60`:"none" }}>
+                  <Mail size={16}/> {u.email}
+                </a>
+              )}
+              {u.phone && (
+                <a href={`tel:${u.phone}`}
+                  style={{ display:"inline-flex", alignItems:"center", gap:10, padding:"14px 36px",
+                    background:"transparent", color:ac, border:`2px solid ${ac}`, fontWeight:900, fontSize:15, textDecoration:"none",
+                    letterSpacing:"0.05em", boxShadow: id==="neon"?`0 0 24px ${ac}30`:"none" }}>
+                  <Phone size={16}/> {u.phone}
+                </a>
+              )}
+            </div>
           </div>
         )}
       </div>

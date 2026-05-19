@@ -49,7 +49,7 @@ export default function LivePortfolio({ portfolio, template, themeName }) {
 
   const t    = TH[themeName] || TH.midnight;
   const fam  = FAMILIES[template] || "minimal";
-  const props = { p: portfolio, t, id: template };
+  const props = { p: portfolio, t, id: template, portfolioId: portfolio.id };
 
   switch (fam) {
     case "minimal":   return <MinimalLayout   {...props} />;

@@ -1,8 +1,8 @@
-import { Mail, Github, ExternalLink } from "lucide-react";
-import { Soc, Tags, FAQList, SectionLabel } from "./shared.jsx";
+import { Mail, Github, ExternalLink, Phone } from "lucide-react";
+import { Soc, Tags, FAQList, SectionLabel, VideoEmbed, MusicEmbed, GalleryAlbum } from "./shared.jsx";
 
 // gradient, aurora, glassmorphism, holographic
-export default function GlassLayout({ p, t, id }) {
+export default function GlassLayout({ p, t, id, portfolioId }) {
   const u = p.user || {};
 
   const cfg = {
@@ -50,10 +50,10 @@ export default function GlassLayout({ p, t, id }) {
           <div style={{ ...card, padding:"40px 40px", display:"flex", gap:32, flexWrap:"wrap", alignItems:"center" }}>
             <div style={{ flexShrink:0 }}>
               {u.avatar
-                ? <img src={u.avatar} alt="" style={{ width:96, height:96, borderRadius:"50%", objectFit:"cover",
-                    border:`3px solid rgba(255,255,255,0.2)`, boxShadow:`0 0 32px ${ac}50` }} />
-                : <div style={{ width:96, height:96, borderRadius:"50%", background:orb,
-                    border:"3px solid rgba(255,255,255,0.2)", boxShadow:`0 0 32px ${ac}50` }} />
+                ? <img src={u.avatar} alt="" style={{ width:140, height:140, borderRadius:"50%", objectFit:"cover",
+                    border:`3px solid rgba(255,255,255,0.2)`, boxShadow:`0 0 40px ${ac}50` }} />
+                : <div style={{ width:140, height:140, borderRadius:"50%", background:orb,
+                    border:"3px solid rgba(255,255,255,0.2)", boxShadow:`0 0 40px ${ac}50` }} />
               }
             </div>
             <div style={{ flex:1 }}>
@@ -62,8 +62,8 @@ export default function GlassLayout({ p, t, id }) {
                 backgroundImage:orb, WebkitBackgroundClip:"text", backgroundClip:"text", WebkitTextFillColor:"transparent" }}>
                 {u.name}
               </h1>
-              <p style={{ opacity:0.7, lineHeight:1.8, fontSize:14, marginBottom:20, maxWidth:440 }}>{u.bio}</p>
-              <Soc user={u} fg={fg} />
+              <p style={{ opacity:0.7, lineHeight:1.8, fontSize:14, marginBottom:20, maxWidth:440, whiteSpace: "pre-wrap" }}>{u.bio}</p>
+              <Soc user={u} fg={fg} portfolioId={portfolioId} />
             </div>
           </div>
         </div>
@@ -196,16 +196,66 @@ export default function GlassLayout({ p, t, id }) {
           </div>
         )}
 
+        {/* Gallery */}
+        {p.gallery?.length > 0 && (
+          <div style={{ marginBottom:48 }}>
+            {lbl("Gallery")}
+            <div style={{ ...card, padding:24 }}>
+              <GalleryAlbum images={p.gallery} fg={t.fg} />
+            </div>
+          </div>
+        )}
+
+        {/* Videos */}
+        {p.videos?.length > 0 && (
+          <div style={{ marginBottom:48 }}>
+            {lbl("Videos")}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
+              {p.videos.map((v, i) => (
+                <div key={i} style={{ ...card, padding: 16 }}>
+                  <VideoEmbed url={v} />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Music */}
+        {p.music?.length > 0 && (
+          <div style={{ marginBottom:48 }}>
+            {lbl("Music")}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
+              {p.music.map((m, i) => (
+                <div key={i} style={{ ...card, padding: 16 }}>
+                  <MusicEmbed url={m} />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Contact */}
-        {(p.sections||[]).includes("Contact") && u.email && (
+        {(p.sections||[]).includes("Contact") && (u.email || u.phone) && (
           <div>
             {lbl("Contact")}
-            <a href={`mailto:${u.email}`}
-              style={{ display:"inline-flex", alignItems:"center", gap:10, padding:"14px 32px",
-                backgroundImage:orb, color:"#fff", borderRadius:12, fontSize:14, textDecoration:"none", fontWeight:700,
-                boxShadow:`0 8px 32px ${ac}40` }}>
-              <Mail size={15}/> {u.email}
-            </a>
+            <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>
+              {u.email && (
+                <a href={`mailto:${u.email}`}
+                  style={{ display:"inline-flex", alignItems:"center", gap:10, padding:"14px 32px",
+                    backgroundImage:orb, color:"#fff", borderRadius:12, fontSize:14, textDecoration:"none", fontWeight:700,
+                    boxShadow:`0 8px 32px ${ac}40` }}>
+                  <Mail size={15}/> {u.email}
+                </a>
+              )}
+              {u.phone && (
+                <a href={`tel:${u.phone}`}
+                  style={{ display:"inline-flex", alignItems:"center", gap:10, padding:"14px 32px",
+                    background: "transparent", border:`1px solid ${ac}`, color:"#fff", borderRadius:12, fontSize:14, textDecoration:"none", fontWeight:700,
+                    boxShadow:`0 8px 32px ${ac}20` }}>
+                  <Phone size={15}/> {u.phone}
+                </a>
+              )}
+            </div>
           </div>
         )}
       </div>

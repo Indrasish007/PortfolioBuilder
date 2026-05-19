@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, Reorder, AnimatePresence } from "framer-motion";
 import { Undo2, Redo2, Save, Eye, EyeOff, Smartphone, Tablet, Monitor, Plus, GripVertical, Image as ImageIcon, Sparkles, Trash2, Github, Globe, Linkedin, Twitter, Facebook, Instagram, Type, Palette, Settings2, CheckCircle2, Loader2, ChevronDown, ChevronUp, ArrowUp, ArrowDown, FileText, X } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import GlassCard from "../components/GlassCard.jsx";
 import Button from "../components/Button.jsx";
 import Badge from "../components/Badge.jsx";
@@ -10,21 +10,28 @@ import { usePortfolioStore } from "../store/portfolioStore.js";
 import { templates, themes } from "../services/templates.js";
 import LivePortfolio from "../templates/LivePortfolio.jsx";
 import { useToast } from "../context/ToasterContext.jsx";
+import { useAuthStore } from "../store/authStore.js";
 
 const sectionTypes = ["About", "Skills", "Experience", "Education", "Projects", "Services", "Languages", "Awards", "Certifications", "Volunteer", "Testimonials", "References", "Blogs", "Gallery", "Videos", "Music", "FAQ", "Contact", "Custom"];
 
 export default function PortfolioEditor() {
-  const { portfolio, template, themeName, setTemplate, setThemeName, updateField, undo, redo, fetchPortfolio, savePortfolio, isLoading } = usePortfolioStore();
+  const { portfolio, template, themeName, setTemplate, setThemeName, updateField, undo, redo, fetchPortfolio, resetPortfolio, savePortfolio, isLoading } = usePortfolioStore();
   const [device, setDevice] = useState("desktop");
   const [tab, setTab] = useState("content");
   const [activeSection, setActiveSection] = useState(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [saveModalOpen, setSaveModalOpen] = useState(false);
+  const [publishModalOpen, setPublishModalOpen] = useState(false);
+  const [selectedDomain, setSelectedDomain] = useState("");
+  const authUser = useAuthStore((s) => s.user) || {};
+  const [portfolioName, setPortfolioName] = useState("");
   const hasFetched = useRef(false);
   const defaultSections = ["About", "Skills", "Experience", "Projects", "Education", "Testimonials", "Contact"];
   const sections = portfolio?.sections || defaultSections;
   const setSections = (newSections) => updateField("sections", newSections);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { id } = useParams();
 
   // Null-safe accessors
   const user = portfolio?.user || {};
@@ -35,23 +42,69 @@ export default function PortfolioEditor() {
   const username = user.username || "preview";
 
   const handleSave = async () => {
+    if (!portfolio?.id) {
+      setPortfolioName(portfolio?.name || "My Portfolio");
+      setSaveModalOpen(true);
+      return;
+    }
+    executeSave();
+  };
+
+  const executeSave = async (overrideName = null) => {
     try {
-      await savePortfolio();
+      const newId = await savePortfolio(overrideName);
       toast({ title: "Portfolio saved!", description: "Your changes have been saved.", type: "success" });
+      setSaveModalOpen(false);
+      if (!id && newId) {
+        navigate(`/editor/${newId}`, { replace: true });
+      }
     } catch {
       toast({ title: "Save failed", description: "Something went wrong. Please try again.", type: "error" });
     }
   };
 
-  // Only fetch once — prevents re-fetching (and overwriting unsaved edits) when navigating back
-  useEffect(() => {
-    if (!hasFetched.current && !portfolio?.id) {
-      hasFetched.current = true;
-      fetchPortfolio();
-    } else {
-      hasFetched.current = true;
+  const baseName = (authUser.username || authUser.name || "myportfolio").toLowerCase().replace(/[^a-z0-9]/g, '');
+  const domainOptions = [
+    { type: "free", domain: `${baseName}.portfolio.ai`, label: "Free Subdomain", price: "Free" },
+    { type: "custom", domain: `${baseName}.com`, label: "Custom Domain", price: "$12/yr" },
+    { type: "custom", domain: `${baseName}.dev`, label: "Custom Domain", price: "$15/yr" },
+    { type: "custom", domain: `${baseName}.design`, label: "Custom Domain", price: "$35/yr" },
+    { type: "custom", domain: `${baseName}.io`, label: "Custom Domain", price: "$39/yr" }
+  ];
+
+  const handlePublishClick = () => {
+    if (!portfolio?.id) {
+       toast({ title: "Save first", description: "Please save your portfolio before publishing.", type: "error" });
+       return;
     }
-  }, []);
+    if (!selectedDomain) {
+      setSelectedDomain(domainOptions[0].domain);
+    }
+    setPublishModalOpen(true);
+  };
+
+  const executePublish = async () => {
+    try {
+      updateField("status", "Published");
+      updateField("domain", selectedDomain);
+      if (selectedDomain.includes(".portfolio.ai")) {
+         updateField("slug", selectedDomain.split(".")[0]);
+      }
+      await savePortfolio();
+      toast({ title: "Portfolio Published!", description: `Your portfolio is now live at ${selectedDomain}`, type: "success" });
+      setPublishModalOpen(false);
+    } catch (e) {
+      toast({ title: "Publish failed", description: "Something went wrong.", type: "error" });
+    }
+  };
+
+  useEffect(() => {
+    if (id) {
+      fetchPortfolio(id);
+    } else {
+      resetPortfolio();
+    }
+  }, [id]);
 
   // Close preview overlay on Escape key
   useEffect(() => {
@@ -64,6 +117,86 @@ export default function PortfolioEditor() {
 
   return (
     <>
+    <AnimatePresence>
+      {saveModalOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+        >
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            className="glass rounded-2xl p-6 max-w-sm w-full mx-4 border border-border shadow-xl"
+          >
+            <h3 className="text-lg font-bold mb-2">Name your portfolio</h3>
+            <p className="text-sm text-muted-foreground mb-4">Give your new portfolio a name so you can easily find it later in your dashboard.</p>
+            <input 
+              value={portfolioName} 
+              onChange={(e) => setPortfolioName(e.target.value)} 
+              className="w-full bg-input/40 border border-border rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand mb-5" 
+              placeholder="e.g. My Developer Portfolio"
+              autoFocus
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => setSaveModalOpen(false)}>Cancel</Button>
+              <Button size="sm" onClick={() => executeSave(portfolioName)}>Save Portfolio</Button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+
+    <AnimatePresence>
+      {publishModalOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+        >
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            className="glass rounded-2xl p-6 max-w-md w-full mx-4 border border-border shadow-xl"
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-full bg-brand/10 flex items-center justify-center text-brand">
+                <Globe className="w-5 h-5" />
+              </div>
+              <h3 className="text-xl font-bold">Publish portfolio</h3>
+            </div>
+            <p className="text-sm text-muted-foreground mb-5">Choose a domain name to make your portfolio live. You can always change this later in settings.</p>
+            
+            <div className="space-y-3 mb-6">
+              {domainOptions.map((opt) => (
+                <label key={opt.domain} className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition ${selectedDomain === opt.domain ? 'border-brand bg-brand/5' : 'border-border/50 hover:border-border glass'}`}>
+                  <div className="flex items-center gap-3">
+                    <input type="radio" name="domain" value={opt.domain} checked={selectedDomain === opt.domain} onChange={() => setSelectedDomain(opt.domain)} className="accent-brand scale-110" />
+                    <div>
+                      <div className="font-medium text-sm">{opt.domain}</div>
+                      <div className="text-xs text-muted-foreground">{opt.label}</div>
+                    </div>
+                  </div>
+                  {opt.type === "custom" && <Badge variant="glass" className="text-xs">{opt.price}</Badge>}
+                </label>
+              ))}
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setPublishModalOpen(false)}>Cancel</Button>
+              <Button onClick={executePublish}>Publish to {selectedDomain}</Button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+
     {/* Full-screen live preview overlay */}
     <AnimatePresence>
       {previewOpen && (
@@ -133,7 +266,7 @@ export default function PortfolioEditor() {
 
               <GlassCard>
                 <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Avatar</div>
-                <label className="w-full h-24 rounded-lg border border-dashed border-border flex flex-col items-center justify-center text-xs text-muted-foreground hover:bg-accent/40 transition cursor-pointer overflow-hidden relative group">
+                <label className="w-full h-40 rounded-lg border border-dashed border-border flex flex-col items-center justify-center text-xs text-muted-foreground hover:bg-accent/40 transition cursor-pointer overflow-hidden relative group">
                   {user.avatar ? (
                     <>
                       <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" />
@@ -228,7 +361,7 @@ export default function PortfolioEditor() {
                     case "Music": content = <MusicEditor music={portfolio?.music || []} updateField={updateField} />; break;
                     case "FAQ": content = <FAQEditor faqs={portfolio?.faqs || []} updateField={updateField} />; break;
                     case "Custom": content = <CustomEditor custom={portfolio?.custom || { title: "Custom Section", content: "" }} updateField={updateField} />; break;
-                    case "Contact": content = <ContactEditor email={user.email} updateField={updateField} />; break;
+                    case "Contact": content = <ContactEditor email={user.email} phone={user.phone} updateField={updateField} />; break;
                     default: return null;
                  }
                  return (
@@ -286,6 +419,7 @@ export default function PortfolioEditor() {
           {tab === "settings" && (
             <GlassCard>
               <div className="space-y-3">
+                <Field label="Portfolio Name" value={portfolio?.name || ""} onChange={(v) => updateField("name", v)} />
                 <Field label="Username / Slug" value={user.username || ""} onChange={(v) => updateField("user.username", v)} hint={`Your URL: /u/${user.username || "your-username"}`} />
                 <Field label="SEO description" multiline value={user.bio || ""} onChange={(v) => updateField("user.bio", v)} />
                 <div className="flex items-center justify-between rounded-lg glass p-3">
@@ -320,7 +454,7 @@ export default function PortfolioEditor() {
             ))}
           </div>
           <Button size="sm" variant="outline" onClick={() => setPreviewOpen(true)}><Eye className="w-4 h-4" /> Preview</Button>
-          <Button size="sm" onClick={() => { handleSave(); navigate("/settings"); }}>Publish</Button>
+          <Button size="sm" onClick={handlePublishClick}>Publish</Button>
         </GlassCard>
 
         <div className="flex-1 rounded-2xl glass overflow-hidden flex items-center justify-center">
@@ -373,20 +507,91 @@ function ExperienceEditor({ experience, updateField }) {
     newArr[i] = { ...newArr[i], [field]: val };
     updateField("experience", newArr);
   };
+
+  const formatMonth = (val) => {
+    if (!val) return "";
+    const [year, month] = val.split('-');
+    const date = new Date(year, month - 1);
+    return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  };
+
+  const handleDateChange = (i, field, val) => {
+    const exp = experience[i];
+    const newExp = { ...exp, [field]: val };
+    
+    const startStr = formatMonth(newExp.startDate);
+    const endStr = newExp.isCurrent ? 'Present' : formatMonth(newExp.endDate);
+    
+    newExp.period = startStr && endStr ? `${startStr} - ${endStr}` : (startStr || endStr);
+    
+    const newArr = [...experience];
+    newArr[i] = newExp;
+    updateField("experience", newArr);
+  };
+
+  const toggleCurrent = (i) => {
+    const exp = experience[i];
+    const isCurrent = !exp.isCurrent;
+    const newExp = { ...exp, isCurrent };
+    if (isCurrent) newExp.endDate = '';
+    
+    const startStr = formatMonth(newExp.startDate);
+    const endStr = isCurrent ? 'Present' : formatMonth(newExp.endDate);
+    
+    newExp.period = startStr && endStr ? `${startStr} - ${endStr}` : (startStr || endStr);
+    
+    const newArr = [...experience];
+    newArr[i] = newExp;
+    updateField("experience", newArr);
+  };
+
   return (
     <div>
       <div className="flex justify-end mb-3">
-        <button onClick={() => updateField("experience", [...experience, { role: "New Role", company: "Company", period: "2024 - Present", description: "" }])} className="text-xs text-brand hover:underline">+ Add</button>
+        <button onClick={() => updateField("experience", [...experience, { role: "New Role", company: "Company", period: "Present", isCurrent: true, startDate: "", endDate: "", description: "" }])} className="text-xs text-brand hover:underline">+ Add</button>
       </div>
       {experience.map((exp, i) => (
         <div key={i} className="group mb-4 last:mb-0 border-l-2 border-brand/30 pl-3">
           <div className="flex items-center justify-between">
-            <input value={exp.role} onChange={(e) => updateItem(i, "role", e.target.value)} className="w-full bg-transparent text-sm font-semibold focus:outline-none" placeholder="Role" />
+            <input value={exp.role || ""} onChange={(e) => updateItem(i, "role", e.target.value)} className="w-full bg-transparent text-sm font-semibold focus:outline-none" placeholder="Role" />
             <button onClick={() => updateField("experience", experience.filter((_, idx) => idx !== i))} className="text-muted-foreground hover:text-destructive"><Trash2 className="w-3 h-3" /></button>
           </div>
-          <input value={exp.company} onChange={(e) => updateItem(i, "company", e.target.value)} className="w-full bg-transparent text-xs mb-1 focus:outline-none" placeholder="Company" />
-          <input value={exp.period} onChange={(e) => updateItem(i, "period", e.target.value)} className="w-full bg-transparent text-xs text-muted-foreground mb-2 focus:outline-none" placeholder="Period" />
-          <textarea value={exp.description} onChange={(e) => updateItem(i, "description", e.target.value)} rows={2} className="w-full bg-input/40 border border-border rounded p-2 text-xs focus:outline-none resize-none" placeholder="Description" />
+          <input value={exp.company || ""} onChange={(e) => updateItem(i, "company", e.target.value)} className="w-full bg-transparent text-xs mb-2 focus:outline-none" placeholder="Company" />
+          
+          <div className="flex flex-wrap items-center gap-2 mb-2">
+            <input 
+              type="month" 
+              value={exp.startDate || ""} 
+              onChange={(e) => handleDateChange(i, "startDate", e.target.value)} 
+              max={!exp.isCurrent && exp.endDate ? exp.endDate : undefined}
+              className="bg-input/40 border border-border text-xs rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-brand text-muted-foreground color-scheme-dark" 
+              style={{ colorScheme: 'dark light' }}
+            />
+            <span className="text-xs text-muted-foreground">to</span>
+            {!exp.isCurrent ? (
+              <input 
+                type="month" 
+                value={exp.endDate || ""} 
+                onChange={(e) => handleDateChange(i, "endDate", e.target.value)} 
+                min={exp.startDate || undefined}
+                className="bg-input/40 border border-border text-xs rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-brand text-muted-foreground color-scheme-dark" 
+                style={{ colorScheme: 'dark light' }}
+              />
+            ) : (
+              <span className="text-xs text-muted-foreground font-medium px-2 py-1 bg-accent/40 rounded">Present</span>
+            )}
+            <label className="flex items-center gap-1.5 ml-2 text-xs text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
+              <input 
+                type="checkbox" 
+                checked={exp.isCurrent || false} 
+                onChange={() => toggleCurrent(i)} 
+                className="accent-brand rounded-sm" 
+              />
+              Current Role
+            </label>
+          </div>
+
+          <textarea value={exp.description || ""} onChange={(e) => updateItem(i, "description", e.target.value)} rows={2} className="w-full bg-input/40 border border-border rounded p-2 text-xs focus:outline-none resize-none" placeholder="Description" />
         </div>
       ))}
     </div>
@@ -399,19 +604,89 @@ function EducationEditor({ education, updateField }) {
     newArr[i] = { ...newArr[i], [field]: val };
     updateField("education", newArr);
   };
+
+  const formatMonth = (val) => {
+    if (!val) return "";
+    const [year, month] = val.split('-');
+    const date = new Date(year, month - 1);
+    return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  };
+
+  const handleDateChange = (i, field, val) => {
+    const edu = education[i];
+    const newEdu = { ...edu, [field]: val };
+    
+    const startStr = formatMonth(newEdu.startDate);
+    const endStr = newEdu.isCurrent ? 'Present' : formatMonth(newEdu.endDate);
+    
+    newEdu.period = startStr && endStr ? `${startStr} - ${endStr}` : (startStr || endStr);
+    
+    const newArr = [...education];
+    newArr[i] = newEdu;
+    updateField("education", newArr);
+  };
+
+  const toggleCurrent = (i) => {
+    const edu = education[i];
+    const isCurrent = !edu.isCurrent;
+    const newEdu = { ...edu, isCurrent };
+    if (isCurrent) newEdu.endDate = '';
+    
+    const startStr = formatMonth(newEdu.startDate);
+    const endStr = isCurrent ? 'Present' : formatMonth(newEdu.endDate);
+    
+    newEdu.period = startStr && endStr ? `${startStr} - ${endStr}` : (startStr || endStr);
+    
+    const newArr = [...education];
+    newArr[i] = newEdu;
+    updateField("education", newArr);
+  };
+
   return (
     <div>
       <div className="flex justify-end mb-3">
-        <button onClick={() => updateField("education", [...education, { school: "University", degree: "Degree", period: "2020 - 2024" }])} className="text-xs text-brand hover:underline">+ Add</button>
+        <button onClick={() => updateField("education", [...education, { school: "University", degree: "Degree", period: "Present", isCurrent: true, startDate: "", endDate: "" }])} className="text-xs text-brand hover:underline">+ Add</button>
       </div>
       {education.map((edu, i) => (
-        <div key={i} className="group mb-3 last:mb-0 border-l-2 border-brand/30 pl-3">
+        <div key={i} className="group mb-4 last:mb-0 border-l-2 border-brand/30 pl-3">
           <div className="flex items-center justify-between">
-            <input value={edu.school} onChange={(e) => updateItem(i, "school", e.target.value)} className="w-full bg-transparent text-sm font-semibold focus:outline-none" placeholder="School" />
+            <input value={edu.school || ""} onChange={(e) => updateItem(i, "school", e.target.value)} className="w-full bg-transparent text-sm font-semibold focus:outline-none" placeholder="School" />
             <button onClick={() => updateField("education", education.filter((_, idx) => idx !== i))} className="text-muted-foreground hover:text-destructive"><Trash2 className="w-3 h-3" /></button>
           </div>
-          <input value={edu.degree} onChange={(e) => updateItem(i, "degree", e.target.value)} className="w-full bg-transparent text-xs mb-1 focus:outline-none" placeholder="Degree" />
-          <input value={edu.period} onChange={(e) => updateItem(i, "period", e.target.value)} className="w-full bg-transparent text-xs text-muted-foreground focus:outline-none" placeholder="Period" />
+          <input value={edu.degree || ""} onChange={(e) => updateItem(i, "degree", e.target.value)} className="w-full bg-transparent text-xs mb-2 focus:outline-none" placeholder="Degree" />
+          
+          <div className="flex flex-wrap items-center gap-2 mb-2">
+            <input 
+              type="month" 
+              value={edu.startDate || ""} 
+              onChange={(e) => handleDateChange(i, "startDate", e.target.value)} 
+              max={!edu.isCurrent && edu.endDate ? edu.endDate : undefined}
+              className="bg-input/40 border border-border text-xs rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-brand text-muted-foreground color-scheme-dark" 
+              style={{ colorScheme: 'dark light' }}
+            />
+            <span className="text-xs text-muted-foreground">to</span>
+            {!edu.isCurrent ? (
+              <input 
+                type="month" 
+                value={edu.endDate || ""} 
+                onChange={(e) => handleDateChange(i, "endDate", e.target.value)} 
+                min={edu.startDate || undefined}
+                className="bg-input/40 border border-border text-xs rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-brand text-muted-foreground color-scheme-dark" 
+                style={{ colorScheme: 'dark light' }}
+              />
+            ) : (
+              <span className="text-xs text-muted-foreground font-medium px-2 py-1 bg-accent/40 rounded">Present</span>
+            )}
+            <label className="flex items-center gap-1.5 ml-2 text-xs text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
+              <input 
+                type="checkbox" 
+                checked={edu.isCurrent || false} 
+                onChange={() => toggleCurrent(i)} 
+                className="accent-brand rounded-sm" 
+              />
+              Current Studies
+            </label>
+          </div>
         </div>
       ))}
     </div>
@@ -489,10 +764,11 @@ function AboutEditor({ bio, resume, updateField }) {
   );
 }
 
-function ContactEditor({ email, updateField }) {
+function ContactEditor({ email, phone, updateField }) {
   return (
     <div>
       <Field label="Email Address" value={email || ""} onChange={(v) => updateField("user.email", v)} />
+      <Field label="Phone Number" value={phone || ""} onChange={(v) => updateField("user.phone", v)} />
     </div>
   );
 }
@@ -523,24 +799,45 @@ function TestimonialsEditor({ testimonials, updateField }) {
 }
 
 function CertificationsEditor({ certifications, updateField }) {
+  const formatMonth = (val) => {
+    if (!val) return "";
+    const [year, month] = val.split('-');
+    const date = new Date(year, month - 1);
+    return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  };
+
+  const handleDateChange = (i, val) => {
+    const newArr = [...certifications];
+    newArr[i] = { ...newArr[i], dateRaw: val, year: formatMonth(val) };
+    updateField("certifications", newArr);
+  };
+
   const updateItem = (i, field, val) => {
     const newArr = [...certifications];
     newArr[i] = { ...newArr[i], [field]: val };
     updateField("certifications", newArr);
   };
+
   return (
     <div>
       <div className="flex justify-end mb-3">
-        <button onClick={() => updateField("certifications", [...certifications, { name: "New Certification", issuer: "Issuer", year: "2024" }])} className="text-xs text-brand hover:underline">+ Add</button>
+        <button onClick={() => updateField("certifications", [...certifications, { name: "New Certification", issuer: "Issuer", year: "", dateRaw: "" }])} className="text-xs text-brand hover:underline">+ Add</button>
       </div>
       {certifications.map((c, i) => (
-        <div key={i} className="group mb-3 last:mb-0 border-l-2 border-brand/30 pl-3">
+        <div key={i} className="group mb-4 last:mb-0 border-l-2 border-brand/30 pl-3">
           <div className="flex items-center justify-between">
-            <input value={c.name} onChange={(e) => updateItem(i, "name", e.target.value)} className="w-full bg-transparent text-sm font-semibold focus:outline-none" placeholder="Certification Name" />
+            <input value={c.name || ""} onChange={(e) => updateItem(i, "name", e.target.value)} className="w-full bg-transparent text-sm font-semibold focus:outline-none" placeholder="Certification Name" />
             <button onClick={() => updateField("certifications", certifications.filter((_, idx) => idx !== i))} className="text-muted-foreground hover:text-destructive"><Trash2 className="w-3 h-3" /></button>
           </div>
-          <input value={c.issuer} onChange={(e) => updateItem(i, "issuer", e.target.value)} className="w-full bg-transparent text-xs mb-1 focus:outline-none" placeholder="Issuer" />
-          <input value={c.year} onChange={(e) => updateItem(i, "year", e.target.value)} className="w-full bg-transparent text-xs text-muted-foreground focus:outline-none" placeholder="Year" />
+          <input value={c.issuer || ""} onChange={(e) => updateItem(i, "issuer", e.target.value)} className="w-full bg-transparent text-xs mb-2 focus:outline-none" placeholder="Issuer" />
+          
+          <input 
+            type="month" 
+            value={c.dateRaw || ""} 
+            onChange={(e) => handleDateChange(i, e.target.value)} 
+            className="bg-input/40 border border-border text-xs rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-brand text-muted-foreground color-scheme-dark mb-1" 
+            style={{ colorScheme: 'dark light' }}
+          />
         </div>
       ))}
     </div>
@@ -587,9 +884,83 @@ function SimpleListEditor({ title, fieldKey, items, updateField }) {
   );
 }
 
-function GalleryEditor({ gallery, updateField }) { return <SimpleListEditor title="Gallery (Image URLs)" fieldKey="gallery" items={gallery} updateField={updateField} />; }
-function VideosEditor({ videos, updateField }) { return <SimpleListEditor title="Videos (YouTube/Vimeo URLs)" fieldKey="videos" items={videos} updateField={updateField} />; }
-function MusicEditor({ music, updateField }) { return <SimpleListEditor title="Music (Soundcloud/Spotify embeds)" fieldKey="music" items={music} updateField={updateField} />; }
+function GalleryEditor({ gallery, updateField }) {
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-3">
+        <div className="text-xs text-muted-foreground">Upload Images ({gallery.length})</div>
+        <label className="text-xs text-brand hover:underline cursor-pointer">
+          + Add Image
+          <input type="file" className="hidden" accept="image/*" onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) {
+              const reader = new FileReader();
+              reader.onloadend = () => updateField("gallery", [...gallery, reader.result]);
+              reader.readAsDataURL(file);
+            }
+          }} />
+        </label>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        {gallery.map((img, i) => (
+          <div key={i} className="relative aspect-square rounded overflow-hidden group border border-border">
+            <img src={img} alt="" className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+              <button onClick={() => updateField("gallery", gallery.filter((_, idx) => idx !== i))} className="p-1 text-white hover:text-destructive">
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+function VideosEditor({ videos, updateField }) {
+  const updateItem = (i, val) => {
+    const newArr = [...videos];
+    newArr[i] = val;
+    updateField("videos", newArr);
+  };
+  return (
+    <div>
+      <div className="flex justify-end mb-3">
+        <button onClick={() => updateField("videos", [...videos, ""])} className="text-xs text-brand hover:underline">+ Add</button>
+      </div>
+      {videos.map((v, i) => (
+        <div key={i} className="group mb-3 last:mb-0 border-l-2 border-brand/30 pl-3">
+          <div className="flex items-center justify-between gap-2">
+            <input value={v} onChange={(e) => updateItem(i, e.target.value)} className="w-full bg-input/40 border border-border rounded p-2 text-xs focus:outline-none" placeholder="YouTube or Vimeo URL" />
+            <button onClick={() => updateField("videos", videos.filter((_, idx) => idx !== i))} className="p-1 text-muted-foreground hover:text-destructive flex-shrink-0"><Trash2 className="w-4 h-4" /></button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MusicEditor({ music, updateField }) {
+  const updateItem = (i, val) => {
+    const newArr = [...music];
+    newArr[i] = val;
+    updateField("music", newArr);
+  };
+  return (
+    <div>
+      <div className="flex justify-end mb-3">
+        <button onClick={() => updateField("music", [...music, ""])} className="text-xs text-brand hover:underline">+ Add</button>
+      </div>
+      {music.map((m, i) => (
+        <div key={i} className="group mb-3 last:mb-0 border-l-2 border-brand/30 pl-3">
+          <div className="flex items-center justify-between gap-2">
+            <input value={m} onChange={(e) => updateItem(i, e.target.value)} className="w-full bg-input/40 border border-border rounded p-2 text-xs focus:outline-none" placeholder="Spotify or SoundCloud URL" />
+            <button onClick={() => updateField("music", music.filter((_, idx) => idx !== i))} className="p-1 text-muted-foreground hover:text-destructive flex-shrink-0"><Trash2 className="w-4 h-4" /></button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function CustomEditor({ custom, updateField }) {
   return (
@@ -716,24 +1087,45 @@ function VolunteerEditor({ volunteer, updateField }) {
 }
 
 function AwardsEditor({ awards, updateField }) {
+  const formatMonth = (val) => {
+    if (!val) return "";
+    const [year, month] = val.split('-');
+    const date = new Date(year, month - 1);
+    return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  };
+
+  const handleDateChange = (i, val) => {
+    const newArr = [...awards];
+    newArr[i] = { ...newArr[i], dateRaw: val, year: formatMonth(val) };
+    updateField("awards", newArr);
+  };
+
   const updateItem = (i, field, val) => {
     const newArr = [...awards];
     newArr[i] = { ...newArr[i], [field]: val };
     updateField("awards", newArr);
   };
+
   return (
     <div>
       <div className="flex justify-end mb-3">
-        <button onClick={() => updateField("awards", [...awards, { name: "Award", issuer: "Issuer", year: "2024" }])} className="text-xs text-brand hover:underline">+ Add</button>
+        <button onClick={() => updateField("awards", [...awards, { name: "Award", issuer: "Issuer", year: "", dateRaw: "" }])} className="text-xs text-brand hover:underline">+ Add</button>
       </div>
       {awards.map((a, i) => (
-        <div key={i} className="group mb-3 last:mb-0 border-l-2 border-brand/30 pl-3">
+        <div key={i} className="group mb-4 last:mb-0 border-l-2 border-brand/30 pl-3">
           <div className="flex items-center justify-between">
-            <input value={a.name} onChange={(e) => updateItem(i, "name", e.target.value)} className="w-full bg-transparent text-sm font-semibold focus:outline-none" placeholder="Award Name" />
+            <input value={a.name || ""} onChange={(e) => updateItem(i, "name", e.target.value)} className="w-full bg-transparent text-sm font-semibold focus:outline-none" placeholder="Award Name" />
             <ItemControls index={i} total={awards.length} onMoveUp={() => moveItem(awards, i, 'up', updateField, 'awards')} onMoveDown={() => moveItem(awards, i, 'down', updateField, 'awards')} onDelete={() => updateField("awards", awards.filter((_, idx) => idx !== i))} />
           </div>
-          <input value={a.issuer} onChange={(e) => updateItem(i, "issuer", e.target.value)} className="w-full bg-transparent text-xs mb-1 focus:outline-none" placeholder="Issuer" />
-          <input value={a.year} onChange={(e) => updateItem(i, "year", e.target.value)} className="w-full bg-transparent text-xs text-muted-foreground focus:outline-none" placeholder="Year" />
+          <input value={a.issuer || ""} onChange={(e) => updateItem(i, "issuer", e.target.value)} className="w-full bg-transparent text-xs mb-2 focus:outline-none" placeholder="Issuer" />
+          
+          <input 
+            type="month" 
+            value={a.dateRaw || ""} 
+            onChange={(e) => handleDateChange(i, e.target.value)} 
+            className="bg-input/40 border border-border text-xs rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-brand text-muted-foreground color-scheme-dark mb-1" 
+            style={{ colorScheme: 'dark light' }}
+          />
         </div>
       ))}
     </div>

@@ -9,51 +9,58 @@ export const usePortfolioStore = create((set, get) => ({
   history: [],
   future: [],
   isLoading: false,
-  fetchPortfolio: async () => {
+  resetPortfolio: () => set({ portfolio: defaultPortfolio, template: "developer", themeName: "midnight", history: [], future: [] }),
+  fetchPortfolio: async (id) => {
     set({ isLoading: true });
     try {
-      const response = await api.get('/portfolios/');
-      if (response.data && response.data.length > 0) {
-        const data = response.data[0];
-        
-        // Transform skills from [{id, name}] to ["name"]
-        if (data.skills) {
-          data.skills = data.skills.map(s => typeof s === 'object' ? s.name : s);
-        }
-
-        // Deep merge user to avoid losing nested structures
-        const mergedUser = { ...defaultPortfolio.user, ...(data.user || {}) };
-        
-        // Unflatten social fields
-        if (data.user) {
-          mergedUser.social = {
-            github: data.user.github || "",
-            twitter: data.user.twitter || "",
-            linkedin: data.user.linkedin || "",
-            facebook: data.user.facebook || "",
-            instagram: data.user.instagram || "",
-            website: data.user.website || "",
-          };
-        }
-        
-        set({
-          portfolio: { ...defaultPortfolio, ...data, user: mergedUser },
-          template: data.template || "developer",
-          themeName: data.theme || "midnight",
-        });
+      const url = id ? `/portfolios/${id}/` : '/portfolios/';
+      const response = await api.get(url);
+      let data = response.data;
+      if (Array.isArray(data)) {
+        if (data.length > 0) data = data[0];
+        else { set({ isLoading: false }); return; }
       }
+
+      // Transform skills from [{id, name}] to ["name"]
+      if (data.skills) {
+        data.skills = data.skills.map(s => typeof s === 'object' ? s.name : s);
+      }
+
+      // Deep merge user to avoid losing nested structures
+      const mergedUser = { ...defaultPortfolio.user, ...(data.user || {}) };
+
+      // Unflatten social fields
+      if (data.user) {
+        mergedUser.social = {
+          github: data.user.github || "",
+          twitter: data.user.twitter || "",
+          linkedin: data.user.linkedin || "",
+          facebook: data.user.facebook || "",
+          instagram: data.user.instagram || "",
+          website: data.user.website || "",
+        };
+      }
+
+      set({
+        portfolio: { ...defaultPortfolio, ...data, user: mergedUser },
+        template: data.template || "developer",
+        themeName: data.theme || "midnight",
+      });
     } catch (error) {
       console.error("Failed to fetch portfolio", error);
     } finally {
       set({ isLoading: false });
     }
   },
-  savePortfolio: async () => {
+  savePortfolio: async (overrideName = null) => {
     set({ isLoading: true });
     try {
       const state = get();
       const payload = { ...state.portfolio, template: state.template, theme: state.themeName };
       
+      // Apply name override from save modal if provided
+      if (overrideName) payload.name = overrideName;
+
       // Transform skills from ["name"] to [{name: "name"}] for API
       if (payload.skills) {
         payload.skills = payload.skills.map(s => typeof s === 'string' ? { name: s } : s);
@@ -86,9 +93,11 @@ export const usePortfolioStore = create((set, get) => ({
       if (state.portfolio.id) {
         const response = await api.put(`/portfolios/${state.portfolio.id}/`, payload);
         restoreData(response.data);
+        return response.data.id;
       } else {
         const response = await api.post('/portfolios/', payload);
         restoreData(response.data);
+        return response.data.id;
       }
     } catch (error) {
       console.error("Failed to save portfolio", error);

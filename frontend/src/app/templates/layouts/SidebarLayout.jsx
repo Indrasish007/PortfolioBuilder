@@ -1,8 +1,8 @@
-import { Mail, Github, ExternalLink } from "lucide-react";
-import { Soc, Tags, FAQList, SectionLabel, sn } from "./shared.jsx";
+import { Mail, Github, ExternalLink, Phone } from "lucide-react";
+import { Soc, Tags, FAQList, SectionLabel, sn, VideoEmbed, MusicEmbed, GalleryAlbum } from "./shared.jsx";
 
 // developer, obsidian, architect, terminal
-export default function SidebarLayout({ p, t, id }) {
+export default function SidebarLayout({ p, t, id, portfolioId }) {
   const u = p.user || {};
   const mono  = ["developer","terminal"].includes(id);
   const font  = mono ? "ui-monospace,monospace" : "Inter,sans-serif";
@@ -30,8 +30,8 @@ export default function SidebarLayout({ p, t, id }) {
         boxSizing:"border-box",
       }}>
         {u.avatar
-          ? <img src={u.avatar} alt="" style={{ width:56, height:56, borderRadius: id==="obsidian"?"50%":radius, objectFit:"cover", marginBottom:16, border:`2px solid ${ac}40` }} />
-          : <div style={{ width:56, height:56, borderRadius: radius, background:`${ac}30`, border:`2px solid ${ac}50`, marginBottom:16 }} />
+          ? <img src={u.avatar} alt="" style={{ width:120, height:120, borderRadius: id==="obsidian"?"50%":radius, objectFit:"cover", marginBottom:16, border:`2px solid ${ac}40` }} />
+          : <div style={{ width:120, height:120, borderRadius: radius, background:`${ac}30`, border:`2px solid ${ac}50`, marginBottom:16 }} />
         }
         <div style={{ fontSize:15, fontWeight:700, lineHeight:1.2, marginBottom:4, color:"#fff" }}>{u.name}</div>
         <div style={{ fontSize:11, color:ac, marginBottom:20 }}>{u.title}</div>
@@ -39,7 +39,7 @@ export default function SidebarLayout({ p, t, id }) {
         {u.location && <div style={{ fontSize:11, color:"#fff", opacity:0.4, marginBottom:6 }}>📍 {u.location}</div>}
         {u.email    && <div style={{ fontSize:11, color:"#fff", opacity:0.4, marginBottom:20, wordBreak:"break-all" }}>✉ {u.email}</div>}
 
-        <Soc user={u} fg="#ffffff" size={14} />
+        <Soc user={u} fg="#ffffff" size={14} portfolioId={portfolioId} />
 
         {id === "terminal" && (
           <div style={{ marginTop:28, fontSize:11, fontFamily:"ui-monospace,monospace", lineHeight:2 }}>
@@ -72,12 +72,12 @@ export default function SidebarLayout({ p, t, id }) {
           <div style={{ marginBottom:36, padding:20, background:"#000", border:`1px solid ${ac}30`, borderRadius:4 }}>
             <div style={{ color:ac, fontFamily:"ui-monospace,monospace", fontSize:12, lineHeight:2 }}>
               <div><span style={{ opacity:0.4 }}>$ </span>cat about.txt</div>
-              <div style={{ marginTop:8, color:"#fff", opacity:0.8 }}>{u.bio}</div>
+              <div style={{ marginTop:8, color:"#fff", opacity:0.8, whiteSpace: "pre-wrap" }}>{u.bio}</div>
             </div>
           </div>
         ) : (
           <div style={{ marginBottom:40 }}>
-            <p style={{ opacity:0.7, lineHeight:1.85, maxWidth:580, fontSize:15 }}>{u.bio}</p>
+            <p style={{ opacity:0.7, lineHeight:1.85, maxWidth:580, fontSize:15, whiteSpace: "pre-wrap" }}>{u.bio}</p>
           </div>
         )}
 
@@ -195,15 +195,54 @@ export default function SidebarLayout({ p, t, id }) {
           </div>
         )}
 
+        {/* Gallery */}
+        {p.gallery?.length > 0 && (
+          <div style={{ marginBottom:36 }}>
+            {lbl("Gallery")}
+            <GalleryAlbum images={p.gallery} fg={t.fg} />
+          </div>
+        )}
+
+        {/* Videos */}
+        {p.videos?.length > 0 && (
+          <div style={{ marginBottom:36 }}>
+            {lbl("Videos")}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
+              {p.videos.map((v, i) => <VideoEmbed key={i} url={v} />)}
+            </div>
+          </div>
+        )}
+
+        {/* Music */}
+        {p.music?.length > 0 && (
+          <div style={{ marginBottom:36 }}>
+            {lbl("Music")}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
+              {p.music.map((m, i) => <MusicEmbed key={i} url={m} />)}
+            </div>
+          </div>
+        )}
+
         {/* Contact */}
-        {(p.sections||[]).includes("Contact") && u.email && (
+        {(p.sections||[]).includes("Contact") && (u.email || u.phone) && (
           <div id="contact">
             {lbl("Contact")}
-            <a href={`mailto:${u.email}`}
-              style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 24px",
-                background: ac, color:"#000", borderRadius:radius, fontSize:13, textDecoration:"none", fontWeight:700 }}>
-              <Mail size={14}/> {u.email}
-            </a>
+            <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>
+              {u.email && (
+                <a href={`mailto:${u.email}`}
+                  style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 24px",
+                    background: ac, color:"#000", borderRadius:radius, fontSize:13, textDecoration:"none", fontWeight:700 }}>
+                  <Mail size={14}/> {u.email}
+                </a>
+              )}
+              {u.phone && (
+                <a href={`tel:${u.phone}`}
+                  style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 24px",
+                    background: "transparent", color:ac, border:`1px solid ${ac}`, borderRadius:radius, fontSize:13, textDecoration:"none", fontWeight:700 }}>
+                  <Phone size={14}/> {u.phone}
+                </a>
+              )}
+            </div>
           </div>
         )}
       </div>

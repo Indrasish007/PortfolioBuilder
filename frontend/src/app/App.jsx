@@ -37,7 +37,7 @@ export default function App() {
             </Route>
 
             {/* Standalone - no Navbar/Footer wrapper */}
-            <Route path="/u/:username" element={<PublicPortfolio />} />
+            <Route path="/p/:id" element={<PublicPortfolio />} />
 
             <Route element={<AuthLayout />}>
               <Route path="/login" element={<Login />} />

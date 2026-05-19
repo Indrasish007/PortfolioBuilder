@@ -37,15 +37,15 @@ export default function Analytics() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { l: "Total views", v: "12,483", d: "+18%", i: Eye },
-          { l: "Visitors", v: "4,219", d: "+9%", i: Users },
-          { l: "Resume DLs", v: "482", d: "+22%", i: Download },
-          { l: "Countries", v: "37", d: "+4", i: Globe },
+          { l: "Total views", v: (data.total_views || 0).toLocaleString(), d: "Live", i: Eye },
+          { l: "Visitors", v: (data.total_visitors || 0).toLocaleString(), d: "Live", i: Users },
+          { l: "Resume DLs", v: (data.downloads || 0).toLocaleString(), d: "Live", i: Download },
+          { l: "Countries", v: (data.countries ? data.countries.length : 0).toString(), d: "Live", i: Globe },
         ].map((s) => (
           <GlassCard key={s.l} className="p-5">
             <div className="flex items-center justify-between"><span className="text-xs text-muted-foreground">{s.l}</span><s.i className="w-4 h-4 text-muted-foreground" /></div>
             <div className="text-2xl font-bold mt-1">{s.v}</div>
-            <div className="text-xs text-emerald-400 inline-flex items-center gap-1 mt-1"><ArrowUp className="w-3 h-3" /> {s.d}</div>
+            <div className="text-xs text-emerald-400 inline-flex items-center gap-1 mt-1">{s.d}</div>
           </GlassCard>
         ))}
       </div>

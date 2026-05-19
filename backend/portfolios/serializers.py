@@ -61,7 +61,7 @@ class PortfolioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Portfolio
         fields = [
-            'id', 'user', 'name', 'template', 'theme', 'status', 'slug', 'views', 'updated_at',
+            'id', 'user', 'name', 'template', 'theme', 'status', 'slug', 'domain', 'views', 'updated_at',
             'skills', 'experience', 'education', 'projects', 'certifications', 'testimonials', 'blogs',
             'sections', 'custom', 'gallery', 'videos', 'music', 'services', 'languages', 'volunteer', 'awards', 'references', 'faqs'
         ]
@@ -76,13 +76,30 @@ class PortfolioSerializer(serializers.ModelSerializer):
         blogs_data = validated_data.pop('blogs', [])
         user_data = validated_data.pop('user', None)
 
-        portfolio = Portfolio.objects.create(**validated_data)
-        
-        if user_data and 'profile' in user_data:
-            profile = portfolio.user.profile
-            for attr, value in user_data['profile'].items():
-                setattr(profile, attr, value)
-            profile.save()
+        # Get request user from context
+        request = self.context.get('request')
+        context_user = request.user if request else None
+
+        # Determine the portfolio owner
+        portfolio_user = None
+        if user_data and hasattr(user_data, 'pk'):
+            portfolio_user = user_data
+            user_data = None  # nothing to update in profile
+        elif context_user:
+            portfolio_user = context_user
+
+        portfolio = Portfolio.objects.create(user=portfolio_user, **validated_data)
+
+        # Update profile fields if a profile dict was sent by the client
+        if user_data and isinstance(user_data, dict):
+            profile_data = user_data.get('profile', user_data)
+            try:
+                profile = portfolio_user.profile if portfolio_user else portfolio.user.profile
+                for attr, value in profile_data.items():
+                    setattr(profile, attr, value)
+                profile.save()
+            except Exception:
+                pass
         
         for item in skills_data:
             Skill.objects.create(portfolio=portfolio, **item)
@@ -115,6 +132,7 @@ class PortfolioSerializer(serializers.ModelSerializer):
         instance.theme = validated_data.get('theme', instance.theme)
         instance.status = validated_data.get('status', instance.status)
         instance.slug = validated_data.get('slug', instance.slug)
+        instance.domain = validated_data.get('domain', instance.domain)
         
         instance.sections = validated_data.get('sections', instance.sections)
         instance.custom = validated_data.get('custom', instance.custom)

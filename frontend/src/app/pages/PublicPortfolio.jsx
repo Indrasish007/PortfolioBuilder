@@ -5,7 +5,7 @@ import api from "../services/api.js";
 import LivePortfolio from "../templates/LivePortfolio.jsx";
 
 export default function PublicPortfolio() {
-  const { username } = useParams();
+  const { id } = useParams();
   const [searchParams] = useSearchParams();
   const [p, setP] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -14,7 +14,7 @@ export default function PublicPortfolio() {
   useEffect(() => {
     async function fetchPortfolio() {
       try {
-        const res = await api.get(`/portfolios/public/${username}/`);
+        const res = await api.get(`/portfolios/public/${id}/`);
         setP(res.data);
       } catch (err) {
         console.error("Failed to load portfolio:", err);
@@ -23,7 +23,27 @@ export default function PublicPortfolio() {
       }
     }
     fetchPortfolio();
-  }, [username]);
+  }, [id]);
+
+  useEffect(() => {
+    if (!p || isPreview) return;
+    
+    let visitorId = localStorage.getItem("visitorId");
+    if (!visitorId) {
+      visitorId = Math.random().toString(36).substring(2) + Date.now().toString(36);
+      localStorage.setItem("visitorId", visitorId);
+    }
+    
+    api.post(`/portfolios/${id}/analytics/`, { event_type: 'view', visitor_id: visitorId }).catch(() => {});
+    
+    let duration = 0;
+    const interval = setInterval(() => {
+      duration += 10;
+      api.post(`/portfolios/${id}/analytics/`, { event_type: 'session_ping', visitor_id: visitorId, duration }).catch(() => {});
+    }, 10000);
+    
+    return () => clearInterval(interval);
+  }, [p, isPreview, id]);
 
   if (loading) {
     return (
@@ -43,7 +63,7 @@ export default function PublicPortfolio() {
         <div style={{ textAlign:"center" }}>
           <div style={{ fontSize:48, marginBottom:16 }}>🔍</div>
           <h1 style={{ fontSize:24, fontWeight:700, marginBottom:8 }}>Portfolio not found</h1>
-          <p style={{ opacity:0.5, fontSize:14, marginBottom:24 }}>No portfolio exists for @{username}</p>
+          <p style={{ opacity:0.5, fontSize:14, marginBottom:24 }}>No portfolio exists at this address.</p>
           <Link to="/" style={{ padding:"10px 24px", background:"#7c3aed", color:"#fff", borderRadius:8, textDecoration:"none", fontSize:14, fontWeight:600 }}>
             Go home
           </Link>

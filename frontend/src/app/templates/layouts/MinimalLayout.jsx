@@ -1,8 +1,8 @@
-import { Mail } from "lucide-react";
-import { Soc, Tags, FAQList, SectionLabel, sn } from "./shared.jsx";
+import { Mail, Phone } from "lucide-react";
+import { Soc, Tags, FAQList, SectionLabel, sn, VideoEmbed, MusicEmbed, GalleryAlbum } from "./shared.jsx";
 
 // minimal, scandinavian, paper, typewriter
-export default function MinimalLayout({ p, t, id }) {
+export default function MinimalLayout({ p, t, id, portfolioId }) {
   const u = p.user || {};
   const mono  = id === "typewriter";
   const serif = id === "paper";
@@ -19,8 +19,8 @@ export default function MinimalLayout({ p, t, id }) {
         {/* ── Hero ── */}
         <div style={{ marginBottom:gap }}>
           {u.avatar
-            ? <img src={u.avatar} alt="" style={{ width:72, height:72, borderRadius: serif?"6px":"50%", objectFit:"cover", marginBottom:28 }} />
-            : <div style={{ width:72, height:72, borderRadius: serif?"6px":"50%", background:t.ac, marginBottom:28 }} />
+            ? <img src={u.avatar} alt="" style={{ width:130, height:130, borderRadius: serif?"10px":"50%", objectFit:"cover", marginBottom:28 }} />
+            : <div style={{ width:130, height:130, borderRadius: serif?"10px":"50%", background:t.ac, marginBottom:28 }} />
           }
           <div style={{ fontSize:12, opacity:0.45, marginBottom:6, letterSpacing:"0.1em" }}>{u.title}</div>
           <h1 style={{
@@ -30,12 +30,12 @@ export default function MinimalLayout({ p, t, id }) {
             letterSpacing: id==="minimal" ? "-0.04em" : id==="paper" ? "0" : "-0.02em",
             fontFamily: serif ? "Georgia,serif" : font,
           }}>{u.name}</h1>
-          <p style={{ opacity:0.65, lineHeight:1.85, fontSize:15, maxWidth:480 }}>{u.bio}</p>
+          <p style={{ opacity:0.65, lineHeight:1.85, fontSize:15, maxWidth:480, whiteSpace: "pre-wrap" }}>{u.bio}</p>
           <div style={{ marginTop:16, display:"flex", gap:16, fontSize:12, opacity:0.45, flexWrap:"wrap" }}>
             {u.location && <span>📍 {u.location}</span>}
             {u.email    && <span>✉ {u.email}</span>}
           </div>
-          <div style={{ marginTop:20 }}><Soc user={u} fg={t.fg} /></div>
+          <div style={{ marginTop:20 }}><Soc user={u} fg={t.fg} portfolioId={portfolioId} /></div>
         </div>
 
         {/* ── Skills ── */}
@@ -142,15 +142,54 @@ export default function MinimalLayout({ p, t, id }) {
           </div>
         )}
 
+        {/* ── Gallery ── */}
+        {p.gallery?.length > 0 && (
+          <div style={sec}>
+            {lbl("Gallery")}
+            <GalleryAlbum images={p.gallery} fg={t.fg} />
+          </div>
+        )}
+
+        {/* ── Videos ── */}
+        {p.videos?.length > 0 && (
+          <div style={sec}>
+            {lbl("Videos")}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
+              {p.videos.map((v, i) => <VideoEmbed key={i} url={v} />)}
+            </div>
+          </div>
+        )}
+
+        {/* ── Music ── */}
+        {p.music?.length > 0 && (
+          <div style={sec}>
+            {lbl("Music")}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
+              {p.music.map((m, i) => <MusicEmbed key={i} url={m} />)}
+            </div>
+          </div>
+        )}
+
         {/* ── Contact ── */}
-        {(p.sections||[]).includes("Contact") && u.email && (
+        {(p.sections||[]).includes("Contact") && (u.email || u.phone) && (
           <div style={sec}>
             {lbl("Get in touch")}
-            <a href={`mailto:${u.email}`}
-              style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"10px 24px",
-                background:t.ac, color:"#fff", borderRadius:4, fontSize:13, textDecoration:"none", fontWeight:500 }}>
-              <Mail size={14}/> {u.email}
-            </a>
+            <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>
+              {u.email && (
+                <a href={`mailto:${u.email}`}
+                  style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"10px 24px",
+                    background:t.ac, color:"#fff", borderRadius:4, fontSize:13, textDecoration:"none", fontWeight:500 }}>
+                  <Mail size={14}/> {u.email}
+                </a>
+              )}
+              {u.phone && (
+                <a href={`tel:${u.phone}`}
+                  style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"10px 24px",
+                    background:t.ac, color:"#fff", borderRadius:4, fontSize:13, textDecoration:"none", fontWeight:500 }}>
+                  <Phone size={14}/> {u.phone}
+                </a>
+              )}
+            </div>
           </div>
         )}
       </div>
