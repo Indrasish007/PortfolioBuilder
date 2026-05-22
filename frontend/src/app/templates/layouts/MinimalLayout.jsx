@@ -1,5 +1,5 @@
 import { Mail, Phone } from "lucide-react";
-import { Soc, Tags, FAQList, SectionLabel, sn, VideoEmbed, MusicEmbed, GalleryAlbum } from "./shared.jsx";
+import { Soc, Tags, FAQList, SectionLabel, sn, VideoEmbed, MusicEmbed, GalleryAlbum, getDefaultAvatar } from "./shared.jsx";
 
 // minimal, scandinavian, paper, typewriter
 export default function MinimalLayout({ p, t, id, portfolioId }) {
@@ -18,10 +18,9 @@ export default function MinimalLayout({ p, t, id, portfolioId }) {
 
         {/* ── Hero ── */}
         <div style={{ marginBottom:gap }}>
-          {u.avatar
-            ? <img src={u.avatar} alt="" style={{ width:130, height:130, borderRadius: serif?"10px":"50%", objectFit:"cover", marginBottom:28 }} />
-            : <div style={{ width:130, height:130, borderRadius: serif?"10px":"50%", background:t.ac, marginBottom:28 }} />
-          }
+          <img src={u.avatar || getDefaultAvatar(t.ac)} alt="" style={{ width:300, height:360, borderRadius:"20px", objectFit:"cover", marginBottom:28, border:`1px solid ${t.fg}15`, boxShadow:"0 10px 30px rgba(0,0,0,0.08)" }} />
+
+
           <div style={{ fontSize:12, opacity:0.45, marginBottom:6, letterSpacing:"0.1em" }}>{u.title}</div>
           <h1 style={{
             fontSize: id==="minimal" ? 52 : id==="paper" ? 40 : 36,
@@ -34,6 +33,7 @@ export default function MinimalLayout({ p, t, id, portfolioId }) {
           <div style={{ marginTop:16, display:"flex", gap:16, fontSize:12, opacity:0.45, flexWrap:"wrap" }}>
             {u.location && <span>📍 {u.location}</span>}
             {u.email    && <span>✉ {u.email}</span>}
+            {u.phone    && <span>📞 {u.phone}</span>}
           </div>
           <div style={{ marginTop:20 }}><Soc user={u} fg={t.fg} portfolioId={portfolioId} /></div>
         </div>
@@ -82,6 +82,23 @@ export default function MinimalLayout({ p, t, id, portfolioId }) {
                 </div>
                 <p style={{ fontSize:13, opacity:0.6, marginTop:8, lineHeight:1.75 }}>{proj.description}</p>
                 <div style={{ marginTop:12 }}><Tags items={proj.tech||[]} bg={`${t.fg}07`} fg={t.fg} radius={serif?"2px":"999px"} /></div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ── Blogs ── */}
+        {p.blogs?.length > 0 && (
+          <div style={sec}>
+            {lbl("Blogs")}
+            {p.blogs.map((b,i) => (
+              <div key={i} style={{ borderTop:`1px solid ${t.fg}12`, paddingTop:24, marginBottom:24 }}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:12 }}>
+                  <div style={{ fontWeight:600, fontSize:16 }}>{b.title}</div>
+                  {b.url && <a href={b.url} target="_blank" rel="noreferrer" style={{ color:t.fg, fontSize:12, flexShrink:0 }}>↗ read</a>}
+                </div>
+                {b.date && <div style={{ fontSize:12, opacity:0.4, marginTop:4 }}>{b.date}</div>}
+                <p style={{ fontSize:13, opacity:0.6, marginTop:8, lineHeight:1.75 }}>{b.excerpt}</p>
               </div>
             ))}
           </div>
@@ -171,7 +188,7 @@ export default function MinimalLayout({ p, t, id, portfolioId }) {
         )}
 
         {/* ── Contact ── */}
-        {(p.sections||[]).includes("Contact") && (u.email || u.phone) && (
+        {(u.email || u.phone) && (
           <div style={sec}>
             {lbl("Get in touch")}
             <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>

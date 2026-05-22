@@ -1,5 +1,5 @@
 import { Mail, Github, ExternalLink, Phone } from "lucide-react";
-import { Soc, Tags, FAQList, SectionLabel, sn, VideoEmbed, MusicEmbed, GalleryAlbum } from "./shared.jsx";
+import { Soc, Tags, FAQList, SectionLabel, sn, VideoEmbed, MusicEmbed, GalleryAlbum, getDefaultAvatar } from "./shared.jsx";
 
 // developer, obsidian, architect, terminal
 export default function SidebarLayout({ p, t, id, portfolioId }) {
@@ -8,7 +8,7 @@ export default function SidebarLayout({ p, t, id, portfolioId }) {
   const font  = mono ? "ui-monospace,monospace" : "Inter,sans-serif";
   const acBg  = { developer:"#0d1117", obsidian:"#0a0a0a", architect:"#0c1623", terminal:"#0d0d0d" }[id] || "#0d1117";
   const ac    = { developer:"#58a6ff", obsidian:"#a1a1aa", architect:"#60a5fa", terminal:"#22c55e" }[id] || t.ac;
-  const sideW = id === "architect" ? 230 : 200;
+  const sideW = id === "architect" ? 280 : 250;
   const prefix = id === "terminal" ? "$ " : id === "developer" ? "// " : "";
   const radius = id === "architect" ? "2px" : id === "obsidian" ? "0" : "8px";
 
@@ -29,12 +29,18 @@ export default function SidebarLayout({ p, t, id, portfolioId }) {
         position: "sticky", top:0, alignSelf:"flex-start",
         boxSizing:"border-box",
       }}>
-        {u.avatar
-          ? <img src={u.avatar} alt="" style={{ width:120, height:120, borderRadius: id==="obsidian"?"50%":radius, objectFit:"cover", marginBottom:16, border:`2px solid ${ac}40` }} />
-          : <div style={{ width:120, height:120, borderRadius: radius, background:`${ac}30`, border:`2px solid ${ac}50`, marginBottom:16 }} />
-        }
+        <img src={u.avatar || getDefaultAvatar(ac)} alt="" style={{
+          width: sideW - 48,
+          height: Math.round((sideW - 48) * 1.25),
+          borderRadius: id === "obsidian" ? "4px" : id === "architect" ? "8px" : "16px",
+          objectFit: "cover",
+          marginBottom: 20,
+          border: `1px solid ${ac}40`,
+          boxShadow: "0 8px 24px rgba(0,0,0,0.2)"
+        }} />
         <div style={{ fontSize:15, fontWeight:700, lineHeight:1.2, marginBottom:4, color:"#fff" }}>{u.name}</div>
         <div style={{ fontSize:11, color:ac, marginBottom:20 }}>{u.title}</div>
+
 
         {u.location && <div style={{ fontSize:11, color:"#fff", opacity:0.4, marginBottom:6 }}>📍 {u.location}</div>}
         {u.email    && <div style={{ fontSize:11, color:"#fff", opacity:0.4, marginBottom:20, wordBreak:"break-all" }}>✉ {u.email}</div>}
@@ -142,6 +148,34 @@ export default function SidebarLayout({ p, t, id, portfolioId }) {
           </div>
         )}
 
+        {/* Blogs */}
+        {p.blogs?.length > 0 && (
+          <div style={{ marginBottom:36 }} id="blogs">
+            {lbl("Blogs")}
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))", gap:14 }}>
+              {p.blogs.map((b,i) => (
+                <div key={i} style={{
+                  border: `1px solid ${ac}25`,
+                  borderTop: `2px solid ${ac}`,
+                  borderRadius: radius,
+                  padding:18,
+                  background: `${ac}06`,
+                  transition:"transform 0.2s",
+                }}
+                  onMouseEnter={e=>e.currentTarget.style.transform="translateY(-2px)"}
+                  onMouseLeave={e=>e.currentTarget.style.transform="translateY(0)"}>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
+                    <div style={{ fontWeight:700, fontSize:14 }}>{b.title}</div>
+                    {b.url && <a href={b.url} target="_blank" rel="noreferrer" style={{ color:t.fg }}><ExternalLink size={12}/></a>}
+                  </div>
+                  {b.date && <div style={{ fontSize:11, color:ac, marginBottom:6 }}>{b.date}</div>}
+                  <p style={{ fontSize:12, opacity:0.65, lineHeight:1.65 }}>{b.excerpt}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Education */}
         {p.education?.length > 0 && (
           <div style={{ marginBottom:36 }} id="education">
@@ -224,7 +258,7 @@ export default function SidebarLayout({ p, t, id, portfolioId }) {
         )}
 
         {/* Contact */}
-        {(p.sections||[]).includes("Contact") && (u.email || u.phone) && (
+        {(u.email || u.phone) && (
           <div id="contact">
             {lbl("Contact")}
             <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>

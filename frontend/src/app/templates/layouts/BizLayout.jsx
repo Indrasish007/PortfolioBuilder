@@ -1,5 +1,5 @@
-import { Mail, Github, ExternalLink, TrendingUp, Users, Star, Phone } from "lucide-react";
-import { Soc, Tags, FAQList, SectionLabel, VideoEmbed, MusicEmbed, GalleryAlbum } from "./shared.jsx";
+import { Mail, Github, ExternalLink, Phone } from "lucide-react";
+import { Soc, Tags, FAQList, SectionLabel, VideoEmbed, MusicEmbed, GalleryAlbum, getDefaultAvatar } from "./shared.jsx";
 
 // classic, startup, forest, oceanic
 export default function BizLayout({ p, t, id, portfolioId }) {
@@ -16,13 +16,6 @@ export default function BizLayout({ p, t, id, portfolioId }) {
   const fg = "#f0f8ff";
 
   const lbl = (txt) => <SectionLabel text={txt} style={{ color:ac, opacity:1 }} />;
-
-  // Mock metrics to showcase SaaS-style layout
-  const metrics = [
-    { label:"Years Experience", value: p.experience?.length ? `${p.experience.length}+` : "3+", icon: TrendingUp },
-    { label:"Projects Built", value: p.projects?.length ? `${p.projects.length}+` : "10+", icon: Star },
-    { label:"Skills Mastered", value: p.skills?.length ? `${p.skills.length}+` : "15+", icon: Users },
-  ];
 
   return (
     <div style={{ background:bg, color:fg, fontFamily:font, minHeight:"100%" }}>
@@ -63,21 +56,8 @@ export default function BizLayout({ p, t, id, portfolioId }) {
               </div>
               <Soc user={u} fg={fg} portfolioId={portfolioId} />
             </div>
-            {u.avatar && (
-              <img src={u.avatar} alt="" style={{ width:150, height:150, borderRadius: id==="classic"?"10px":"50%",
-                objectFit:"cover", border:`3px solid ${ac}50`, flexShrink:0 }} />
-            )}
-          </div>
-
-          {/* Metrics row */}
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:16, marginTop:48 }}>
-            {metrics.map((m,i) => (
-              <div key={i} style={{ background:`${ac}10`, border:`1px solid ${ac}25`, borderRadius:radius, padding:20, textAlign:"center" }}>
-                <m.icon size={18} style={{ color:ac, marginBottom:8 }} />
-                <div style={{ fontSize:28, fontWeight:900, color:ac }}>{m.value}</div>
-                <div style={{ fontSize:12, opacity:0.5, marginTop:4 }}>{m.label}</div>
-              </div>
-            ))}
+            <img src={u.avatar || getDefaultAvatar(ac)} alt="" style={{ width:300, height:360, borderRadius:"20px",
+              objectFit:"cover", border:`1px solid ${ac}30`, boxShadow: "0 10px 30px rgba(0,0,0,0.25)", flexShrink:0 }} />
           </div>
         </div>
       </div>
@@ -139,6 +119,28 @@ export default function BizLayout({ p, t, id, portfolioId }) {
                     <div style={{ fontWeight:700, fontSize:16, marginBottom:6 }}>{e.role}</div>
                     <p style={{ fontSize:13, opacity:0.65, lineHeight:1.75 }}>{e.description}</p>
                   </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Blogs */}
+        {p.blogs?.length > 0 && (
+          <div style={{ marginBottom:56 }} id="blogs">
+            {lbl("Blogs")}
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))", gap:16 }}>
+              {p.blogs.map((b,i) => (
+                <div key={i} style={{ background:`${ac}07`, border:`1px solid ${ac}20`, borderRadius:radius, padding:24,
+                  transition:"border-color 0.2s,transform 0.2s" }}
+                  onMouseEnter={e=>{e.currentTarget.style.borderColor=`${ac}60`;e.currentTarget.style.transform="translateY(-2px)"}}
+                  onMouseLeave={e=>{e.currentTarget.style.borderColor=`${ac}20`;e.currentTarget.style.transform="translateY(0)"}}>
+                  <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
+                    <div style={{ fontWeight:700, fontSize:15 }}>{b.title}</div>
+                    {b.url && <a href={b.url} target="_blank" rel="noreferrer" style={{ color:fg }}><ExternalLink size={13}/></a>}
+                  </div>
+                  {b.date && <div style={{ fontSize:12, color:ac, marginBottom:6 }}>{b.date}</div>}
+                  <p style={{ fontSize:13, opacity:0.65, lineHeight:1.65, marginBottom:12 }}>{b.excerpt}</p>
                 </div>
               ))}
             </div>
@@ -238,7 +240,7 @@ export default function BizLayout({ p, t, id, portfolioId }) {
         )}
 
         {/* Contact */}
-        {(p.sections||[]).includes("Contact") && (u.email || u.phone) && (
+        {(u.email || u.phone) && (
           <div id="contact">
             {lbl("Contact")}
             <div style={{ display:"flex", gap:16, flexWrap:"wrap" }}>

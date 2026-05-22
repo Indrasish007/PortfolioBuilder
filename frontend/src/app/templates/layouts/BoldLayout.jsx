@@ -1,5 +1,5 @@
 import { Mail, Github, ExternalLink, Phone } from "lucide-react";
-import { Soc, Tags, FAQList, SectionLabel, VideoEmbed, MusicEmbed, GalleryAlbum } from "./shared.jsx";
+import { Soc, Tags, FAQList, SectionLabel, VideoEmbed, MusicEmbed, GalleryAlbum, getDefaultAvatar } from "./shared.jsx";
 
 // bold, cyberpunk, space, retro, neon, quantum
 export default function BoldLayout({ p, t, id, portfolioId }) {
@@ -45,15 +45,15 @@ export default function BoldLayout({ p, t, id, portfolioId }) {
         )}
 
         <div style={{ position:"relative", zIndex:1 }}>
-          {u.avatar && (
-            <img src={u.avatar} alt="" style={{ width:140, height:140, borderRadius:"50%", objectFit:"cover", marginBottom:24, border:`4px solid ${ac}`, boxShadow:`0 0 32px ${ac}60` }} />
-          )}
+          <img src={u.avatar || getDefaultAvatar(ac)} alt="" style={{ width:320, height:380, borderRadius:"24px", objectFit:"cover", marginBottom:24, border:`4px solid ${ac}`, boxShadow:`0 0 32px ${ac}60` }} />
+
           <div style={{ fontSize:13, color:ac, marginBottom:10, letterSpacing:"0.12em", textTransform:"uppercase" }}>{u.title}</div>
           <h1 style={{ fontSize:heroSz, fontWeight:fw, lineHeight:0.95, letterSpacing:"-0.03em", margin:"0 0 24px", maxWidth:720, textShadow: id==="neon"?`0 0 40px ${ac}80`:"none" }}>{u.name}</h1>
           <p style={{ opacity:0.75, maxWidth:520, lineHeight:1.75, fontSize:15, marginBottom:32, whiteSpace: "pre-wrap" }}>{u.bio}</p>
           <div style={{ display:"flex", gap:16, flexWrap:"wrap" }}>
             {u.location && <span style={{ fontSize:12, opacity:0.5 }}>📍 {u.location}</span>}
             {u.email    && <span style={{ fontSize:12, opacity:0.5 }}>✉ {u.email}</span>}
+            {u.phone    && <span style={{ fontSize:12, opacity:0.5 }}>📞 {u.phone}</span>}
           </div>
           <div style={{ marginTop:20 }}><Soc user={u} fg={t.fg} portfolioId={portfolioId} /></div>
         </div>
@@ -120,6 +120,32 @@ export default function BoldLayout({ p, t, id, portfolioId }) {
                   </div>
                   <p style={{ fontSize:13, opacity:0.7, lineHeight:1.65, marginBottom:12 }}>{proj.description}</p>
                   <Tags items={proj.tech||[]} bg={`${ac}18`} fg={ac} radius="2px" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Blogs */}
+        {p.blogs?.length > 0 && (
+          <div style={{ marginBottom:64 }}>
+            <SLabel>Blogs</SLabel>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))", gap:20 }}>
+              {p.blogs.map((b,i) => (
+                <div key={i} style={{
+                  border:`1px solid ${ac}35`, borderTop:`3px solid ${ac}`,
+                  padding:24, background:`${ac}07`,
+                  transition:"transform 0.2s,box-shadow 0.2s",
+                  boxShadow: id==="neon"?`0 0 0 1px ${ac}20`:"none",
+                }}
+                  onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-4px)";e.currentTarget.style.boxShadow=`0 8px 32px ${ac}30`}}
+                  onMouseLeave={e=>{e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.boxShadow=id==="neon"?`0 0 0 1px ${ac}20`:"none"}}>
+                  <div style={{ display:"flex", justifyContent:"space-between", marginBottom:12 }}>
+                    <div style={{ fontWeight:fw, fontSize:16 }}>{b.title}</div>
+                    {b.url && <a href={b.url} target="_blank" rel="noreferrer" style={{ color:t.fg }}><ExternalLink size={14}/></a>}
+                  </div>
+                  {b.date && <div style={{ fontSize:13, color:ac, marginBottom:8 }}>{b.date}</div>}
+                  <p style={{ fontSize:13, opacity:0.7, lineHeight:1.65 }}>{b.excerpt}</p>
                 </div>
               ))}
             </div>
@@ -218,7 +244,7 @@ export default function BoldLayout({ p, t, id, portfolioId }) {
         )}
 
         {/* Contact */}
-        {(p.sections||[]).includes("Contact") && (u.email || u.phone) && (
+        {(u.email || u.phone) && (
           <div>
             <SLabel>Contact</SLabel>
             <div style={{ display:"flex", gap:16, flexWrap:"wrap" }}>

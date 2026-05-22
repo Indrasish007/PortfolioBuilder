@@ -5,7 +5,6 @@ import Logo from "../components/Logo.jsx";
 import ThemeToggle from "../components/ThemeToggle.jsx";
 import Button from "../components/Button.jsx";
 import { useAuthStore } from "../store/authStore.js";
-import AIWidget from "../components/AIWidget.jsx";
 import CommandPalette from "../components/CommandPalette.jsx";
 import { useEffect } from "react";
 import BackButton from "../components/BackButton.jsx";
@@ -110,7 +109,6 @@ export default function DashboardLayout() {
         </div>
       </div>
 
-      <AIWidget />
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
     </div>
   );

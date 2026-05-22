@@ -1,5 +1,5 @@
 import { Mail, Github, ExternalLink, Phone } from "lucide-react";
-import { Soc, Tags, FAQList, SectionLabel, VideoEmbed, MusicEmbed, GalleryAlbum } from "./shared.jsx";
+import { Soc, Tags, FAQList, SectionLabel, VideoEmbed, MusicEmbed, GalleryAlbum, getDefaultAvatar } from "./shared.jsx";
 
 // creative, dusk, coral, sakura
 export default function SplitLayout({ p, t, id, portfolioId }) {
@@ -25,6 +25,7 @@ export default function SplitLayout({ p, t, id, portfolioId }) {
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", minHeight:"90vh" }}>
         {/* Left panel — bio */}
         <div style={{ background:left, padding:"60px 48px", display:"flex", flexDirection:"column", justifyContent:"center", borderRight:`1px solid rgba(255,255,255,0.06)` }}>
+          <img src={u.avatar || getDefaultAvatar(ac)} alt="" style={{ width:300, height:360, borderRadius:"20px", objectFit:"cover", marginBottom:28, border:`1px solid rgba(255,255,255,0.12)`, boxShadow:`0 10px 30px rgba(0,0,0,0.5)` }} />
           <div style={{ fontSize:12, color:ac, marginBottom:12, letterSpacing:"0.15em", textTransform:"uppercase" }}>{u.title}</div>
           <h1 style={{ fontSize:52, fontWeight:900, lineHeight:1.0, letterSpacing:"-0.03em", margin:"0 0 24px",
             backgroundImage:grad, WebkitBackgroundClip:"text", backgroundClip:"text", WebkitTextFillColor:"transparent" }}>
@@ -131,6 +132,30 @@ export default function SplitLayout({ p, t, id, portfolioId }) {
                     <div style={{ fontWeight:700, fontSize:16, marginBottom:6 }}>{e.role}</div>
                     <p style={{ fontSize:13, opacity:0.65, lineHeight:1.75 }}>{e.description}</p>
                   </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Blogs */}
+        {p.blogs?.length > 0 && (
+          <div style={{ marginBottom:56 }}>
+            {lbl("Blogs")}
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))", gap:16 }}>
+              {p.blogs.map((b,i) => (
+                <div key={i} style={{ background:"rgba(255,255,255,0.04)", border:`1px solid rgba(255,255,255,0.08)`,
+                  borderRadius:10, padding:20,
+                  transition:"border-color 0.2s,transform 0.2s",
+                }}
+                  onMouseEnter={e=>{e.currentTarget.style.borderColor=`${ac}50`;e.currentTarget.style.transform="translateY(-3px)"}}
+                  onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.08)";e.currentTarget.style.transform="translateY(0)"}}>
+                  <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
+                    <div style={{ fontWeight:700, fontSize:15 }}>{b.title}</div>
+                    {b.url && <a href={b.url} target="_blank" rel="noreferrer" style={{ color:fg }}><ExternalLink size={13}/></a>}
+                  </div>
+                  {b.date && <div style={{ fontSize:12, color:ac, marginBottom:6 }}>{b.date}</div>}
+                  <p style={{ fontSize:13, opacity:0.6, lineHeight:1.65, marginBottom:12 }}>{b.excerpt}</p>
                 </div>
               ))}
             </div>

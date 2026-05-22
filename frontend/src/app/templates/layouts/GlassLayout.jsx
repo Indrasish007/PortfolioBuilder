@@ -1,5 +1,5 @@
 import { Mail, Github, ExternalLink, Phone } from "lucide-react";
-import { Soc, Tags, FAQList, SectionLabel, VideoEmbed, MusicEmbed, GalleryAlbum } from "./shared.jsx";
+import { Soc, Tags, FAQList, SectionLabel, VideoEmbed, MusicEmbed, GalleryAlbum, getDefaultAvatar } from "./shared.jsx";
 
 // gradient, aurora, glassmorphism, holographic
 export default function GlassLayout({ p, t, id, portfolioId }) {
@@ -49,12 +49,8 @@ export default function GlassLayout({ p, t, id, portfolioId }) {
         <div style={{ position:"relative", maxWidth:720, margin:"0 auto" }}>
           <div style={{ ...card, padding:"40px 40px", display:"flex", gap:32, flexWrap:"wrap", alignItems:"center" }}>
             <div style={{ flexShrink:0 }}>
-              {u.avatar
-                ? <img src={u.avatar} alt="" style={{ width:140, height:140, borderRadius:"50%", objectFit:"cover",
-                    border:`3px solid rgba(255,255,255,0.2)`, boxShadow:`0 0 40px ${ac}50` }} />
-                : <div style={{ width:140, height:140, borderRadius:"50%", background:orb,
-                    border:"3px solid rgba(255,255,255,0.2)", boxShadow:`0 0 40px ${ac}50` }} />
-              }
+              <img src={u.avatar || getDefaultAvatar(ac)} alt="" style={{ width:280, height:340, borderRadius:"20px", objectFit:"cover",
+                  border:`3px solid rgba(255,255,255,0.2)`, boxShadow:`0 0 40px ${ac}50` }} />
             </div>
             <div style={{ flex:1 }}>
               <div style={{ fontSize:12, color:ac, marginBottom:8, letterSpacing:"0.1em", textTransform:"uppercase" }}>{u.title}</div>
@@ -62,7 +58,12 @@ export default function GlassLayout({ p, t, id, portfolioId }) {
                 backgroundImage:orb, WebkitBackgroundClip:"text", backgroundClip:"text", WebkitTextFillColor:"transparent" }}>
                 {u.name}
               </h1>
-              <p style={{ opacity:0.7, lineHeight:1.8, fontSize:14, marginBottom:20, maxWidth:440, whiteSpace: "pre-wrap" }}>{u.bio}</p>
+              <p style={{ opacity:0.7, lineHeight:1.8, fontSize:14, marginBottom:12, maxWidth:440, whiteSpace: "pre-wrap" }}>{u.bio}</p>
+              <div style={{ display:"flex", gap:14, flexWrap:"wrap", fontSize:12, opacity:0.45, marginBottom:16 }}>
+                {u.location && <span>📍 {u.location}</span>}
+                {u.email    && <span>✉ {u.email}</span>}
+                {u.phone    && <span>📞 {u.phone}</span>}
+              </div>
               <Soc user={u} fg={fg} portfolioId={portfolioId} />
             </div>
           </div>
@@ -133,6 +134,32 @@ export default function GlassLayout({ p, t, id, portfolioId }) {
                   </div>
                   <p style={{ fontSize:13, opacity:0.65, lineHeight:1.65, marginBottom:12 }}>{proj.description}</p>
                   <Tags items={proj.tech||[]} bg={`${ac}18`} fg={ac} radius="999px" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Blogs */}
+        {p.blogs?.length > 0 && (
+          <div style={{ marginBottom:48 }}>
+            {lbl("Blogs")}
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))", gap:16 }}>
+              {p.blogs.map((b,i) => (
+                <div key={i} style={{
+                  ...card,
+                  padding:22,
+                  transition:"transform 0.25s,box-shadow 0.25s",
+                  backgroundImage: id==="holographic" ? "linear-gradient(135deg,rgba(34,211,238,0.08),rgba(244,114,182,0.08),rgba(250,204,21,0.08))" : "none",
+                }}
+                  onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-4px)";e.currentTarget.style.boxShadow=`0 16px 48px ${ac}30`}}
+                  onMouseLeave={e=>{e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.boxShadow="none"}}>
+                  <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
+                    <div style={{ fontWeight:700, fontSize:15 }}>{b.title}</div>
+                    {b.url && <a href={b.url} target="_blank" rel="noreferrer" style={{ color:fg }}><ExternalLink size={13}/></a>}
+                  </div>
+                  {b.date && <div style={{ fontSize:12, color:ac, marginBottom:6 }}>{b.date}</div>}
+                  <p style={{ fontSize:13, opacity:0.65, lineHeight:1.65, marginBottom:12 }}>{b.excerpt}</p>
                 </div>
               ))}
             </div>
@@ -235,7 +262,7 @@ export default function GlassLayout({ p, t, id, portfolioId }) {
         )}
 
         {/* Contact */}
-        {(p.sections||[]).includes("Contact") && (u.email || u.phone) && (
+        {(u.email || u.phone) && (
           <div>
             {lbl("Contact")}
             <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>

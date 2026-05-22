@@ -59,3 +59,6 @@ tzdata==2026.2
 urllib3==2.7.0
 whitenoise==6.12.0
 wrapt==2.1.2
+pdfplumber
+mammoth
+google-genai>=2.6.0

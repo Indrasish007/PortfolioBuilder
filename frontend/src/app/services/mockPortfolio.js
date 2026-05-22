@@ -5,6 +5,7 @@ export const defaultPortfolio = {
     title: "",
     location: "",
     email: "",
+    phone: "",
     avatar: "",
     bio: "",
     social: {
@@ -15,6 +16,7 @@ export const defaultPortfolio = {
     },
     resume_link: "",
   },
+  sections: ["About", "Skills", "Experience", "Education", "Projects", "Testimonials", "Contact"],
   skills: [],
   experience: [],
   education: [],

@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Eye, MousePointerClick, Download, Plus, ExternalLink, MoreHorizontal, ArrowUp, Sparkles, Globe, Pencil, Trash2 } from "lucide-react";
+import { Eye, MousePointerClick, Download, Plus, ExternalLink, MoreHorizontal, ArrowUp, Sparkles, Globe, Pencil, Trash2, Loader2 } from "lucide-react";
 import GlassCard from "../components/GlassCard.jsx";
 import Button from "../components/Button.jsx";
 import Badge from "../components/Badge.jsx";
@@ -8,6 +8,7 @@ import BackButton from "../components/BackButton.jsx";
 import { useState, useEffect, useRef } from "react";
 import api from "../services/api.js";
 import { useAuthStore } from "../store/authStore.js";
+import { useToast } from "../context/ToasterContext.jsx";
 
 // stats will be fetched from backend
 
@@ -82,6 +83,10 @@ export default function Dashboard() {
   const [portfolios, setPortfolios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deleteConfirm, setDeleteConfirm] = useState(null); // id to confirm
+  const [isParsing, setIsParsing] = useState(false);
+  const fileInputRef = useRef(null);
+  const { toast } = useToast();
+  const navigate = useNavigate();
 
   const [statsData, setStatsData] = useState({ total_views: 0, unique_visitors: 0, resume_downloads: 0, avg_session: 0 });
 
@@ -119,6 +124,51 @@ export default function Dashboard() {
     }
   }
 
+  const handleCVParsingClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsParsing(true);
+    toast({ title: "Uploading CV...", description: "Uploading your file for parsing.", type: "info" });
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const resumeDataUrl = reader.result;
+      try {
+        toast({ title: "Parsing CV...", description: "Our AI is reading and extracting details from your CV.", type: "info" });
+        const res = await api.post("/ai/parse-cv/", formData, {
+          headers: { "Content-Type": "multipart/form-data" }
+        });
+        const data = res.data;
+        if (data) {
+          toast({ title: "CV Parsed Successfully!", description: "Redirecting you to the editor with your CV data filled.", type: "success" });
+          navigate("/editor", {
+            state: {
+              parsedCV: {
+                ...data,
+                resume_link: resumeDataUrl
+              }
+            }
+          });
+        }
+      } catch (err) {
+        console.error("Parsing failed", err);
+        toast({ title: "Parsing Failed", description: "Could not parse details from your CV. You can still build it manually.", type: "error" });
+      } finally {
+        setIsParsing(false);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
     <div className="space-y-6">
       <BackButton fallback="/" />
@@ -127,7 +177,27 @@ export default function Dashboard() {
           <h1 className="text-2xl md:text-3xl font-bold">Welcome back, {user?.name || "User"} 👋</h1>
           <p className="text-muted-foreground text-sm">Here's what's happening with your portfolios.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          <Button
+            onClick={handleCVParsingClick}
+            variant="glass"
+            disabled={isParsing}
+            className="border border-border/60 hover:bg-accent/40"
+          >
+            {isParsing ? (
+              <Loader2 className="w-4 h-4 animate-spin text-brand" />
+            ) : (
+              <Sparkles className="w-4 h-4 text-brand" />
+            )}
+            {isParsing ? "Parsing CV..." : "Parse CV with AI"}
+          </Button>
+          <input
+            type="file"
+            ref={fileInputRef}
+            className="hidden"
+            accept="application/pdf"
+            onChange={handleFileChange}
+          />
           <Button as={Link} to="/editor"><Plus className="w-4 h-4" /> Create new</Button>
         </div>
       </div>
@@ -219,22 +289,6 @@ export default function Dashboard() {
             ))}
           </div>
 
-          <GlassCard>
-            <div className="font-semibold mb-3">Recent activity</div>
-            <ul className="space-y-3 text-sm">
-              {[
-                ["AI rewrote your About section", "2m ago"],
-                ["Visitor from Berlin downloaded resume", "14m ago"],
-                ["Template switched to Glassmorphism", "1h ago"],
-                ["New 5★ feedback received", "Yesterday"],
-              ].map(([t, when]) => (
-                <li key={t} className="flex items-start gap-3">
-                  <span className="w-1.5 h-1.5 rounded-full gradient-bg mt-2" />
-                  <div className="flex-1">{t}<div className="text-xs text-muted-foreground">{when}</div></div>
-                </li>
-              ))}
-            </ul>
-          </GlassCard>
         </div>
       </div>
 

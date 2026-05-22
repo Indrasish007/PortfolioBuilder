@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "./context/ThemeContext.jsx";
 import { ToasterProvider } from "./context/ToasterContext.jsx";
+import { OnboardingProvider } from "./context/OnboardingContext.jsx";
 import CursorGlow from "./components/CursorGlow.jsx";
 import ScrollToTop from "./components/ScrollToTop.jsx";
 
@@ -22,42 +23,46 @@ import PortfolioEditor from "./pages/PortfolioEditor.jsx";
 import TemplateMarketplace from "./pages/TemplateMarketplace.jsx";
 import Analytics from "./pages/Analytics.jsx";
 import Settings from "./pages/Settings.jsx";
+import Onboarding from "./pages/Onboarding.jsx";
 
 export default function App() {
   return (
     <ThemeProvider>
       <ToasterProvider>
-        <BrowserRouter>
-          <ScrollToTop />
-          <CursorGlow />
-          <Routes>
-            <Route element={<PublicLayout />}>
-              <Route path="/" element={<Landing />} />
-              <Route path="/demo" element={<DemoPortfolio />} />
-            </Route>
+        <OnboardingProvider>
+          <BrowserRouter>
+            <ScrollToTop />
+            <CursorGlow />
+            <Routes>
+              <Route element={<PublicLayout />}>
+                <Route path="/" element={<Landing />} />
+                <Route path="/demo" element={<DemoPortfolio />} />
+              </Route>
 
-            {/* Standalone - no Navbar/Footer wrapper */}
-            <Route path="/p/:id" element={<PublicPortfolio />} />
+              {/* Standalone - no Navbar/Footer wrapper */}
+              <Route path="/p/:id" element={<PublicPortfolio />} />
 
-            <Route element={<AuthLayout />}>
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-            </Route>
+              <Route element={<AuthLayout />}>
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+              </Route>
 
-            <Route element={<DashboardLayout />}>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/editor" element={<PortfolioEditor />} />
-              <Route path="/editor/:id" element={<PortfolioEditor />} />
-              <Route path="/templates" element={<TemplateMarketplace />} />
-              <Route path="/analytics" element={<Analytics />} />
-              <Route path="/settings" element={<Settings />} />
-            </Route>
+              <Route element={<DashboardLayout />}>
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/onboarding" element={<Onboarding />} />
+                <Route path="/editor" element={<PortfolioEditor />} />
+                <Route path="/editor/:id" element={<PortfolioEditor />} />
+                <Route path="/templates" element={<TemplateMarketplace />} />
+                <Route path="/analytics" element={<Analytics />} />
+                <Route path="/settings" element={<Settings />} />
+              </Route>
 
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </OnboardingProvider>
       </ToasterProvider>
     </ThemeProvider>
   );

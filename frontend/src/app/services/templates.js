@@ -191,13 +191,13 @@ export const templates = [
   },
   {
     id: "brutalist",
-    name: "Brutalist Web",
-    tag: "Raw",
+    name: "Editorial Impact",
+    tag: "Editorial",
     category: "Creative",
     price: "Free",
     color: "from-yellow-300 to-black",
     accent: "#fbbf24",
-    desc: "Bold borders, raw type, unapologetically loud.",
+    desc: "High-contrast editorial design. Bold borders, commanding type, unforgettable presence.",
     preview: { lines: [8, 5, 3, 7], dots: "yellow" },
   },
   {

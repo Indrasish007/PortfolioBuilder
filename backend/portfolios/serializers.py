@@ -35,7 +35,7 @@ class TestimonialSerializer(serializers.ModelSerializer):
 class BlogSerializer(serializers.ModelSerializer):
     class Meta:
         model = Blog
-        fields = ['id', 'title', 'date', 'excerpt']
+        fields = ['id', 'title', 'date', 'dateRaw', 'excerpt', 'url']
 
 class ProfileSerializer(serializers.ModelSerializer):
     email = serializers.CharField(source='user.email', read_only=True)

@@ -92,6 +92,8 @@ class Blog(models.Model):
     portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE, related_name='blogs')
     title = models.CharField(max_length=255)
     date = models.CharField(max_length=100)
+    dateRaw = models.CharField(max_length=50, blank=True, null=True)
+    url = models.URLField(max_length=500, blank=True, null=True)
     excerpt = models.TextField(blank=True)
 
     def __str__(self):

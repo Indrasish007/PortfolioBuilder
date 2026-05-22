@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, Reorder, AnimatePresence } from "framer-motion";
-import { Undo2, Redo2, Save, Eye, EyeOff, Smartphone, Tablet, Monitor, Plus, GripVertical, Image as ImageIcon, Sparkles, Trash2, Github, Globe, Linkedin, Twitter, Facebook, Instagram, Type, Palette, Settings2, CheckCircle2, Loader2, ChevronDown, ChevronUp, ArrowUp, ArrowDown, FileText, X } from "lucide-react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Undo2, Redo2, Save, Eye, EyeOff, Smartphone, Tablet, Monitor, Plus, GripVertical, Image as ImageIcon, Sparkles, Trash2, Github, Globe, Linkedin, Twitter, Facebook, Instagram, Type, Palette, Settings2, CheckCircle2, Loader2, ChevronDown, ChevronUp, ArrowUp, ArrowDown, FileText, X, Calendar } from "lucide-react";
+import { useNavigate, useParams, useSearchParams, useLocation } from "react-router-dom";
 import GlassCard from "../components/GlassCard.jsx";
 import Button from "../components/Button.jsx";
 import Badge from "../components/Badge.jsx";
@@ -11,6 +11,7 @@ import { templates, themes } from "../services/templates.js";
 import LivePortfolio from "../templates/LivePortfolio.jsx";
 import { useToast } from "../context/ToasterContext.jsx";
 import { useAuthStore } from "../store/authStore.js";
+import api from "../services/api.js";
 
 const sectionTypes = ["About", "Skills", "Experience", "Education", "Projects", "Services", "Languages", "Awards", "Certifications", "Volunteer", "Testimonials", "References", "Blogs", "Gallery", "Videos", "Music", "FAQ", "Contact", "Custom"];
 
@@ -31,7 +32,9 @@ export default function PortfolioEditor() {
   const setSections = (newSections) => updateField("sections", newSections);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
 
   // Null-safe accessors
   const user = portfolio?.user || {};
@@ -98,13 +101,70 @@ export default function PortfolioEditor() {
     }
   };
 
+  const hasInitialised = useRef(false);
+
   useEffect(() => {
     if (id) {
       fetchPortfolio(id);
-    } else {
+      hasInitialised.current = true;
+      return;
+    }
+
+    // ── New / CV-parsed portfolio (no saved id) ───────────────────────────
+    if (location.state?.parsedCV) {
+      // Always apply fresh CV data – this is an intentional parse action
+      const cvData = location.state.parsedCV;
+      resetPortfolio();
+      hasInitialised.current = true;
+      Promise.resolve().then(() => {
+        // Profile identity
+        if (cvData.full_name)  updateField("user.name",     cvData.full_name);
+        if (cvData.headline)   updateField("user.title",    cvData.headline);
+        if (cvData.bio)        updateField("user.bio",      cvData.bio);
+        if (cvData.email)      updateField("user.email",    cvData.email);
+        if (cvData.phone)      updateField("user.phone",    cvData.phone);
+        if (cvData.location)   updateField("user.location", cvData.location);
+        // Social links from parser
+        if (cvData.social_links && cvData.social_links.length > 0) {
+          cvData.social_links.forEach(({ platform, url }) => {
+            if (platform && url) {
+              updateField(`user.social.${platform.toLowerCase()}`, url);
+            }
+          });
+        }
+        // Portfolio sections
+        if (cvData.skills     && cvData.skills.length > 0)     updateField("skills",     cvData.skills);
+        if (cvData.experience && cvData.experience.length > 0) updateField("experience", cvData.experience);
+        if (cvData.education  && cvData.education.length > 0)  updateField("education",  cvData.education);
+        if (cvData.projects   && cvData.projects.length > 0)   updateField("projects",   cvData.projects);
+        if (cvData.resume_link) updateField("user.resume_link", cvData.resume_link);
+      });
+      return;
+    }
+
+    // ── Returning from template marketplace or a plain /editor visit ──────
+    // Only reset if the store has no real content yet (i.e. truly blank slate).
+    // This prevents wiping CV data when the user just switched templates.
+    const alreadyHasData = (
+      portfolio?.user?.name ||
+      (portfolio?.skills?.length > 0) ||
+      (portfolio?.experience?.length > 0) ||
+      (portfolio?.education?.length > 0) ||
+      (portfolio?.projects?.length > 0)
+    );
+
+    if (!alreadyHasData && !hasInitialised.current) {
       resetPortfolio();
     }
-  }, [id]);
+    hasInitialised.current = true;
+
+    // Apply ?template= query param from the marketplace (legacy path, now only
+    // reached when opening /editor fresh from a bookmark/link)
+    const templateParam = searchParams.get("template");
+    if (templateParam) {
+      Promise.resolve().then(() => setTemplate(templateParam));
+    }
+  }, [id, location.state]);
 
   // Close preview overlay on Escape key
   useEffect(() => {
@@ -361,7 +421,7 @@ export default function PortfolioEditor() {
                     case "Music": content = <MusicEditor music={portfolio?.music || []} updateField={updateField} />; break;
                     case "FAQ": content = <FAQEditor faqs={portfolio?.faqs || []} updateField={updateField} />; break;
                     case "Custom": content = <CustomEditor custom={portfolio?.custom || { title: "Custom Section", content: "" }} updateField={updateField} />; break;
-                    case "Contact": content = <ContactEditor email={user.email} phone={user.phone} updateField={updateField} />; break;
+                    case "Contact": content = <ContactEditor email={user.email} phone={user.phone} location={user.location} updateField={updateField} />; break;
                     default: return null;
                  }
                  return (
@@ -721,11 +781,44 @@ function ProjectsEditor({ projects, updateField }) {
     </div>
   );
 }
+function AboutEditor({ bio, resume, updateField }) {
+  const [isRewriting, setIsRewriting] = useState(false);
+  const { toast } = useToast();
 
-function AboutEditor({ bio, resume, updateField }) {
+  const handleRewrite = async () => {
+    if (!bio || !bio.trim()) {
+      toast({ title: "Bio is empty", description: "Please enter some text in your bio first.", type: "error" });
+      return;
+    }
+    setIsRewriting(true);
+    try {
+      const res = await api.post("/ai/rewrite/", { text: bio });
+      if (res.data && res.data.rewritten) {
+        updateField("user.bio", res.data.rewritten);
+        toast({ title: "Bio Rewritten", description: "Successfully improved your bio using AI.", type: "success" });
+      }
+    } catch (e) {
+      toast({ title: "Rewrite failed", description: "Something went wrong while rewriting your bio.", type: "error" });
+    } finally {
+      setIsRewriting(false);
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        updateField("user.resume_link", reader.result);
+        toast({ title: "CV Uploaded", description: "Your CV has been attached to your portfolio.", type: "success" });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   return (
     <div>
-      <div className="mb-3">
+      <div className="mb-4">
         <div className="text-xs text-muted-foreground mb-1">Upload CV (PDF)</div>
         <label className="w-full h-24 rounded-lg border border-dashed border-border flex flex-col items-center justify-center text-xs text-muted-foreground hover:bg-accent/40 transition cursor-pointer overflow-hidden relative group">
           {resume ? (
@@ -743,32 +836,58 @@ function AboutEditor({ bio, resume, updateField }) {
               <FileText className="w-5 h-5 mb-1" /> Drop PDF or click to upload
             </>
           )}
-          <input type="file" className="hidden" accept="application/pdf" onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) {
-              const reader = new FileReader();
-              reader.onloadend = () => updateField("user.resume_link", reader.result);
-              reader.readAsDataURL(file);
-            }
-          }} />
+          <input 
+            type="file" 
+            className="hidden" 
+            accept="application/pdf" 
+            onChange={handleFileChange} 
+          />
         </label>
-        {resume && (
-          <button onClick={() => updateField("user.resume_link", "")} className="text-[10px] text-destructive hover:underline mt-1">Remove CV</button>
-        )}
+        
+        {/* Buttons section below the upload box */}
+        <div className="flex items-center justify-between mt-2 min-h-[32px]">
+          <div>
+            {resume && (
+              <button 
+                type="button"
+                onClick={() => {
+                  updateField("user.resume_link", "");
+                  toast({ title: "CV Removed", description: "Your CV has been removed from your portfolio.", type: "success" });
+                }} 
+                className="text-[10px] text-destructive hover:underline"
+              >
+                Remove CV
+              </button>
+            )}
+          </div>
+        </div>
       </div>
       <Field label="Bio" multiline value={bio || ""} onChange={(v) => updateField("user.bio", v)} />
-      <button className="mt-2 text-xs inline-flex items-center gap-1 text-brand hover:underline">
-        <Sparkles className="w-3 h-3" /> Rewrite with AI
+      <button 
+        onClick={handleRewrite}
+        disabled={isRewriting}
+        className="mt-2 text-xs inline-flex items-center gap-1 text-brand hover:underline disabled:opacity-50"
+      >
+        {isRewriting ? (
+          <>
+            <Loader2 className="w-3 h-3 animate-spin" /> Rewriting...
+          </>
+        ) : (
+          <>
+            <Sparkles className="w-3 h-3" /> Rewrite with AI
+          </>
+        )}
       </button>
     </div>
   );
 }
 
-function ContactEditor({ email, phone, updateField }) {
+function ContactEditor({ email, phone, location, updateField }) {
   return (
     <div>
       <Field label="Email Address" value={email || ""} onChange={(v) => updateField("user.email", v)} />
       <Field label="Phone Number" value={phone || ""} onChange={(v) => updateField("user.phone", v)} />
+      <Field label="Location / Address" value={location || ""} onChange={(v) => updateField("user.location", v)} />
     </div>
   );
 }
@@ -850,10 +969,27 @@ function BlogsEditor({ blogs, updateField }) {
     newArr[i] = { ...newArr[i], [field]: val };
     updateField("blogs", newArr);
   };
+
+  const formatDate = (val) => {
+    if (!val) return "";
+    const [year, month, day] = val.split('-');
+    const date = new Date(year, month - 1, day);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  const handleDateChange = (i, val) => {
+    const newArr = [...blogs];
+    newArr[i] = { ...newArr[i], dateRaw: val, date: formatDate(val) };
+    updateField("blogs", newArr);
+  };
+
+  const today = new Date().toISOString().split('T')[0];
+  const formattedToday = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
   return (
     <div>
       <div className="flex justify-end mb-3">
-        <button onClick={() => updateField("blogs", [...blogs, { title: "New Post", url: "", date: "2024", excerpt: "" }])} className="text-xs text-brand hover:underline">+ Add</button>
+        <button onClick={() => updateField("blogs", [...blogs, { title: "New Post", url: "", date: formattedToday, dateRaw: today, excerpt: "" }])} className="text-xs text-brand hover:underline">+ Add</button>
       </div>
       {blogs.map((b, i) => (
         <div key={i} className="group mb-4 last:mb-0 border-l-2 border-brand/30 pl-3 space-y-1">
@@ -861,9 +997,29 @@ function BlogsEditor({ blogs, updateField }) {
             <input value={b.title} onChange={(e) => updateItem(i, "title", e.target.value)} className="w-full bg-transparent text-sm font-semibold focus:outline-none" placeholder="Post Title" />
             <button onClick={() => updateField("blogs", blogs.filter((_, idx) => idx !== i))} className="text-muted-foreground hover:text-destructive"><Trash2 className="w-3 h-3" /></button>
           </div>
-          <input value={b.date} onChange={(e) => updateItem(i, "date", e.target.value)} className="w-full bg-transparent text-xs text-muted-foreground focus:outline-none" placeholder="Date (e.g. Jan 2024)" />
+          
+          <div className="flex flex-wrap items-center gap-2 py-1">
+            <div className="flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+              <input 
+                type="date" 
+                value={b.dateRaw || ""} 
+                onChange={(e) => handleDateChange(i, e.target.value)} 
+                className="bg-input/40 border border-border text-xs rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-brand text-muted-foreground color-scheme-dark" 
+                style={{ colorScheme: 'dark light' }}
+              />
+            </div>
+            <span className="text-[10px] text-muted-foreground">Display:</span>
+            <input 
+              value={b.date || ""} 
+              onChange={(e) => updateItem(i, "date", e.target.value)} 
+              className="bg-input/40 border border-border text-xs rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-brand text-muted-foreground flex-1" 
+              placeholder="Display Date (e.g. May 21, 2026)" 
+            />
+          </div>
+
           <textarea value={b.excerpt} onChange={(e) => updateItem(i, "excerpt", e.target.value)} rows={2} className="w-full bg-input/40 border border-border rounded p-2 text-xs focus:outline-none resize-none" placeholder="Excerpt / Summary" />
-          <input value={b.url} onChange={(e) => updateItem(i, "url", e.target.value)} className="w-full bg-input/40 border border-border rounded p-2 text-xs focus:outline-none" placeholder="Link URL" />
+          <input value={b.url || ""} onChange={(e) => updateItem(i, "url", e.target.value)} className="w-full bg-input/40 border border-border rounded p-2 text-xs focus:outline-none" placeholder="Link URL" />
         </div>
       ))}
     </div>
