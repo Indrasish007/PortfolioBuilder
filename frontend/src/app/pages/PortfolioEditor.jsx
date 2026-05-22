@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, Reorder, AnimatePresence } from "framer-motion";
-import { Undo2, Redo2, Save, Eye, EyeOff, Smartphone, Tablet, Monitor, Plus, GripVertical, Image as ImageIcon, Sparkles, Trash2, Github, Globe, Linkedin, Twitter, Facebook, Instagram, Type, Palette, Settings2, CheckCircle2, Loader2, ChevronDown, ChevronUp, ArrowUp, ArrowDown, FileText, X, Calendar } from "lucide-react";
+import { Undo2, Redo2, Save, Eye, EyeOff, Smartphone, Tablet, Monitor, Plus, GripVertical, Image as ImageIcon, Sparkles, Trash2, Github, Globe, Linkedin, Twitter, Facebook, Instagram, Type, Palette, Settings2, CheckCircle2, Loader2, ChevronDown, ChevronUp, ArrowUp, ArrowDown, FileText, X, Calendar, ExternalLink } from "lucide-react";
 import { useNavigate, useParams, useSearchParams, useLocation } from "react-router-dom";
 import GlassCard from "../components/GlassCard.jsx";
 import Button from "../components/Button.jsx";
@@ -23,7 +23,7 @@ export default function PortfolioEditor() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [saveModalOpen, setSaveModalOpen] = useState(false);
   const [publishModalOpen, setPublishModalOpen] = useState(false);
-  const [selectedDomain, setSelectedDomain] = useState("");
+  const [isPublishing, setIsPublishing] = useState(false);
   const authUser = useAuthStore((s) => s.user) || {};
   const [portfolioName, setPortfolioName] = useState("");
   const hasFetched = useRef(false);
@@ -66,38 +66,53 @@ export default function PortfolioEditor() {
     }
   };
 
-  const baseName = (authUser.username || authUser.name || "myportfolio").toLowerCase().replace(/[^a-z0-9]/g, '');
-  const domainOptions = [
-    { type: "free", domain: `${baseName}.portfolio.ai`, label: "Free Subdomain", price: "Free" },
-    { type: "custom", domain: `${baseName}.com`, label: "Custom Domain", price: "$12/yr" },
-    { type: "custom", domain: `${baseName}.dev`, label: "Custom Domain", price: "$15/yr" },
-    { type: "custom", domain: `${baseName}.design`, label: "Custom Domain", price: "$35/yr" },
-    { type: "custom", domain: `${baseName}.io`, label: "Custom Domain", price: "$39/yr" }
-  ];
-
   const handlePublishClick = () => {
     if (!portfolio?.id) {
        toast({ title: "Save first", description: "Please save your portfolio before publishing.", type: "error" });
        return;
     }
-    if (!selectedDomain) {
-      setSelectedDomain(domainOptions[0].domain);
-    }
     setPublishModalOpen(true);
   };
 
   const executePublish = async () => {
+    setIsPublishing(true);
     try {
-      updateField("status", "Published");
-      updateField("domain", selectedDomain);
-      if (selectedDomain.includes(".portfolio.ai")) {
-         updateField("slug", selectedDomain.split(".")[0]);
-      }
+      // 1. First save any local edits to ensure backend has latest content
       await savePortfolio();
-      toast({ title: "Portfolio Published!", description: `Your portfolio is now live at ${selectedDomain}`, type: "success" });
-      setPublishModalOpen(false);
+
+      // 2. Call the publish API to mark live and auto-generate slug
+      const res = await api.post(`/portfolios/${portfolio.id}/publish/`);
+      const { slug, status } = res.data;
+
+      // 3. Update the local store status & slug
+      updateField("status", status);
+      updateField("slug", slug);
+
+      toast({ title: "Portfolio Published!", description: "Your portfolio is now live on our free domain!", type: "success" });
     } catch (e) {
-      toast({ title: "Publish failed", description: "Something went wrong.", type: "error" });
+      console.error(e);
+      toast({ title: "Publish failed", description: "Something went wrong. Please try again.", type: "error" });
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  const executeUnpublish = async () => {
+    setIsPublishing(true);
+    try {
+      // Call the unpublish API
+      const res = await api.post(`/portfolios/${portfolio.id}/unpublish/`);
+      const { status } = res.data;
+
+      // Update the local store status
+      updateField("status", status);
+
+      toast({ title: "Portfolio Unpublished", description: "Your portfolio has been returned to Draft status.", type: "success" });
+    } catch (e) {
+      console.error(e);
+      toast({ title: "Unpublish failed", description: "Something went wrong. Please try again.", type: "error" });
+    } finally {
+      setIsPublishing(false);
     }
   };
 
@@ -225,33 +240,133 @@ export default function PortfolioEditor() {
             transition={{ duration: 0.18 }}
             className="glass rounded-2xl p-6 max-w-md w-full mx-4 border border-border shadow-xl"
           >
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-full bg-brand/10 flex items-center justify-center text-brand">
-                <Globe className="w-5 h-5" />
+            {portfolio.status === "Published" ? (
+              <div className="space-y-4">
+                <div className="text-center py-4">
+                  <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center mx-auto mb-3">
+                    <CheckCircle2 className="w-7 h-7" />
+                  </div>
+                  <h3 className="text-xl font-bold">Your portfolio is live! 🎉</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Deployed successfully. Anyone can access it at the link below.
+                  </p>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-accent/20 border border-border/80 flex items-center justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[10px] uppercase font-bold text-muted-foreground/75 tracking-wider mb-0.5">Deployment Domain</div>
+                    <a
+                      href={`/p/s/${portfolio.slug}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-brand hover:underline font-mono text-sm font-semibold truncate block"
+                    >
+                      {window.location.origin}/p/s/{portfolio.slug}
+                    </a>
+                  </div>
+                  <button
+                    onClick={() => {
+                      const liveUrl = `${window.location.origin}/p/s/${portfolio.slug}`;
+                      navigator.clipboard.writeText(liveUrl);
+                      toast({
+                        title: "Link copied!",
+                        description: "Deployed portfolio link has been copied to your clipboard.",
+                        type: "success"
+                      });
+                    }}
+                    className="text-xs px-3 py-1.5 rounded-lg bg-brand/10 hover:bg-brand/20 text-brand font-semibold transition"
+                  >
+                    Copy
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 mt-4">
+                  <Button
+                    as="a"
+                    href={`/p/s/${portfolio.slug}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    variant="outline"
+                    className="w-full flex items-center justify-center gap-1.5 font-semibold"
+                  >
+                    <ExternalLink className="w-4 h-4" /> Visit Site
+                  </Button>
+                  <Button
+                    onClick={executeUnpublish}
+                    variant="glass"
+                    disabled={isPublishing}
+                    className="w-full text-red-400 hover:text-red-300 border-red-500/10 hover:bg-red-500/5 font-semibold"
+                  >
+                    {isPublishing ? (
+                      <Loader2 className="w-4 h-4 animate-spin mx-auto" />
+                    ) : (
+                      "Unpublish"
+                    )}
+                  </Button>
+                </div>
+
+                <div className="pt-2 border-t border-border/40 flex justify-end">
+                  <Button size="sm" variant="ghost" onClick={() => setPublishModalOpen(false)}>Close</Button>
+                </div>
               </div>
-              <h3 className="text-xl font-bold">Publish portfolio</h3>
-            </div>
-            <p className="text-sm text-muted-foreground mb-5">Choose a domain name to make your portfolio live. You can always change this later in settings.</p>
-            
-            <div className="space-y-3 mb-6">
-              {domainOptions.map((opt) => (
-                <label key={opt.domain} className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition ${selectedDomain === opt.domain ? 'border-brand bg-brand/5' : 'border-border/50 hover:border-border glass'}`}>
-                  <div className="flex items-center gap-3">
-                    <input type="radio" name="domain" value={opt.domain} checked={selectedDomain === opt.domain} onChange={() => setSelectedDomain(opt.domain)} className="accent-brand scale-110" />
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 mb-2 border-b border-border/40 pb-3">
+                  <div className="w-10 h-10 rounded-full bg-brand/10 flex items-center justify-center text-brand shrink-0">
+                    <Globe className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold">Deploy to Production</h3>
+                    <p className="text-xs text-muted-foreground">Publish your site live on our global edge network.</p>
+                  </div>
+                </div>
+
+                <div className="space-y-3 bg-accent/10 border border-border/40 p-4 rounded-xl">
+                  <div className="flex gap-3">
+                    <div className="w-5 h-5 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                    </div>
                     <div>
-                      <div className="font-medium text-sm">{opt.domain}</div>
-                      <div className="text-xs text-muted-foreground">{opt.label}</div>
+                      <div className="text-xs font-semibold">⚡ Instant Free Deployment</div>
+                      <div className="text-[11px] text-muted-foreground mt-0.5">Publish in 1-click under a secure global subdomain without paying a cent.</div>
                     </div>
                   </div>
-                  {opt.type === "custom" && <Badge variant="glass" className="text-xs">{opt.price}</Badge>}
-                </label>
-              ))}
-            </div>
+                  <div className="flex gap-3">
+                    <div className="w-5 h-5 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-semibold">🌍 Optimized Edge Network</div>
+                      <div className="text-[11px] text-muted-foreground mt-0.5">Supercharge your site load speeds with our optimized distribution platform.</div>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="w-5 h-5 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-semibold">📊 Real-Time Analytics</div>
+                      <div className="text-[11px] text-muted-foreground mt-0.5">Track views, duration, unique visitors, and devices in real-time.</div>
+                    </div>
+                  </div>
+                </div>
 
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setPublishModalOpen(false)}>Cancel</Button>
-              <Button onClick={executePublish}>Publish to {selectedDomain}</Button>
-            </div>
+                <div className="flex justify-end gap-2 pt-2 border-t border-border/40">
+                  <Button variant="ghost" size="sm" onClick={() => setPublishModalOpen(false)}>Cancel</Button>
+                  <Button
+                    onClick={executePublish}
+                    disabled={isPublishing}
+                    className="flex items-center gap-1.5 font-semibold"
+                  >
+                    {isPublishing ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>🚀 Deploy Production</>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
           </motion.div>
         </motion.div>
       )}

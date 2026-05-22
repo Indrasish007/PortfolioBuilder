@@ -44,7 +44,7 @@ class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
         fields = [
-            'name', 'username', 'title', 'location', 'email', 'avatar', 'bio',
+            'name', 'username', 'title', 'location', 'email', 'phone', 'avatar', 'bio',
             'github', 'twitter', 'linkedin', 'facebook', 'instagram', 'website', 'calendly', 'resume_link'
         ]
 
@@ -120,11 +120,16 @@ class PortfolioSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         user_data = validated_data.pop('user', None)
-        if user_data and 'profile' in user_data:
-            profile = instance.user.profile
-            for attr, value in user_data['profile'].items():
-                setattr(profile, attr, value)
-            profile.save()
+        if user_data and isinstance(user_data, dict):
+            profile_data = user_data.get('profile', user_data)
+            try:
+                profile = instance.user.profile
+                for attr, value in profile_data.items():
+                    if hasattr(profile, attr):
+                        setattr(profile, attr, value)
+                profile.save()
+            except Exception:
+                pass
 
         # Update flat fields
         instance.name = validated_data.get('name', instance.name)

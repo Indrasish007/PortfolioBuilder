@@ -1,7 +1,11 @@
 from rest_framework import viewsets, permissions, generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.decorators import action
+from rest_framework import status as http_status
 from django.db.models import Count, Sum
+from django.utils.text import slugify
+import re
 from .models import Portfolio, PortfolioEvent
 from .serializers import PortfolioSerializer
 
@@ -37,6 +41,54 @@ class PublicPortfolioView(generics.RetrieveAPIView):
     def get_object(self):
         pk = self.kwargs.get('pk')
         return generics.get_object_or_404(Portfolio, pk=pk)
+
+class PublicPortfolioBySlugView(generics.RetrieveAPIView):
+    """Fetch a published portfolio by its human-readable slug."""
+    serializer_class = PortfolioSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_object(self):
+        slug = self.kwargs.get('slug')
+        return generics.get_object_or_404(Portfolio, slug=slug, status='Published')
+
+class PublishPortfolioView(APIView):
+    """POST /portfolios/{id}/publish/ — marks portfolio Published and generates a slug."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        portfolio = generics.get_object_or_404(Portfolio, pk=pk, user=request.user)
+
+        # Generate a slug if none exists
+        if not portfolio.slug:
+            base = slugify(f"{request.user.profile.name or request.user.username}-{portfolio.name}")
+            base = re.sub(r'-+', '-', base).strip('-') or 'portfolio'
+            slug = base
+            counter = 1
+            while Portfolio.objects.filter(slug=slug).exclude(pk=portfolio.pk).exists():
+                slug = f"{base}-{counter}"
+                counter += 1
+            portfolio.slug = slug
+
+        portfolio.status = 'Published'
+        portfolio.save(update_fields=['slug', 'status'])
+
+        serializer = PortfolioSerializer(portfolio)
+        return Response({
+            'id': portfolio.pk,
+            'slug': portfolio.slug,
+            'status': portfolio.status,
+            'portfolio': serializer.data,
+        }, status=http_status.HTTP_200_OK)
+
+class UnpublishPortfolioView(APIView):
+    """POST /portfolios/{id}/unpublish/ — marks portfolio as Draft."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        portfolio = generics.get_object_or_404(Portfolio, pk=pk, user=request.user)
+        portfolio.status = 'Draft'
+        portfolio.save(update_fields=['status'])
+        return Response({'id': portfolio.pk, 'status': portfolio.status})
 
 class AnalyticsView(APIView):
     permission_classes = [permissions.AllowAny]

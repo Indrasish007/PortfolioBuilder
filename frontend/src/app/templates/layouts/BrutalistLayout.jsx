@@ -41,9 +41,11 @@ export default function BrutalistLayout({ p, t, id, portfolioId }) {
             }} />
             <div>
               <div style={{ fontSize:isMono?11:13, opacity:0.5, marginBottom:8, letterSpacing:"0.15em", textTransform:"uppercase", fontFamily:"Inter,sans-serif" }}>{u.title}</div>
-              <h1 style={{ fontSize:isMono?52:72, fontWeight:isMono?900:400, lineHeight:0.95, margin:"0 0 16px",
-                letterSpacing:isMono?"-0.03em":"0", color:isMono?fg:"#0a0a0a",
-                textTransform: isMono?"none":"uppercase" }}>
+              <h1 style={{ fontSize:isMono?52:72, fontWeight:900, lineHeight:0.95, margin:"0 0 16px",
+                letterSpacing:isMono?"-0.03em":"0", color:fg,
+                fontFamily: font,
+                textTransform: isMono?"none":"uppercase",
+                textShadow: isMono?"none":`2px 2px 0px ${ac}` }}>
                 {u.name}
               </h1>
               {u.location && <div style={{ fontSize:12, opacity:0.45, marginBottom:4, fontFamily:"Inter,sans-serif" }}>📍 {u.location}</div>}

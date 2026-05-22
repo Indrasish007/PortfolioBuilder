@@ -243,6 +243,29 @@ export default function SplitLayout({ p, t, id, portfolioId }) {
             </div>
           </div>
         )}
+
+        {/* Contact */}
+        {(u.email || u.phone) && (
+          <div style={{ marginBottom:56 }}>
+            {lbl("Contact")}
+            <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>
+              {u.email && (
+                <a href={`mailto:${u.email}`} style={{ display:"inline-flex", alignItems:"center", gap:8,
+                  padding:"12px 28px", backgroundImage:grad, color:"#fff", borderRadius:6, fontSize:13,
+                  textDecoration:"none", fontWeight:700, width:"fit-content" }}>
+                  <Mail size={14}/> {u.email}
+                </a>
+              )}
+              {u.phone && (
+                <a href={`tel:${u.phone}`} style={{ display:"inline-flex", alignItems:"center", gap:8,
+                  padding:"12px 28px", border:`1px solid ${ac}`, color:"#fff", borderRadius:6, fontSize:13,
+                  textDecoration:"none", fontWeight:700, width:"fit-content" }}>
+                  <Phone size={14}/> {u.phone}
+                </a>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

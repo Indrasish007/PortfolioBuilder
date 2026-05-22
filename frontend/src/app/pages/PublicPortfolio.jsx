@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import api from "../services/api.js";
 import LivePortfolio from "../templates/LivePortfolio.jsx";
 
-export default function PublicPortfolio() {
-  const { id } = useParams();
+export default function PublicPortfolio({ bySlug }) {
+  const { id, slug } = useParams();
   const [searchParams] = useSearchParams();
   const [p, setP] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -14,7 +14,9 @@ export default function PublicPortfolio() {
   useEffect(() => {
     async function fetchPortfolio() {
       try {
-        const res = await api.get(`/portfolios/public/${id}/`);
+        const res = bySlug
+          ? await api.get(`/portfolios/public/slug/${slug}/`)
+          : await api.get(`/portfolios/public/${id}/`);
         setP(res.data);
       } catch (err) {
         console.error("Failed to load portfolio:", err);
@@ -23,7 +25,7 @@ export default function PublicPortfolio() {
       }
     }
     fetchPortfolio();
-  }, [id]);
+  }, [id, slug, bySlug]);
 
   useEffect(() => {
     if (!p || isPreview) return;
@@ -34,16 +36,16 @@ export default function PublicPortfolio() {
       localStorage.setItem("visitorId", visitorId);
     }
     
-    api.post(`/portfolios/${id}/analytics/`, { event_type: 'view', visitor_id: visitorId }).catch(() => {});
+    api.post(`/portfolios/${p.id}/analytics/`, { event_type: 'view', visitor_id: visitorId }).catch(() => {});
     
     let duration = 0;
     const interval = setInterval(() => {
       duration += 10;
-      api.post(`/portfolios/${id}/analytics/`, { event_type: 'session_ping', visitor_id: visitorId, duration }).catch(() => {});
+      api.post(`/portfolios/${p.id}/analytics/`, { event_type: 'session_ping', visitor_id: visitorId, duration }).catch(() => {});
     }, 10000);
     
     return () => clearInterval(interval);
-  }, [p, isPreview, id]);
+  }, [p, isPreview]);
 
   if (loading) {
     return (

@@ -41,6 +41,7 @@ export default function App() {
 
               {/* Standalone - no Navbar/Footer wrapper */}
               <Route path="/p/:id" element={<PublicPortfolio />} />
+              <Route path="/p/s/:slug" element={<PublicPortfolio bySlug />} />
 
               <Route element={<AuthLayout />}>
                 <Route path="/login" element={<Login />} />

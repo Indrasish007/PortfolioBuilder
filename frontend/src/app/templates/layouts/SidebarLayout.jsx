@@ -43,7 +43,8 @@ export default function SidebarLayout({ p, t, id, portfolioId }) {
 
 
         {u.location && <div style={{ fontSize:11, color:"#fff", opacity:0.4, marginBottom:6 }}>📍 {u.location}</div>}
-        {u.email    && <div style={{ fontSize:11, color:"#fff", opacity:0.4, marginBottom:20, wordBreak:"break-all" }}>✉ {u.email}</div>}
+        {u.email    && <div style={{ fontSize:11, color:"#fff", opacity:0.4, marginBottom:6, wordBreak:"break-all" }}>✉ {u.email}</div>}
+        {u.phone    && <div style={{ fontSize:11, color:"#fff", opacity:0.4, marginBottom:20, wordBreak:"break-all" }}>📞 {u.phone}</div>}
 
         <Soc user={u} fg="#ffffff" size={14} portfolioId={portfolioId} />
 

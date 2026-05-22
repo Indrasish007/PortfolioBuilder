@@ -16,6 +16,7 @@ class Profile(models.Model):
     title = models.CharField(max_length=150, blank=True)
     location = models.CharField(max_length=150, blank=True)
     bio = models.TextField(blank=True)
+    phone = models.CharField(max_length=30, blank=True, null=True)
     avatar = models.TextField(blank=True, null=True) # Changed to TextField to support base64 strings
     
     # Social links
