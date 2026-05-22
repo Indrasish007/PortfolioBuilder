@@ -2,7 +2,6 @@
   "buildCommand": "npm run build",
   "installCommand": "npm install",
   "env": {
-    "VITE_API_URL": "https://your-backend.up.railway.app/api",
     "NITRO_PRESET": "vercel"
   }
 }
