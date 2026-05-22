@@ -157,11 +157,11 @@ AUTH_USER_MODEL = 'users.CustomUser'
 
 # In production set: CORS_ALLOWED_ORIGINS=https://your-frontend.vercel.app
 _cors_env = os.getenv('CORS_ALLOWED_ORIGINS', '')
-if _cors_env:
+if _cors_env and _cors_env.strip() != '*':
     CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors_env.split(',') if o.strip()]
     CORS_ALLOW_ALL_ORIGINS = False
 else:
-    # Development fallback — allow all
+    # Development fallback or wildcard — allow all origins
     CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOW_CREDENTIALS = True
@@ -206,9 +206,9 @@ REST_AUTH = {
 }
 
 ACCOUNT_EMAIL_VERIFICATION = 'none'
-ACCOUNT_LOGIN_METHODS = {'email'}
+ACCOUNT_LOGIN_METHODS = ['email']
 ACCOUNT_UNIQUE_EMAIL = True
-ACCOUNT_SIGNUP_FIELDS = ['email']
+ACCOUNT_SIGNUP_FIELDS = ['email*']
 
 # AI / Gemini
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')
