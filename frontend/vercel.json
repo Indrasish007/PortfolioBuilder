@@ -1,15 +1,8 @@
 {
   "buildCommand": "npm run build",
-  "outputDirectory": "dist",
   "installCommand": "npm install",
-  "framework": "vite",
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ],
   "env": {
-    "VITE_API_URL": "https://your-backend.up.railway.app"
+    "VITE_API_URL": "https://your-backend.up.railway.app/api",
+    "NITRO_PRESET": "vercel"
   }
 }

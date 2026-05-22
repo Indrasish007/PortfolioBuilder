@@ -7,7 +7,10 @@ import tsConfigPaths from "vite-tsconfig-paths";
 export default defineConfig({
   plugins: [
     tanstackStart({
-      server: { entry: "server" },
+      server: {
+        entry: "server",
+        preset: (process.env.NITRO_PRESET as any) || "node",
+      },
     }),
     react(),
     tailwindcss(),
@@ -17,5 +20,5 @@ export default defineConfig({
   ],
   server: {
     host: true,
-  }
+  },
 });
