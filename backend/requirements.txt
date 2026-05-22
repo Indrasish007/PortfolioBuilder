@@ -32,7 +32,6 @@ markdown-it-py==4.2.0
 MarkupSafe==3.0.3
 mdurl==0.1.2
 mpmath==1.3.0
-mysqlclient==2.2.8
 networkx==3.6.1
 openai==2.36.0
 packaging==26.2
