@@ -5,7 +5,6 @@ import Input from "../components/Input.jsx";
 import Button from "../components/Button.jsx";
 import { useAuthStore } from "../store/authStore.js";
 import { useToast } from "../context/ToasterContext.jsx";
-import SocialButtons from "../components/SocialButtons.jsx";
 
 export default function Signup() {
   const [name, setName] = useState("");
@@ -63,13 +62,6 @@ export default function Signup() {
       <h1 className="text-3xl font-bold">Create your account</h1>
       <p className="text-sm text-muted-foreground mt-1 mb-6">Free forever. Upgrade when you want.</p>
       
-      <SocialButtons className="mb-6" />
-      <div className="my-6 flex items-center gap-3">
-        <div className="flex-1 h-px bg-border" />
-        <span className="text-xs text-muted-foreground">or with email</span>
-        <div className="flex-1 h-px bg-border" />
-      </div>
-
       <form onSubmit={submit} className="space-y-4">
         <Input label="Full name" icon={User} placeholder="Alex Carter" value={name} onChange={(e) => setName(e.target.value)} />
         <Input label="Email" type="email" icon={Mail} placeholder="you@company.com" value={email} onChange={(e) => setEmail(e.target.value)} />
