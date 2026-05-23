@@ -59,15 +59,17 @@ class AnalyticsView(APIView):
                 {"name": "Tablet", "value": 10},
             ]
 
-        # 3. Countries
+        # 3. Countries — count only actual page views, not pings or downloads
         country_counts = PortfolioEvent.objects.filter(
             portfolio__in=portfolios,
+            event_type='view',
             created_at__date__gte=today - datetime.timedelta(days=13)
-        ).values('country').annotate(visits=Count('id')).order_by('-visits')[:5]
+        ).values('country').annotate(visits=Count('id')).order_by('-visits')[:10]
         
         countries_data = []
         for item in country_counts:
-            countries_data.append({"country": item['country'], "visits": item['visits']})
+            if item['country']:  # skip blank/null country values
+                countries_data.append({"country": item['country'], "visits": item['visits']})
         
         if not countries_data:
             countries_data = [

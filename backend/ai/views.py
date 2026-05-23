@@ -242,7 +242,15 @@ class AICVParsingView(APIView):
         email_match = re.search(r'[\w\.-]+@[\w\.-]+\.\w+', text)
         email = email_match.group(0) if email_match else ""
 
-        phone_match = re.search(r'\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}', text)
+        phone_match = re.search(
+            r'(?<!\w)'                                # not preceded by word chars
+            r'(\+?[\d]{1,3}[\s\-.]?)?'               # optional country code: +91, 1, etc.
+            r'(\(?\d{3,5}\)?[\s\-.]?)'               # area/city code (3–5 digits)
+            r'(\d{3,4}[\s\-.]?)'                     # exchange
+            r'(\d{4,5})'                             # subscriber number
+            r'(?!\d)',                               # not followed by more digits
+            text
+        )
         phone = phone_match.group(0) if phone_match else ""
 
         # 2. Bio / Summary

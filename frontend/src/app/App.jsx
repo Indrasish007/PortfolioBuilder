@@ -24,6 +24,7 @@ import TemplateMarketplace from "./pages/TemplateMarketplace.jsx";
 import Analytics from "./pages/Analytics.jsx";
 import Settings from "./pages/Settings.jsx";
 import Onboarding from "./pages/Onboarding.jsx";
+import CVPreview from "./pages/CVPreview.jsx";
 
 export default function App() {
   return (
@@ -58,6 +59,7 @@ export default function App() {
                 <Route path="/templates" element={<TemplateMarketplace />} />
                 <Route path="/analytics" element={<Analytics />} />
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/cv-preview" element={<CVPreview />} />
               </Route>
 
               <Route path="*" element={<NotFound />} />

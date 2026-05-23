@@ -4,7 +4,6 @@ import { Eye, MousePointerClick, Download, Plus, ExternalLink, MoreHorizontal, A
 import GlassCard from "../components/GlassCard.jsx";
 import Button from "../components/Button.jsx";
 import Badge from "../components/Badge.jsx";
-import BackButton from "../components/BackButton.jsx";
 import { useState, useEffect, useRef } from "react";
 import api from "../services/api.js";
 import { useAuthStore } from "../store/authStore.js";
@@ -171,15 +170,11 @@ export default function Dashboard() {
         });
         const data = res.data;
         if (data) {
-          toast({ title: "CV Parsed Successfully!", description: "Redirecting you to the editor with your CV data filled.", type: "success" });
-          navigate("/editor", {
-            state: {
-              parsedCV: {
-                ...data,
-                resume_link: resumeDataUrl
-              }
-            }
-          });
+          const parsedCV = { ...data, resume_link: resumeDataUrl };
+          sessionStorage.setItem("pendingParsedCV", JSON.stringify(parsedCV));
+          window.dispatchEvent(new Event("storage"));
+          toast({ title: "CV Parsed Successfully!", description: "Review your details before importing.", type: "success" });
+          navigate("/cv-preview", { state: { parsedCV } });
         }
       } catch (err) {
         console.error("Parsing failed", err);
@@ -194,7 +189,6 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <BackButton fallback="/" />
       <div className="flex items-end justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold">Welcome back, {user?.name || "User"} 👋</h1>
@@ -247,8 +241,8 @@ export default function Dashboard() {
         ))}
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-4">
-        <GlassCard className="lg:col-span-2 p-0 overflow-hidden">
+      <div>
+        <GlassCard className="p-0 overflow-hidden">
           {/* ── Section header ── */}
           <div className="p-4 border-b border-border/50 space-y-3">
             <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -407,26 +401,6 @@ export default function Dashboard() {
             )}
           </div>
         </GlassCard>
-
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold">Quick actions</h2>
-          <div className="grid grid-cols-2 gap-3">
-            {[
-              { l: "New blank", i: Plus, to: "/editor" },
-              { l: "Switch template", i: Sparkles, to: "/templates" },
-              { l: "Connect domain", i: Globe, to: "/settings" },
-              { l: "Share portfolio", i: ExternalLink, to: "/demo" },
-            ].map((a) => (
-              <Link key={a.l} to={a.to} className="glass rounded-xl p-4 hover:bg-accent/40 transition flex flex-col items-center justify-center text-center gap-2 group">
-                <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <a.i className="w-5 h-5 text-muted-foreground" />
-                </div>
-                <span className="text-sm font-medium">{a.l}</span>
-              </Link>
-            ))}
-          </div>
-
-        </div>
       </div>
 
       {/* Delete Confirmation Modal */}

@@ -21,7 +21,7 @@ Return this exact JSON structure (use null for missing fields, empty arrays for 
   "headline": "string — one-line job title or role summary",
   "bio": "string — 2-3 sentence professional summary",
   "email": "string or null",
-  "phone": "string or null",
+  "phone": "string or null — extract any phone number exactly as written, including country code prefix (e.g. +91 9876543210)",
   "location": "string — full address or city/region (e.g. B-3/45 Kalyani, Nadia, WB 741235)",
   "skills": ["string", "..."],
   "experience": [

@@ -124,50 +124,51 @@ class PortfolioSerializer(serializers.ModelSerializer):
             profile_data = user_data.get('profile', user_data)
             try:
                 profile = instance.user.profile
+                changed_fields = []
                 for attr, value in profile_data.items():
                     if hasattr(profile, attr):
                         setattr(profile, attr, value)
-                profile.save()
+                        changed_fields.append(attr)
+                if changed_fields:
+                    profile.save(update_fields=changed_fields)
             except Exception:
                 pass
 
-        # Update flat fields
-        instance.name = validated_data.get('name', instance.name)
-        instance.template = validated_data.get('template', instance.template)
-        instance.theme = validated_data.get('theme', instance.theme)
-        instance.status = validated_data.get('status', instance.status)
-        instance.slug = validated_data.get('slug', instance.slug)
-        instance.domain = validated_data.get('domain', instance.domain)
-        
-        instance.sections = validated_data.get('sections', instance.sections)
-        instance.custom = validated_data.get('custom', instance.custom)
-        instance.gallery = validated_data.get('gallery', instance.gallery)
-        instance.videos = validated_data.get('videos', instance.videos)
-        instance.music = validated_data.get('music', instance.music)
-        instance.services = validated_data.get('services', instance.services)
-        instance.languages = validated_data.get('languages', instance.languages)
-        instance.volunteer = validated_data.get('volunteer', instance.volunteer)
-        instance.awards = validated_data.get('awards', instance.awards)
-        instance.references = validated_data.get('references', instance.references)
-        instance.faqs = validated_data.get('faqs', instance.faqs)
-        
-        instance.save()
+        # Track which flat fields actually changed to minimise the UPDATE statement
+        flat_field_map = {
+            'name': 'name', 'template': 'template', 'theme': 'theme',
+            'status': 'status', 'slug': 'slug', 'domain': 'domain',
+            'sections': 'sections', 'custom': 'custom', 'gallery': 'gallery',
+            'videos': 'videos', 'music': 'music', 'services': 'services',
+            'languages': 'languages', 'volunteer': 'volunteer', 'awards': 'awards',
+            'references': 'references', 'faqs': 'faqs',
+        }
+        changed_flat = []
+        for vd_key, field_name in flat_field_map.items():
+            if vd_key in validated_data:
+                setattr(instance, field_name, validated_data[vd_key])
+                changed_flat.append(field_name)
 
-        # Helper function for nested updates
-        def update_nested(model, serializer_class, related_name, data):
-            if data is not None:
-                # Naive implementation: clear and recreate
-                # A robust implementation would match IDs and update/create/delete accordingly
-                getattr(instance, related_name).all().delete()
-                for item in data:
-                    model.objects.create(portfolio=instance, **item)
+        if changed_flat:
+            instance.save(update_fields=changed_flat)
 
-        update_nested(Skill, SkillSerializer, 'skills', validated_data.get('skills'))
-        update_nested(Experience, ExperienceSerializer, 'experiences', validated_data.get('experiences'))
-        update_nested(Education, EducationSerializer, 'educations', validated_data.get('educations'))
-        update_nested(Project, ProjectSerializer, 'projects', validated_data.get('projects'))
-        update_nested(Certification, CertificationSerializer, 'certifications', validated_data.get('certifications'))
-        update_nested(Testimonial, TestimonialSerializer, 'testimonials', validated_data.get('testimonials'))
-        update_nested(Blog, BlogSerializer, 'blogs', validated_data.get('blogs'))
+        # Optimised nested update: bulk delete + bulk_create in two queries per relation
+        def update_nested(model, related_name, data):
+            if data is None:
+                return
+            # Delete existing rows in one query
+            getattr(instance, related_name).all().delete()
+            if data:
+                # Build model instances and bulk-insert in a single query
+                objs = [model(portfolio=instance, **item) for item in data]
+                model.objects.bulk_create(objs)
+
+        update_nested(Skill, 'skills', validated_data.get('skills'))
+        update_nested(Experience, 'experiences', validated_data.get('experiences'))
+        update_nested(Education, 'educations', validated_data.get('educations'))
+        update_nested(Project, 'projects', validated_data.get('projects'))
+        update_nested(Certification, 'certifications', validated_data.get('certifications'))
+        update_nested(Testimonial, 'testimonials', validated_data.get('testimonials'))
+        update_nested(Blog, 'blogs', validated_data.get('blogs'))
 
         return instance

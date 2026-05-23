@@ -107,11 +107,9 @@ class AnalyticsView(APIView):
         else:
             ip = request.META.get('REMOTE_ADDR', '')
 
-        # Detect Country (defaults to India, or hash-mocked for localhost development to show rich dashboard graphics with India prioritized)
+        # Detect Country — default to India for localhost/private IPs
         if not ip or ip in ('127.0.0.1', 'localhost', '::1') or ip.startswith('192.168.') or ip.startswith('10.'):
-            countries_pool = ['India', 'India', 'Germany', 'Brazil', 'Japan', 'United Kingdom', 'United States', 'Canada']
-            h = int(hashlib.md5(visitor_id.encode('utf-8')).hexdigest(), 16)
-            country = countries_pool[h % len(countries_pool)]
+            country = 'India'
         else:
             country = 'India'
 
