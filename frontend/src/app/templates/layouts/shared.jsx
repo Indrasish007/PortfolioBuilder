@@ -19,14 +19,17 @@ export const handleResumeDownload = (resumeLink, action, portfolioId = null) => 
   if (!resumeLink) return;
   try {
     let url = resumeLink;
-    if (resumeLink.startsWith("data:application/pdf")) {
-      const byteCharacters = atob(resumeLink.split(',')[1]);
+    if (resumeLink.startsWith("data:")) {
+      const parts = resumeLink.split(',');
+      const meta = parts[0];
+      const mimeType = meta.split(':')[1]?.split(';')[0] || 'application/pdf';
+      const byteCharacters = atob(parts[1]);
       const byteNumbers = new Array(byteCharacters.length);
       for (let i = 0; i < byteCharacters.length; i++) {
           byteNumbers[i] = byteCharacters.charCodeAt(i);
       }
       const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], {type: 'application/pdf'});
+      const blob = new Blob([byteArray], {type: mimeType});
       url = URL.createObjectURL(blob);
     }
     

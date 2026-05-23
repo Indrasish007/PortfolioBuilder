@@ -1,5 +1,5 @@
 import { Mail, Github, ExternalLink, Phone } from "lucide-react";
-import { Soc, Tags, FAQList, SectionLabel, VideoEmbed, MusicEmbed, GalleryAlbum, getDefaultAvatar } from "./shared.jsx";
+import { Soc, Tags, FAQList, SectionLabel, VideoEmbed, MusicEmbed, GalleryAlbum, getDefaultAvatar, handleResumeDownload } from "./shared.jsx";
 
 // classic, startup, forest, oceanic
 export default function BizLayout({ p, t, id, portfolioId }) {
@@ -48,10 +48,10 @@ export default function BizLayout({ p, t, id, portfolioId }) {
                   </a>
                 )}
                 {u.resume_link && (
-                  <a href={u.resume_link} style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 24px",
-                    border:`1px solid ${ac}50`, color:ac, borderRadius:radius, fontSize:13, textDecoration:"none", fontWeight:600 }}>
+                  <button onClick={() => handleResumeDownload(u.resume_link, 'view', portfolioId)} style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 24px",
+                    border:`1px solid ${ac}50`, color:ac, borderRadius:radius, fontSize:13, textDecoration:"none", fontWeight:600, background:"transparent", cursor:"pointer" }}>
                     Resume
-                  </a>
+                  </button>
                 )}
               </div>
               <Soc user={u} fg={fg} portfolioId={portfolioId} />
