@@ -846,3 +846,80 @@ class ResumeParseView(APIView):
         import mammoth
         result = mammoth.extract_raw_text(file_obj)
         return result.value
+
+
+class FetchGlobalPortfolioView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def post(self, request):
+        url = request.data.get('url', '').strip()
+        if not url:
+            return Response({"error": "No URL provided"}, status=400)
+            
+        if not url.startswith(('http://', 'https://')):
+            url = 'https://' + url
+
+        # 1. Fetch the webpage content
+        try:
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            }
+            response = requests.get(url, headers=headers, timeout=15)
+            if response.status_code != 200:
+                return Response({
+                    "error": f"Failed to retrieve the webpage. Server returned status code {response.status_code}."
+                }, status=400)
+            html_content = response.text
+        except Exception as e:
+            return Response({
+                "error": f"Could not connect to the URL: {str(e)}"
+            }, status=400)
+
+        # 2. Extract clean text from HTML
+        import html
+        try:
+            # Strip script and style tags completely
+            clean_html = re.sub(r'<(script|style)\b[^>]*>([\s\S]*?)</\1>', ' ', html_content, flags=re.IGNORECASE)
+            # Strip all remaining HTML tags
+            raw_text = re.sub(r'<[^>]+>', ' ', clean_html)
+            # Unescape entities (e.g. &nbsp;, &amp;)
+            raw_text = html.unescape(raw_text)
+            # Normalize whitespace
+            clean_text = re.sub(r'\s+', ' ', raw_text).strip()
+        except Exception as e:
+            return Response({"error": f"Failed to parse page content: {str(e)}"}, status=400)
+
+        if not clean_text or len(clean_text) < 100:
+            return Response({
+                "error": "The webpage content is too short or could not be read as text."
+            }, status=400)
+
+        # 3. AI parser via Gemini
+        from ai.services.ai_parser import parse_resume_with_ai
+        try:
+            parsed = parse_resume_with_ai(clean_text)
+            return Response(parsed)
+        except RuntimeError as e:
+            print(f"[FetchGlobalPortfolioView] AI parser error: {e}")
+        except Exception as e:
+            print(f"[FetchGlobalPortfolioView] Unexpected AI error: {e}")
+
+        # 4. Fallback to heuristic parser
+        print("[FetchGlobalPortfolioView] Falling back to heuristic parser.")
+        heuristic = AICVParsingView().fallback_parse_cv(clean_text)
+        
+        # Populate basic fields for structured CV schema
+        return Response({
+            "full_name": "",
+            "headline": "",
+            "bio": heuristic.get("bio", ""),
+            "email": "",
+            "phone": "",
+            "location": "",
+            "skills": heuristic.get("skills", []),
+            "experience": heuristic.get("experience", []),
+            "education": heuristic.get("education", []),
+            "projects": heuristic.get("projects", []),
+            "social_links": heuristic.get("social_links", [])
+        })

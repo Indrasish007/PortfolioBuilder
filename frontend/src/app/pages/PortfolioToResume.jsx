@@ -145,23 +145,133 @@ export default function PortfolioToResume() {
   // ── Fetch ─────────────────────────────────────────────────────────────────
   const handleFetch = async () => {
     setError(null);
-    const parsed = parsePortfolioUrl(url);
-    if (!parsed) { setError("Could not parse the URL. Enter a valid ID, slug, or portfolio domain."); return; }
+    const trimmedUrl = url.trim();
+    const parsed = parsePortfolioUrl(trimmedUrl);
+    
+    const isGlobalUrl = trimmedUrl.startsWith("http://") || 
+                        trimmedUrl.startsWith("https://") || 
+                        (trimmedUrl.includes(".") && trimmedUrl.includes("/"));
+
+    if (!parsed && !isGlobalUrl) {
+      setError("Could not parse the URL. Enter a valid ID, slug, or portfolio domain.");
+      return;
+    }
+
     setFetching(true);
-    try {
-      const endpoint = parsed.type === "slug"
-        ? `/portfolios/public/slug/${parsed.value}/`
-        : parsed.type === "domain"
-        ? `/portfolios/public/domain/${parsed.value}/`
-        : `/portfolios/public/${parsed.value}/`;
-      const res = await api.get(endpoint);
-      setRawPortfolio(res.data);
-      setStep("preview");
-    } catch (e) {
-      setError(e.response?.status === 404
-        ? "Portfolio not found. Check the URL/domain and make sure it is published."
-        : "Failed to fetch portfolio. Make sure the URL is correct and the portfolio is published.");
-    } finally {
+    let fetchedData = null;
+    let fallbackToGlobal = false;
+
+    // 1. Try local fetch first (if a valid local parse signature exists)
+    if (parsed) {
+      try {
+        const endpoint = parsed.type === "slug"
+          ? `/portfolios/public/slug/${parsed.value}/`
+          : parsed.type === "domain"
+          ? `/portfolios/public/domain/${parsed.value}/`
+          : `/portfolios/public/${parsed.value}/`;
+        const res = await api.get(endpoint);
+        fetchedData = res.data;
+        setRawPortfolio(fetchedData);
+        setStep("preview");
+      } catch (e) {
+        if (e.response?.status === 404 && isGlobalUrl) {
+          fallbackToGlobal = true;
+        } else {
+          setError(e.response?.status === 404
+            ? "Portfolio not found. Check the URL/domain and make sure it is published."
+            : "Failed to fetch portfolio. Make sure the URL is correct and the portfolio is published.");
+          setFetching(false);
+          return;
+        }
+      }
+    } else {
+      fallbackToGlobal = true;
+    }
+
+    // 2. Fallback to global scraper if local failed (or if URL didn't match local patterns)
+    if (fallbackToGlobal && isGlobalUrl) {
+      try {
+        const fullUrl = trimmedUrl.startsWith("http") ? trimmedUrl : `https://${trimmedUrl}`;
+        const res = await api.post("/ai/portfolio/fetch-url/", { url: fullUrl });
+        const aiData = res.data;
+
+        if (aiData.error) {
+          setError(aiData.error);
+          setFetching(false);
+          return;
+        }
+
+        // Map the parsed global resume data to our frontend CV structure
+        const cv = {
+          full_name:    aiData.full_name || "",
+          headline:     aiData.headline || "",
+          bio:          aiData.bio || "",
+          email:        aiData.email || "",
+          phone:        aiData.phone || "",
+          location:     aiData.location || "",
+          social_links: (aiData.social_links || []).map(l => ({ platform: l.platform || "github", url: l.url || "" })),
+          skills:       (aiData.skills || []).map(s => (typeof s === "object" ? s.name : s)),
+          experience:   (aiData.experience || []).map(e => {
+            let period = e.period || "";
+            if (!period && (e.start_date || e.end_date)) {
+              period = `${e.start_date || ""} - ${e.end_date || "Present"}`.trim().replace(/^ - | - $/g, "");
+            }
+            return {
+              role:        e.role || "",
+              company:     e.company || "",
+              period:      period,
+              description: e.description || "",
+            };
+          }),
+          education:    (aiData.education || []).map(e => {
+            let period = e.period || "";
+            if (!period && (e.start_date || e.end_date)) {
+              period = `${e.start_date || ""} - ${e.end_date || "Present"}`.trim().replace(/^ - | - $/g, "");
+            }
+            let deg = e.degree || "";
+            if (e.grade) {
+              deg = `${deg} (${e.grade})`;
+            }
+            return {
+              school: e.school || "",
+              degree: deg,
+              period: period,
+            };
+          }),
+          projects:     (aiData.projects || []).map(pr => {
+            let techList = pr.tech || [];
+            if (pr.tech_stack && typeof pr.tech_stack === "string") {
+              techList = pr.tech_stack.split(",").map(t => t.trim()).filter(Boolean);
+            }
+            return {
+              title:       pr.title || "",
+              description: pr.description || "",
+              tech:        techList,
+              github:      pr.github || pr.github_url || "",
+              live:        pr.live || pr.live_url || "",
+              period:      pr.period || "",
+            };
+          }),
+        };
+
+        setEditData({
+          ...cv,
+          skills:      [...cv.skills],
+          social_links: cv.social_links.map(l => ({ ...l })),
+          experience:  cv.experience.map(e => ({ ...e })),
+          education:   cv.education.map(e => ({ ...e })),
+          projects:    cv.projects.map(p => ({ ...p, tech: [...(p.tech || [])] })),
+        });
+        
+        // Go straight to the interactive editor!
+        setStep("edit");
+
+      } catch (e) {
+        setError(e.response?.data?.error || "Failed to fetch and parse external portfolio. Make sure the URL is valid and publicly accessible.");
+      } finally {
+        setFetching(false);
+      }
+    } else {
       setFetching(false);
     }
   };
