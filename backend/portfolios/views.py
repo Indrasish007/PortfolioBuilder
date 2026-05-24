@@ -51,6 +51,38 @@ class PublicPortfolioBySlugView(generics.RetrieveAPIView):
         slug = self.kwargs.get('slug')
         return generics.get_object_or_404(Portfolio, slug=slug, status='Published')
 
+class PublicPortfolioByDomainView(generics.RetrieveAPIView):
+    """Fetch a published portfolio by its mapped domain or hostname."""
+    serializer_class = PortfolioSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_object(self):
+        domain = self.kwargs.get('domain', '').strip()
+        
+        # Clean the input domain
+        cleaned = domain.lower()
+        if '://' in cleaned:
+            cleaned = cleaned.split('://', 1)[1]
+        cleaned = cleaned.split('/')[0] # Get just the host part
+        if cleaned.startswith('www.'):
+            cleaned = cleaned[4:]
+            
+        # 1. Look up by exact domain field
+        portfolio = Portfolio.objects.filter(domain__iexact=cleaned, status='Published').first()
+        if not portfolio:
+            # Look up by domain containing cleaned
+            portfolio = Portfolio.objects.filter(domain__icontains=cleaned, status='Published').first()
+            
+        # 2. Fallback: maybe they entered the slug as the domain or vice-versa
+        if not portfolio:
+            portfolio = Portfolio.objects.filter(slug=cleaned, status='Published').first()
+            
+        if not portfolio:
+            from django.http import Http404
+            raise Http404("Portfolio not found for this domain.")
+            
+        return portfolio
+
 class PublishPortfolioView(APIView):
     """POST /portfolios/{id}/publish/ — marks portfolio Published and generates a slug."""
     permission_classes = [permissions.IsAuthenticated]

@@ -2,7 +2,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
     PortfolioViewSet, PublicPortfolioView, PublicPortfolioBySlugView,
-    PublishPortfolioView, UnpublishPortfolioView,
+    PublicPortfolioByDomainView, PublishPortfolioView, UnpublishPortfolioView,
     AnalyticsView, DashboardStatsView
 )
 
@@ -10,9 +10,10 @@ router = DefaultRouter()
 router.register(r'', PortfolioViewSet, basename='portfolio')
 
 urlpatterns = [
-    # Public access — by id or slug
+    # Public access — by id, slug or domain
     path('public/<int:pk>/', PublicPortfolioView.as_view(), name='public_portfolio'),
     path('public/slug/<slug:slug>/', PublicPortfolioBySlugView.as_view(), name='public_portfolio_slug'),
+    path('public/domain/<path:domain>/', PublicPortfolioByDomainView.as_view(), name='public_portfolio_domain'),
     # Publish / unpublish actions (authenticated)
     path('<int:pk>/publish/', PublishPortfolioView.as_view(), name='publish_portfolio'),
     path('<int:pk>/unpublish/', UnpublishPortfolioView.as_view(), name='unpublish_portfolio'),

@@ -25,6 +25,7 @@ import Analytics from "./pages/Analytics.jsx";
 import Settings from "./pages/Settings.jsx";
 import Onboarding from "./pages/Onboarding.jsx";
 import CVPreview from "./pages/CVPreview.jsx";
+import ResumeBuilder from "./pages/ResumeBuilder.jsx";
 
 export default function App() {
   return (
@@ -53,6 +54,7 @@ export default function App() {
 
               <Route element={<DashboardLayout />}>
                 <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/resume-builder" element={<ResumeBuilder />} />
                 <Route path="/onboarding" element={<Onboarding />} />
                 <Route path="/editor" element={<PortfolioEditor />} />
                 <Route path="/editor/:id" element={<PortfolioEditor />} />
