@@ -833,7 +833,7 @@ class ResumeParseView(APIView):
                         text_parts.append(page_text)
             return "\n".join(text_parts)
         except ImportError:
-            # Fallback to pypdf if pdfplumber not installed yet
+            # Fallback to pypdf if pdfplumber not installed
             file_obj.seek(0)
             import pypdf
             reader = pypdf.PdfReader(io.BytesIO(file_obj.read()))
@@ -863,36 +863,99 @@ class FetchGlobalPortfolioView(APIView):
         # 1. Fetch the webpage content
         try:
             headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.5',
             }
-            response = requests.get(url, headers=headers, timeout=15)
-            if response.status_code != 200:
+            resp = requests.get(url, headers=headers, timeout=20, allow_redirects=True)
+            if resp.status_code != 200:
                 return Response({
-                    "error": f"Failed to retrieve the webpage. Server returned status code {response.status_code}."
+                    "error": f"Failed to retrieve the webpage. Server returned status code {resp.status_code}."
                 }, status=400)
-            html_content = response.text
+            html_content = resp.text
         except Exception as e:
             return Response({
                 "error": f"Could not connect to the URL: {str(e)}"
             }, status=400)
 
-        # 2. Extract clean text from HTML
-        import html
+        # 2. Smart multi-strategy text extraction
+        import html as html_module
+
+        extracted_parts = []
+
         try:
-            # Strip script and style tags completely
-            clean_html = re.sub(r'<(script|style)\b[^>]*>([\s\S]*?)</\1>', ' ', html_content, flags=re.IGNORECASE)
-            # Strip all remaining HTML tags
-            raw_text = re.sub(r'<[^>]+>', ' ', clean_html)
-            # Unescape entities (e.g. &nbsp;, &amp;)
-            raw_text = html.unescape(raw_text)
-            # Normalize whitespace
-            clean_text = re.sub(r'\s+', ' ', raw_text).strip()
+            # ── Title ────────────────────────────────────────────────────────
+            title_m = re.search(r'<title[^>]*>(.*?)</title>', html_content, re.IGNORECASE | re.DOTALL)
+            if title_m:
+                t = html_module.unescape(title_m.group(1).strip())
+                if t:
+                    extracted_parts.append("Name/Title: " + t)
+
+            # ── Meta tags (og:*, twitter:*, name=description, etc.) ──────────
+            USEFUL_META = {
+                'description', 'author', 'keywords',
+                'og:title', 'og:description', 'og:site_name',
+                'twitter:title', 'twitter:description', 'twitter:creator',
+                'profile:username', 'profile:first_name', 'profile:last_name',
+            }
+            for tag_str in re.findall(r'<meta\s+([^>]+)>', html_content, re.IGNORECASE):
+                nm = re.search(r'(?:name|property)\s*=\s*["\']([^"\']+)["\']', tag_str, re.IGNORECASE)
+                cm = re.search(r'content\s*=\s*["\']([^"\']*)["\']', tag_str, re.IGNORECASE)
+                if nm and cm:
+                    key = nm.group(1).lower().strip()
+                    val = html_module.unescape(cm.group(1).strip())
+                    if val and key in USEFUL_META:
+                        extracted_parts.append(f"{key}: {val}")
+
+            # ── JSON-LD structured data (schema.org Person / WebPage) ─────────
+            for ld_block in re.findall(
+                r'<script[^>]+type=["\']application/ld\+json["\'][^>]*>([\s\S]*?)</script>',
+                html_content, re.IGNORECASE
+            ):
+                try:
+                    import json as _json
+                    ld = _json.loads(ld_block.strip())
+                    if isinstance(ld, list):
+                        ld = ld[0] if ld else {}
+                    for f in ('name', 'description', 'jobTitle', 'email', 'telephone',
+                              'address', 'sameAs', 'knowsAbout', 'alumniOf',
+                              'worksFor', 'hasOccupation'):
+                        v = ld.get(f)
+                        if v:
+                            if isinstance(v, list):
+                                extracted_parts.append(f"{f}: {', '.join(str(x) for x in v)}")
+                            elif isinstance(v, dict):
+                                extracted_parts.append(f"{f}: {' '.join(str(x) for x in v.values())}")
+                            else:
+                                extracted_parts.append(f"{f}: {v}")
+                except Exception:
+                    pass
+
+            # ── Body visible text (works for SSR / static sites) ─────────────
+            no_script = re.sub(
+                r'<(script|style|noscript|svg|head)\b[^>]*>[\s\S]*?</\1>',
+                ' ', html_content, flags=re.IGNORECASE
+            )
+            body_text = re.sub(r'<[^>]+>', ' ', no_script)
+            body_text = html_module.unescape(body_text)
+            body_text = re.sub(r'\s+', ' ', body_text).strip()
+            if len(body_text) > 80:
+                extracted_parts.append(body_text[:12000])
+
+            clean_text = '\n'.join(extracted_parts).strip()
+
         except Exception as e:
             return Response({"error": f"Failed to parse page content: {str(e)}"}, status=400)
 
-        if not clean_text or len(clean_text) < 100:
+        # ── SPA detection ────────────────────────────────────────────────────
+        # If we got nothing useful, the site is a client-side-only SPA
+        if not clean_text or len(clean_text) < 30:
             return Response({
-                "error": "The webpage content is too short or could not be read as text."
+                "error": (
+                    "This page is a JavaScript Single-Page App — the server cannot execute "
+                    "JavaScript, so the portfolio content couldn't be read. "
+                    "Try pasting just your slug (e.g. 'indrasishadhya') or your custom domain."
+                )
             }, status=400)
 
         # 3. AI parser via Gemini
@@ -905,11 +968,9 @@ class FetchGlobalPortfolioView(APIView):
         except Exception as e:
             print(f"[FetchGlobalPortfolioView] Unexpected AI error: {e}")
 
-        # 4. Fallback to heuristic parser
+        # 4. Heuristic fallback
         print("[FetchGlobalPortfolioView] Falling back to heuristic parser.")
         heuristic = AICVParsingView().fallback_parse_cv(clean_text)
-        
-        # Populate basic fields for structured CV schema
         return Response({
             "full_name": "",
             "headline": "",

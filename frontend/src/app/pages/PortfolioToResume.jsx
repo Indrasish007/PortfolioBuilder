@@ -146,132 +146,164 @@ export default function PortfolioToResume() {
   const handleFetch = async () => {
     setError(null);
     const trimmedUrl = url.trim();
-    const parsed = parsePortfolioUrl(trimmedUrl);
-    
-    const isGlobalUrl = trimmedUrl.startsWith("http://") || 
-                        trimmedUrl.startsWith("https://") || 
-                        (trimmedUrl.includes(".") && trimmedUrl.includes("/"));
 
-    if (!parsed && !isGlobalUrl) {
-      setError("Could not parse the URL. Enter a valid ID, slug, or portfolio domain.");
+    if (!trimmedUrl) {
+      setError("Please enter a portfolio URL, domain, or slug.");
       return;
     }
 
-    setFetching(true);
-    let fetchedData = null;
-    let fallbackToGlobal = false;
+    const isGlobalUrl = /^https?:\/\//i.test(trimmedUrl) ||
+                        (trimmedUrl.includes(".") && trimmedUrl.includes("/"));
 
-    // 1. Try local fetch first (if a valid local parse signature exists)
-    if (parsed) {
-      try {
-        const endpoint = parsed.type === "slug"
-          ? `/portfolios/public/slug/${parsed.value}/`
-          : parsed.type === "domain"
-          ? `/portfolios/public/domain/${parsed.value}/`
-          : `/portfolios/public/${parsed.value}/`;
-        const res = await api.get(endpoint);
-        fetchedData = res.data;
-        setRawPortfolio(fetchedData);
-        setStep("preview");
-      } catch (e) {
-        if (e.response?.status === 404 && isGlobalUrl) {
-          fallbackToGlobal = true;
-        } else {
-          setError(e.response?.status === 404
-            ? "Portfolio not found. Check the URL/domain and make sure it is published."
-            : "Failed to fetch portfolio. Make sure the URL is correct and the portfolio is published.");
-          setFetching(false);
-          return;
+    // ── Build a prioritized list of local API attempts ────────────────────
+    const localAttempts = [];           // { endpoint, label }
+
+    try {
+      const rawForParsing = /^https?:\/\//i.test(trimmedUrl) ? trimmedUrl : `http://${trimmedUrl}`;
+      const u = new URL(rawForParsing);
+      const host = u.hostname;
+      const path = u.pathname;
+
+      // 1a. /p/s/<slug> path → slug
+      const slugPathMatch = path.match(/\/p\/s\/([^/?#]+)/);
+      if (slugPathMatch) localAttempts.push({ endpoint: `/portfolios/public/slug/${slugPathMatch[1]}/` });
+
+      // 1b. /p/<id> path → id
+      const idPathMatch = path.match(/\/p\/([^/?#]+)/);
+      if (idPathMatch) localAttempts.push({ endpoint: `/portfolios/public/${idPathMatch[1]}/` });
+
+      // 1c. Subdomain of known SPA hosting providers → try as slug first
+      const SPA_HOSTS = ["vercel.app", "netlify.app", "github.io", "pages.dev", "render.com", "railway.app"];
+      const matchedHost = SPA_HOSTS.find(h => host.endsWith(`.${h}`));
+      if (matchedHost) {
+        const subdomain = host.slice(0, host.length - matchedHost.length - 1);
+        if (subdomain) {
+          localAttempts.push({ endpoint: `/portfolios/public/slug/${subdomain}/` });
         }
       }
-    } else {
-      fallbackToGlobal = true;
+
+      // 1d. Full domain lookup
+      const cleanedHost = host.startsWith("www.") ? host.slice(4) : host;
+      if (cleanedHost && cleanedHost !== "localhost" && !cleanedHost.startsWith("127.")) {
+        localAttempts.push({ endpoint: `/portfolios/public/domain/${cleanedHost}/` });
+      }
+    } catch { /* not a URL, fall through */ }
+
+    // 1e. Plain string → try as slug
+    if (!isGlobalUrl) {
+      const plain = trimmedUrl.trim();
+      if (/^\d+$/.test(plain)) {
+        localAttempts.push({ endpoint: `/portfolios/public/${plain}/` });
+      } else if (!/\s/.test(plain)) {
+        localAttempts.push({ endpoint: `/portfolios/public/slug/${plain}/` });
+      }
     }
 
-    // 2. Fallback to global scraper if local failed (or if URL didn't match local patterns)
-    if (fallbackToGlobal && isGlobalUrl) {
-      try {
-        const fullUrl = trimmedUrl.startsWith("http") ? trimmedUrl : `https://${trimmedUrl}`;
-        const res = await api.post("/ai/portfolio/fetch-url/", { url: fullUrl });
-        const aiData = res.data;
+    setFetching(true);
+    let localSucceeded = false;
 
-        if (aiData.error) {
-          setError(aiData.error);
+    // ── Attempt local lookups in priority order ───────────────────────────
+    for (const attempt of localAttempts) {
+      try {
+        const res = await api.get(attempt.endpoint);
+        setRawPortfolio(res.data);
+        setStep("preview");
+        setFetching(false);
+        return; // Done!
+      } catch (e) {
+        if (e.response?.status !== 404) {
+          // A real error (not just "not found")
+          setError("Failed to reach the server. Please try again.");
           setFetching(false);
           return;
         }
-
-        // Map the parsed global resume data to our frontend CV structure
-        const cv = {
-          full_name:    aiData.full_name || "",
-          headline:     aiData.headline || "",
-          bio:          aiData.bio || "",
-          email:        aiData.email || "",
-          phone:        aiData.phone || "",
-          location:     aiData.location || "",
-          social_links: (aiData.social_links || []).map(l => ({ platform: l.platform || "github", url: l.url || "" })),
-          skills:       (aiData.skills || []).map(s => (typeof s === "object" ? s.name : s)),
-          experience:   (aiData.experience || []).map(e => {
-            let period = e.period || "";
-            if (!period && (e.start_date || e.end_date)) {
-              period = `${e.start_date || ""} - ${e.end_date || "Present"}`.trim().replace(/^ - | - $/g, "");
-            }
-            return {
-              role:        e.role || "",
-              company:     e.company || "",
-              period:      period,
-              description: e.description || "",
-            };
-          }),
-          education:    (aiData.education || []).map(e => {
-            let period = e.period || "";
-            if (!period && (e.start_date || e.end_date)) {
-              period = `${e.start_date || ""} - ${e.end_date || "Present"}`.trim().replace(/^ - | - $/g, "");
-            }
-            let deg = e.degree || "";
-            if (e.grade) {
-              deg = `${deg} (${e.grade})`;
-            }
-            return {
-              school: e.school || "",
-              degree: deg,
-              period: period,
-            };
-          }),
-          projects:     (aiData.projects || []).map(pr => {
-            let techList = pr.tech || [];
-            if (pr.tech_stack && typeof pr.tech_stack === "string") {
-              techList = pr.tech_stack.split(",").map(t => t.trim()).filter(Boolean);
-            }
-            return {
-              title:       pr.title || "",
-              description: pr.description || "",
-              tech:        techList,
-              github:      pr.github || pr.github_url || "",
-              live:        pr.live || pr.live_url || "",
-              period:      pr.period || "",
-            };
-          }),
-        };
-
-        setEditData({
-          ...cv,
-          skills:      [...cv.skills],
-          social_links: cv.social_links.map(l => ({ ...l })),
-          experience:  cv.experience.map(e => ({ ...e })),
-          education:   cv.education.map(e => ({ ...e })),
-          projects:    cv.projects.map(p => ({ ...p, tech: [...(p.tech || [])] })),
-        });
-        
-        // Go straight to the interactive editor!
-        setStep("edit");
-
-      } catch (e) {
-        setError(e.response?.data?.error || "Failed to fetch and parse external portfolio. Make sure the URL is valid and publicly accessible.");
-      } finally {
-        setFetching(false);
+        // 404 → try next attempt
       }
-    } else {
+    }
+
+    // ── All local attempts failed — try global scraper ────────────────────
+    if (!isGlobalUrl) {
+      // No URL-like input and no local match → give up
+      setError("Portfolio not found. Check the URL, domain, or slug and make sure it is published.");
+      setFetching(false);
+      return;
+    }
+
+    try {
+      const fullUrl = /^https?:\/\//i.test(trimmedUrl) ? trimmedUrl : `https://${trimmedUrl}`;
+      const res = await api.post("/ai/portfolio/fetch-url/", { url: fullUrl });
+      const aiData = res.data;
+
+      if (aiData.error) {
+        setError(aiData.error);
+        setFetching(false);
+        return;
+      }
+
+      // Map the parsed global resume data to our frontend CV structure
+      const cv = {
+        full_name:    aiData.full_name || "",
+        headline:     aiData.headline || "",
+        bio:          aiData.bio || "",
+        email:        aiData.email || "",
+        phone:        aiData.phone || "",
+        location:     aiData.location || "",
+        social_links: (aiData.social_links || []).map(l => ({ platform: l.platform || "github", url: l.url || "" })),
+        skills:       (aiData.skills || []).map(s => (typeof s === "object" ? s.name : s)),
+        experience:   (aiData.experience || []).map(e => {
+          let period = e.period || "";
+          if (!period && (e.start_date || e.end_date)) {
+            period = `${e.start_date || ""} - ${e.end_date || "Present"}`.trim().replace(/^ - | - $/g, "");
+          }
+          return {
+            role:        e.role || "",
+            company:     e.company || "",
+            period:      period,
+            description: e.description || "",
+          };
+        }),
+        education:    (aiData.education || []).map(e => {
+          let period = e.period || "";
+          if (!period && (e.start_date || e.end_date)) {
+            period = `${e.start_date || ""} - ${e.end_date || "Present"}`.trim().replace(/^ - | - $/g, "");
+          }
+          let deg = e.degree || "";
+          if (e.grade) deg = `${deg} (${e.grade})`;
+          return { school: e.school || "", degree: deg, period };
+        }),
+        projects:     (aiData.projects || []).map(pr => {
+          let techList = pr.tech || [];
+          if (pr.tech_stack && typeof pr.tech_stack === "string") {
+            techList = pr.tech_stack.split(",").map(t => t.trim()).filter(Boolean);
+          }
+          return {
+            title:       pr.title || "",
+            description: pr.description || "",
+            tech:        techList,
+            github:      pr.github || pr.github_url || "",
+            live:        pr.live || pr.live_url || "",
+            period:      pr.period || "",
+          };
+        }),
+      };
+
+      setEditData({
+        ...cv,
+        skills:       [...cv.skills],
+        social_links: cv.social_links.map(l => ({ ...l })),
+        experience:   cv.experience.map(e => ({ ...e })),
+        education:    cv.education.map(e => ({ ...e })),
+        projects:     cv.projects.map(p => ({ ...p, tech: [...(p.tech || [])] })),
+      });
+
+      setStep("edit"); // go straight to editor for external sites
+
+    } catch (e) {
+      setError(
+        e.response?.data?.error ||
+        "Failed to fetch and parse the external portfolio. Make sure the URL is valid and publicly accessible."
+      );
+    } finally {
       setFetching(false);
     }
   };
@@ -336,9 +368,9 @@ export default function PortfolioToResume() {
                 style={{ background:"color-mix(in oklch,var(--brand) 12%,transparent)", borderColor:"color-mix(in oklch,var(--brand) 30%,transparent)", color:"var(--brand)" }}>
                 <Globe className="w-3.5 h-3.5" /> Portfolio → Resume Generator
               </div>
-              <h2 className="text-3xl font-bold">Turn your portfolio into a polished resume</h2>
+              <h2 className="text-3xl font-bold">Turn any portfolio into a polished resume</h2>
               <p className="text-muted-foreground max-w-lg mx-auto">
-                Paste the link to any PortfolioBuilder portfolio — we'll fetch the data and create a fully editable, downloadable resume in seconds.
+                Paste any portfolio URL — from this platform or anywhere on the web. We'll fetch, AI-parse, and build you a fully editable downloadable resume in seconds.
               </p>
             </div>
 
@@ -377,17 +409,18 @@ export default function PortfolioToResume() {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-3 gap-3 pt-1">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
                     {[
-                      { label:"By Domain", ex:"indrasishadhya.vercel.app", icon:"🌐" },
-                      { label:"By Slug",   ex:"…/p/s/my-name",             icon:"🔗" },
-                      { label:"By ID",     ex:"…/p/123",                   icon:"🔢" },
+                      { label:"Any URL",     ex:"https://mysite.com",                icon:"🌍" },
+                      { label:"By Domain",   ex:"indrasishadhya.vercel.app",          icon:"🌐" },
+                      { label:"By Slug",     ex:"…/p/s/my-name",                      icon:"🔗" },
+                      { label:"Slug only",   ex:"indrasishadhya",                     icon:"✍️" },
                     ].map(f => (
                       <div key={f.label} className="flex items-start gap-2.5 p-3 rounded-xl bg-accent/20 border border-border/50">
                         <span className="text-lg leading-none">{f.icon}</span>
                         <div>
                           <div className="text-xs font-semibold">{f.label}</div>
-                          <div className="text-[10px] text-muted-foreground font-mono mt-0.5 truncate max-w-[120px]">{f.ex}</div>
+                          <div className="text-[10px] text-muted-foreground font-mono mt-0.5 truncate max-w-[110px]">{f.ex}</div>
                         </div>
                       </div>
                     ))}
@@ -498,13 +531,17 @@ export default function PortfolioToResume() {
           <motion.div key="edit" initial={{ opacity:0,x:20 }} animate={{ opacity:1,x:0 }} exit={{ opacity:0,x:-20 }} className="space-y-4">
             {/* Toolbar */}
             <div className="flex items-center justify-between gap-3 flex-wrap">
-              <button onClick={() => setStep("preview")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition">
-                <ArrowLeft className="w-4 h-4" /> Back to Preview
+              <button
+                onClick={() => rawPortfolio ? setStep("preview") : handleReset()}
+                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                {rawPortfolio ? "Back to Preview" : "Start Over"}
               </button>
               <div className="flex items-center gap-2">
                 <span className="text-xs px-2.5 py-1 rounded-full font-semibold"
                   style={{ background:"color-mix(in oklch,var(--brand) 15%,transparent)", color:"var(--brand)" }}>
-                  Generated Resume
+                  {rawPortfolio ? "Generated Resume" : "AI‑Parsed Resume"}
                 </span>
               </div>
               <div className="flex items-center gap-2">
@@ -524,7 +561,10 @@ export default function PortfolioToResume() {
             {/* Edit hint */}
             <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl border border-border/50 bg-accent/20 text-xs text-muted-foreground">
               <Pencil className="w-3.5 h-3.5 flex-shrink-0" style={{ color:"var(--brand)" }} />
-              <span>Generated from your portfolio — click <strong className="text-foreground">Edit</strong> on any section to refine, then download as PDF.</span>
+              {rawPortfolio
+                ? <span>Generated from your PortfolioBuilder portfolio — click <strong className="text-foreground">Edit</strong> on any section to refine, then download as PDF.</span>
+                : <span>🌍 AI-parsed from the external website — review and refine each section, then download as PDF.</span>
+              }
             </div>
 
             {/* ── Profile hero ── */}
