@@ -105,12 +105,27 @@ function portfolioToCV(p) {
 // ── Print styles ──────────────────────────────────────────────────────────────
 const PRINT_STYLE = `
   @media print {
-    body > * { display: none !important; }
-    #resume-print-area { display: block !important; }
-    #resume-print-area * { visibility: visible; }
-    @page { margin: 18mm; }
+    body {
+      visibility: hidden !important;
+      background: white !important;
+    }
+    #resume-print-area, #resume-print-area * {
+      visibility: visible !important;
+    }
+    #resume-print-area {
+      position: absolute !important;
+      left: 0 !important;
+      top: 0 !important;
+      width: 100% !important;
+      display: block !important;
+    }
+    @page {
+      margin: 18mm;
+    }
   }
-  #resume-print-area { display: none; }
+  #resume-print-area {
+    display: none;
+  }
 `;
 
 // ── Main component ────────────────────────────────────────────────────────────
