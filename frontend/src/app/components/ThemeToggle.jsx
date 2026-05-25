@@ -10,19 +10,16 @@ export default function ThemeToggle({ className = "" }) {
     if (spinning) return; // Debounce rapid clicks
     setSpinning(true);
 
-    // Add transition class to <html> so all bg/color changes animate
+    // Add transition class THEN switch theme immediately — no delay.
+    // The CSS transition (180ms) on body/.glass handles the visual fade.
     document.documentElement.classList.add("theme-transitioning");
+    toggle();
 
-    // Switch theme at the midpoint of the icon spin (150ms)
-    setTimeout(() => {
-      toggle();
-    }, 150);
-
-    // Remove transitioning class and reset spin state after animation
+    // Remove transitioning class after CSS animation completes (220ms)
     setTimeout(() => {
       document.documentElement.classList.remove("theme-transitioning");
       setSpinning(false);
-    }, 500);
+    }, 220);
   };
 
   const isDark = theme === "dark";
