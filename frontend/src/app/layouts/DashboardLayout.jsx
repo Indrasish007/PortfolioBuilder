@@ -6,7 +6,6 @@ import ThemeToggle from "../components/ThemeToggle.jsx";
 import Button from "../components/Button.jsx";
 import { useAuthStore } from "../store/authStore.js";
 import CommandPalette from "../components/CommandPalette.jsx";
-import BackButton from "../components/BackButton.jsx";
 import api from "../services/api.js";
 import { useToast } from "../context/ToasterContext.jsx";
 
@@ -358,7 +357,6 @@ export default function DashboardLayout() {
                   }`}
                 />
               </button>
-              <BackButton fallback="/" className="md:hidden" />
               <div className="w-8 h-8 rounded-lg bg-brand flex items-center justify-center text-white font-bold flex-shrink-0">P</div>
               <span className="font-semibold text-lg hidden md:block">PortfolioBuilder</span>
             </div>
