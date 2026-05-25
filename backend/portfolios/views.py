@@ -193,3 +193,17 @@ class DashboardStatsView(APIView):
             'resume_downloads': resume_downloads,
             'avg_session': int(avg_session)
         })
+
+class PublicPortfolioListView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        portfolios = Portfolio.objects.filter(status='Published')
+        data = [
+            {
+                'slug': p.slug,
+                'updated_at': p.updated_at.strftime('%Y-%m-%d') if p.updated_at else None
+            }
+            for p in portfolios if p.slug
+        ]
+        return Response(data)

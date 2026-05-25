@@ -45,7 +45,7 @@ export default function BoldLayout({ p, t, id, portfolioId }) {
         )}
 
         <div style={{ position:"relative", zIndex:1 }}>
-          <img src={u.avatar || getDefaultAvatar(ac)} alt="" style={{ width:320, height:380, borderRadius:"24px", objectFit:"cover", marginBottom:24, border:`4px solid ${ac}`, boxShadow:`0 0 32px ${ac}60` }} />
+          <img src={u.avatar || getDefaultAvatar(ac)} alt={`${u.name || "User"} profile picture`} loading="lazy" style={{ width:320, height:380, borderRadius:"24px", objectFit:"cover", marginBottom:24, border:`4px solid ${ac}`, boxShadow:`0 0 32px ${ac}60` }} />
 
           <div style={{ fontSize:13, color:ac, marginBottom:10, letterSpacing:"0.12em", textTransform:"uppercase" }}>{u.title}</div>
           <h1 style={{ fontSize:heroSz, fontWeight:fw, lineHeight:0.95, letterSpacing:"-0.03em", margin:"0 0 24px", maxWidth:720, textShadow: id==="neon"?`0 0 40px ${ac}80`:"none" }}>{u.name}</h1>
@@ -103,7 +103,7 @@ export default function BoldLayout({ p, t, id, portfolioId }) {
               <div key={i} style={{ borderTop:`1px solid ${t.fg}12`, padding:"28px 0" }}>
                 <div style={{ display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:8 }}>
                   <div>
-                    <div style={{ fontSize:22, fontWeight:fw }}>{e.role}</div>
+                    <h3 style={{ fontSize:22, fontWeight:fw, margin:0 }}>{e.role}</h3>
                     <div style={{ color:ac, fontSize:14, marginTop:4 }}>{e.company}</div>
                   </div>
                   <div style={{ fontSize:12, opacity:0.45, paddingTop:4 }}>{e.period}</div>
@@ -129,7 +129,7 @@ export default function BoldLayout({ p, t, id, portfolioId }) {
                   onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-4px)";e.currentTarget.style.boxShadow=`0 8px 32px ${ac}30`}}
                   onMouseLeave={e=>{e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.boxShadow=id==="neon"?`0 0 0 1px ${ac}20`:"none"}}>
                   <div style={{ display:"flex", justifyContent:"space-between", marginBottom:12 }}>
-                    <div style={{ fontWeight:fw, fontSize:16 }}>{proj.title}</div>
+                    <h3 style={{ fontWeight:fw, fontSize:16, margin:0 }}>{proj.title}</h3>
                     <div style={{ display:"flex", gap:10, opacity:0.55 }}>
                       {proj.github && <a href={proj.github} target="_blank" rel="noreferrer" style={{ color:t.fg }}><Github size={14}/></a>}
                       {proj.live   && <a href={proj.live}   target="_blank" rel="noreferrer" style={{ color:t.fg }}><ExternalLink size={14}/></a>}
@@ -158,7 +158,7 @@ export default function BoldLayout({ p, t, id, portfolioId }) {
                   onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-4px)";e.currentTarget.style.boxShadow=`0 8px 32px ${ac}30`}}
                   onMouseLeave={e=>{e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.boxShadow=id==="neon"?`0 0 0 1px ${ac}20`:"none"}}>
                   <div style={{ display:"flex", justifyContent:"space-between", marginBottom:12 }}>
-                    <div style={{ fontWeight:fw, fontSize:16 }}>{b.title}</div>
+                    <h3 style={{ fontWeight:fw, fontSize:16, margin:0 }}>{b.title}</h3>
                     {b.url && <a href={b.url} target="_blank" rel="noreferrer" style={{ color:t.fg }}><ExternalLink size={14}/></a>}
                   </div>
                   {b.date && <div style={{ fontSize:13, color:ac, marginBottom:8 }}>{b.date}</div>}
@@ -176,7 +176,7 @@ export default function BoldLayout({ p, t, id, portfolioId }) {
             {p.education.map((e,i) => (
               <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", borderTop:`1px solid ${t.fg}12`, padding:"16px 0", flexWrap:"wrap", gap:8 }}>
                 <div>
-                  <div style={{ fontWeight:600 }}>{e.school}</div>
+                  <h3 style={{ fontWeight:600, fontSize:"inherit", margin:0 }}>{e.school}</h3>
                   <div style={{ fontSize:13, color:ac }}>{e.degree}</div>
                 </div>
                 <div style={{ fontSize:12, opacity:0.45 }}>{e.period}</div>
@@ -192,7 +192,7 @@ export default function BoldLayout({ p, t, id, portfolioId }) {
             <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))", gap:16 }}>
               {p.services.map((s,i) => (
                 <div key={i} style={{ border:`1px solid ${ac}30`, padding:20, background:`${ac}05` }}>
-                  <div style={{ fontWeight:700, fontSize:15, marginBottom:4 }}>{s.name}</div>
+                  <h3 style={{ fontWeight:700, fontSize:15, marginBottom:4, margin:0 }}>{s.name}</h3>
                   {s.price && <div style={{ color:ac, fontSize:13, marginBottom:8 }}>{s.price}</div>}
                   <p style={{ fontSize:13, opacity:0.65, lineHeight:1.65 }}>{s.description}</p>
                 </div>

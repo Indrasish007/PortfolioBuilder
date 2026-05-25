@@ -25,7 +25,7 @@ export default function SplitLayout({ p, t, id, portfolioId }) {
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", minHeight:"90vh" }}>
         {/* Left panel — bio */}
         <div style={{ background:left, padding:"60px 48px", display:"flex", flexDirection:"column", justifyContent:"center", borderRight:`1px solid rgba(255,255,255,0.06)` }}>
-          <img src={u.avatar || getDefaultAvatar(ac)} alt="" style={{ width:300, height:360, borderRadius:"20px", objectFit:"cover", marginBottom:28, border:`1px solid rgba(255,255,255,0.12)`, boxShadow:`0 10px 30px rgba(0,0,0,0.5)` }} />
+          <img src={u.avatar || getDefaultAvatar(ac)} alt={`${u.name || "User"} profile picture`} loading="lazy" style={{ width:300, height:360, borderRadius:"20px", objectFit:"cover", marginBottom:28, border:`1px solid rgba(255,255,255,0.12)`, boxShadow:`0 10px 30px rgba(0,0,0,0.5)` }} />
           <div style={{ fontSize:12, color:ac, marginBottom:12, letterSpacing:"0.15em", textTransform:"uppercase" }}>{u.title}</div>
           <h1 style={{ fontSize:52, fontWeight:900, lineHeight:1.0, letterSpacing:"-0.03em", margin:"0 0 24px",
             backgroundImage:grad, WebkitBackgroundClip:"text", backgroundClip:"text", WebkitTextFillColor:"transparent" }}>
@@ -116,7 +116,7 @@ export default function SplitLayout({ p, t, id, portfolioId }) {
                   onMouseEnter={e=>{e.currentTarget.style.borderColor=`${ac}50`;e.currentTarget.style.transform="translateY(-3px)"}}
                   onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.08)";e.currentTarget.style.transform="translateY(0)"}}>
                   <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
-                    <div style={{ fontWeight:700, fontSize:15 }}>{proj.title}</div>
+                    <h3 style={{ fontWeight:700, fontSize:15, margin:0 }}>{proj.title}</h3>
                     <div style={{ display:"flex", gap:8, opacity:0.45 }}>
                       {proj.github && <a href={proj.github} target="_blank" rel="noreferrer" style={{ color:fg }}><Github size={13}/></a>}
                       {proj.live   && <a href={proj.live}   target="_blank" rel="noreferrer" style={{ color:fg }}><ExternalLink size={13}/></a>}
@@ -142,7 +142,7 @@ export default function SplitLayout({ p, t, id, portfolioId }) {
                     <div style={{ fontSize:13, color:ac, marginTop:4 }}>{e.company}</div>
                   </div>
                   <div>
-                    <div style={{ fontWeight:700, fontSize:16, marginBottom:6 }}>{e.role}</div>
+                    <h3 style={{ fontWeight:700, fontSize:16, marginBottom:6, margin:0 }}>{e.role}</h3>
                     <p style={{ fontSize:13, opacity:0.65, lineHeight:1.75 }}>{e.description}</p>
                   </div>
                 </div>
@@ -164,7 +164,7 @@ export default function SplitLayout({ p, t, id, portfolioId }) {
                   onMouseEnter={e=>{e.currentTarget.style.borderColor=`${ac}50`;e.currentTarget.style.transform="translateY(-3px)"}}
                   onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.08)";e.currentTarget.style.transform="translateY(0)"}}>
                   <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
-                    <div style={{ fontWeight:700, fontSize:15 }}>{b.title}</div>
+                    <h3 style={{ fontWeight:700, fontSize:15, margin:0 }}>{b.title}</h3>
                     {b.url && <a href={b.url} target="_blank" rel="noreferrer" style={{ color:fg }}><ExternalLink size={13}/></a>}
                   </div>
                   {b.date && <div style={{ fontSize:12, color:ac, marginBottom:6 }}>{b.date}</div>}
@@ -183,7 +183,7 @@ export default function SplitLayout({ p, t, id, portfolioId }) {
               <div key={i} style={{ display:"grid", gridTemplateColumns:"1fr 2fr", gap:24, padding:"20px 0", borderTop:`1px solid rgba(255,255,255,0.07)` }}>
                 <div style={{ fontSize:12, opacity:0.4 }}>{e.period}</div>
                 <div>
-                  <div style={{ fontWeight:600 }}>{e.school}</div>
+                  <h3 style={{ fontWeight:600, fontSize:"inherit", margin:0 }}>{e.school}</h3>
                   <div style={{ fontSize:13, opacity:0.55 }}>{e.degree}</div>
                 </div>
               </div>
@@ -198,7 +198,7 @@ export default function SplitLayout({ p, t, id, portfolioId }) {
             <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))", gap:14 }}>
               {p.services.map((s,i) => (
                 <div key={i} style={{ background:"rgba(255,255,255,0.04)", border:`1px solid ${ac}25`, borderRadius:8, padding:20 }}>
-                  <div style={{ fontWeight:700, fontSize:14, marginBottom:4 }}>{s.name}</div>
+                  <h3 style={{ fontWeight:700, fontSize:14, marginBottom:4, margin:0 }}>{s.name}</h3>
                   {s.price && <div style={{ color:ac, fontSize:12, marginBottom:8 }}>{s.price}</div>}
                   <p style={{ fontSize:13, opacity:0.6, lineHeight:1.65 }}>{s.description}</p>
                 </div>

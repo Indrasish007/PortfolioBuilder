@@ -28,7 +28,7 @@ export default function BrutalistLayout({ p, t, id, portfolioId }) {
         {!isMono && <div style={{ position:"absolute", top:0, right:0, width:200, height:"100%", background:"#facc15", zIndex:0 }} />}
         <div style={{ position:"relative", zIndex:1 }}>
           <div style={{ display:"flex", alignItems:"flex-start", gap:32, flexWrap:"wrap" }}>
-            <img src={u.avatar || getDefaultAvatar(ac)} alt="" style={{
+            <img src={u.avatar || getDefaultAvatar(ac)} alt={`${u.name || "User"} profile picture`} loading="lazy" style={{
               width: isMono ? 280 : 320,
               height: isMono ? 340 : 380,
               objectFit: "cover",
@@ -114,7 +114,7 @@ export default function BrutalistLayout({ p, t, id, portfolioId }) {
             {p.experience.map((e,i) => (
               <div key={i} style={{ marginBottom:24, borderLeft: isMono?"4px solid #111":`4px solid #facc15`, paddingLeft:20 }}>
                 <div style={{ display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:4 }}>
-                  <div style={{ fontWeight:isMono?700:400, fontSize:isMono?16:20, fontFamily:isMono?font:"Impact,sans-serif", textTransform:isMono?"none":"uppercase" }}>{e.role}</div>
+                  <h3 style={{ fontWeight:isMono?700:400, fontSize:isMono?16:20, fontFamily:isMono?font:"Impact,sans-serif", textTransform:isMono?"none":"uppercase", margin:0 }}>{e.role}</h3>
                   <div style={{ fontSize:12, opacity:0.45, fontFamily:"Inter,sans-serif" }}>{e.period}</div>
                 </div>
                 <div style={{ fontSize:13, color:isMono?"#666":ac, fontFamily:"Inter,sans-serif", marginBottom:6 }}>{e.company}</div>
@@ -133,7 +133,7 @@ export default function BrutalistLayout({ p, t, id, portfolioId }) {
                   {p.projects.map((proj,i) => (
                     <div key={i} style={{ border:"2px solid #111", padding:20, background:i%2===0?"#f5f5f5":"#efefef" }}>
                       <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
-                        <div style={{ fontWeight:900, fontSize:14 }}>{proj.title}</div>
+                        <h3 style={{ fontWeight:900, fontSize:14, margin:0 }}>{proj.title}</h3>
                         <div style={{ display:"flex", gap:8, opacity:0.5 }}>
                           {proj.github && <a href={proj.github} target="_blank" rel="noreferrer" style={{ color:fg }}><Github size={12}/></a>}
                           {proj.live   && <a href={proj.live}   target="_blank" rel="noreferrer" style={{ color:fg }}><ExternalLink size={12}/></a>}
@@ -148,7 +148,7 @@ export default function BrutalistLayout({ p, t, id, portfolioId }) {
                   {p.projects.map((proj,i) => (
                     <div key={i} style={{ border:`3px solid ${i===0?"#facc15":"rgba(250,204,21,0.3)"}`, padding:20, display:"flex", justifyContent:"space-between", gap:20, flexWrap:"wrap" }}>
                       <div style={{ flex:1 }}>
-                        <div style={{ fontWeight:400, fontSize:22, textTransform:"uppercase", marginBottom:6 }}>{proj.title}</div>
+                        <h3 style={{ fontWeight:400, fontSize:22, textTransform:"uppercase", marginBottom:6, margin:0 }}>{proj.title}</h3>
                         <p style={{ fontSize:13, opacity:0.65, lineHeight:1.65, fontFamily:"Inter,sans-serif", marginBottom:10 }}>{proj.description}</p>
                         <Tags items={proj.tech||[]} bg="rgba(250,204,21,0.2)" fg="#facc15" radius="0" />
                       </div>
@@ -172,7 +172,7 @@ export default function BrutalistLayout({ p, t, id, portfolioId }) {
                   {p.blogs.map((b,i) => (
                     <div key={i} style={{ border:"2px solid #111", padding:20, background:i%2===0?"#f5f5f5":"#efefef" }}>
                       <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
-                        <div style={{ fontWeight:900, fontSize:14 }}>{b.title}</div>
+                        <h3 style={{ fontWeight:900, fontSize:14, margin:0 }}>{b.title}</h3>
                         {b.url && <a href={b.url} target="_blank" rel="noreferrer" style={{ color:fg }}><ExternalLink size={12}/></a>}
                       </div>
                       {b.date && <div style={{ fontSize:12, fontWeight:700, marginBottom:8 }}>{b.date}</div>}
@@ -184,7 +184,7 @@ export default function BrutalistLayout({ p, t, id, portfolioId }) {
                   {p.blogs.map((b,i) => (
                     <div key={i} style={{ border:`3px solid ${i===0?"#facc15":"rgba(250,204,21,0.3)"}`, padding:20, display:"flex", justifyContent:"space-between", gap:20, flexWrap:"wrap" }}>
                       <div style={{ flex:1 }}>
-                        <div style={{ fontWeight:400, fontSize:22, textTransform:"uppercase", marginBottom:6 }}>{b.title}</div>
+                        <h3 style={{ fontWeight:400, fontSize:22, textTransform:"uppercase", marginBottom:6, margin:0 }}>{b.title}</h3>
                         {b.date && <div style={{ fontSize:13, color:ac, marginBottom:6 }}>{b.date}</div>}
                         <p style={{ fontSize:13, opacity:0.65, lineHeight:1.65, fontFamily:"Inter,sans-serif", marginBottom:10 }}>{b.excerpt}</p>
                       </div>
@@ -205,7 +205,7 @@ export default function BrutalistLayout({ p, t, id, portfolioId }) {
             {p.education.map((e,i) => (
               <div key={i} style={{ display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:8, marginBottom:16, borderBottom:`1px solid ${isMono?"#ddd":"rgba(250,204,21,0.2)"}`, paddingBottom:12 }}>
                 <div>
-                  <div style={{ fontWeight:isMono?700:400, fontSize:isMono?14:18, textTransform:isMono?"none":"uppercase" }}>{e.school}</div>
+                  <h3 style={{ fontWeight:isMono?700:400, fontSize:isMono?14:18, textTransform:isMono?"none":"uppercase", margin:0 }}>{e.school}</h3>
                   <div style={{ fontSize:13, fontFamily:"Inter,sans-serif", color:isMono?"#666":ac, marginTop:2 }}>{e.degree}</div>
                 </div>
                 <div style={{ fontSize:12, opacity:0.45, fontFamily:"Inter,sans-serif" }}>{e.period}</div>

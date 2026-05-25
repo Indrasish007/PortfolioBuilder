@@ -363,7 +363,7 @@ export default function Dashboard() {
                           <Button as={Link} to={`/editor/${p.id}`} size="sm" variant="outline" className="flex-1 sm:flex-initial justify-center py-2.5 h-11 sm:h-9">Edit</Button>
                           <Button
                             as="a"
-                            href={p.status === "Published" && p.slug ? `/p/s/${p.slug}` : `/p/${p.id}`}
+                            href={p.status === "Published" && p.slug ? `/p/${p.slug}` : `/p/${p.id}`}
                             target="_blank"
                             rel="noreferrer"
                             size="sm"
@@ -383,17 +383,17 @@ export default function Dashboard() {
                             <Globe className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                             <span className="text-muted-foreground font-medium shrink-0">Live:</span>
                             <a
-                              href={p.slug ? `/p/s/${p.slug}` : `/p/${p.id}`}
+                              href={p.slug ? `/p/${p.slug}` : `/p/${p.id}`}
                               target="_blank"
                               rel="noreferrer"
                               className="text-brand hover:underline font-mono truncate break-all block flex-1"
                             >
-                              {window.location.origin}{p.slug ? `/p/s/${p.slug}` : `/p/${p.id}`}
+                              {window.location.origin}{p.slug ? `/p/${p.slug}` : `/p/${p.id}`}
                             </a>
                           </div>
                           <button
                             onClick={() => {
-                              const liveUrl = `${window.location.origin}${p.slug ? `/p/s/${p.slug}` : `/p/${p.id}`}`;
+                              const liveUrl = `${window.location.origin}${p.slug ? `/p/${p.slug}` : `/p/${p.id}`}`;
                               navigator.clipboard.writeText(liveUrl);
                               toast({
                                 title: "Copied live link!",

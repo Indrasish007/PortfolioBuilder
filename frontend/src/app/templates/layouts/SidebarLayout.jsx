@@ -29,7 +29,7 @@ export default function SidebarLayout({ p, t, id, portfolioId }) {
         position: "sticky", top:0, alignSelf:"flex-start",
         boxSizing:"border-box",
       }}>
-        <img src={u.avatar || getDefaultAvatar(ac)} alt="" style={{
+        <img src={u.avatar || getDefaultAvatar(ac)} alt={`${u.name || "User"} profile picture`} loading="lazy" style={{
           width: sideW - 48,
           height: Math.round((sideW - 48) * 1.25),
           borderRadius: id === "obsidian" ? "4px" : id === "architect" ? "8px" : "16px",
@@ -38,7 +38,7 @@ export default function SidebarLayout({ p, t, id, portfolioId }) {
           border: `1px solid ${ac}40`,
           boxShadow: "0 8px 24px rgba(0,0,0,0.2)"
         }} />
-        <div style={{ fontSize:15, fontWeight:700, lineHeight:1.2, marginBottom:4, color:"#fff" }}>{u.name}</div>
+        <h1 style={{ fontSize:15, fontWeight:700, lineHeight:1.2, marginBottom:4, color:"#fff", margin: "0 0 4px" }}>{u.name}</h1>
         <div style={{ fontSize:11, color:ac, marginBottom:20 }}>{u.title}</div>
 
 
@@ -127,7 +127,7 @@ export default function SidebarLayout({ p, t, id, portfolioId }) {
             {p.experience.map((e,i) => (
               <div key={i} style={{ marginBottom:24, paddingLeft:14, borderLeft:`2px solid ${ac}50` }}>
                 <div style={{ display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:4 }}>
-                  <div style={{ fontWeight:700 }}>{e.role}</div>
+                  <h3 style={{ fontWeight:700, fontSize:"inherit", margin:0 }}>{e.role}</h3>
                   <div style={{ fontSize:11, opacity:0.45 }}>{e.period}</div>
                 </div>
                 <div style={{ fontSize:12, color:ac, marginBottom:6 }}>{e.company}</div>
@@ -154,7 +154,7 @@ export default function SidebarLayout({ p, t, id, portfolioId }) {
                   onMouseEnter={e=>e.currentTarget.style.transform="translateY(-2px)"}
                   onMouseLeave={e=>e.currentTarget.style.transform="translateY(0)"}>
                   <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
-                    <div style={{ fontWeight:700, fontSize:14 }}>{proj.title}</div>
+                    <h3 style={{ fontWeight:700, fontSize:14, margin:0 }}>{proj.title}</h3>
                     <div style={{ display:"flex", gap:8, opacity:0.5 }}>
                       {proj.github && <a href={proj.github} target="_blank" rel="noreferrer" style={{ color:t.fg }}><Github size={12}/></a>}
                       {proj.live   && <a href={proj.live}   target="_blank" rel="noreferrer" style={{ color:t.fg }}><ExternalLink size={12}/></a>}
@@ -185,7 +185,7 @@ export default function SidebarLayout({ p, t, id, portfolioId }) {
                   onMouseEnter={e=>e.currentTarget.style.transform="translateY(-2px)"}
                   onMouseLeave={e=>e.currentTarget.style.transform="translateY(0)"}>
                   <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
-                    <div style={{ fontWeight:700, fontSize:14 }}>{b.title}</div>
+                    <h3 style={{ fontWeight:700, fontSize:14, margin:0 }}>{b.title}</h3>
                     {b.url && <a href={b.url} target="_blank" rel="noreferrer" style={{ color:t.fg }}><ExternalLink size={12}/></a>}
                   </div>
                   {b.date && <div style={{ fontSize:11, color:ac, marginBottom:6 }}>{b.date}</div>}
@@ -202,7 +202,7 @@ export default function SidebarLayout({ p, t, id, portfolioId }) {
             {lbl("Education")}
             {p.education.map((e,i) => (
               <div key={i} style={{ marginBottom:18, paddingLeft:14, borderLeft:`2px solid ${t.fg}15` }}>
-                <div style={{ fontWeight:600 }}>{e.school}</div>
+                <h3 style={{ fontWeight:600, fontSize:"inherit", margin:0 }}>{e.school}</h3>
                 <div style={{ fontSize:12, color:ac }}>{e.degree}</div>
                 <div style={{ fontSize:11, opacity:0.45 }}>{e.period}</div>
               </div>
@@ -217,7 +217,7 @@ export default function SidebarLayout({ p, t, id, portfolioId }) {
             <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))", gap:12 }}>
               {p.services.map((s,i) => (
                 <div key={i} style={{ border:`1px solid ${ac}20`, borderRadius:radius, padding:16 }}>
-                  <div style={{ fontWeight:600, fontSize:14, marginBottom:4 }}>{s.name}</div>
+                  <h3 style={{ fontWeight:600, fontSize:14, marginBottom:4, margin:0 }}>{s.name}</h3>
                   {s.price && <div style={{ fontSize:12, color:ac, marginBottom:8 }}>{s.price}</div>}
                   <p style={{ fontSize:12, opacity:0.65, lineHeight:1.65 }}>{s.description}</p>
                 </div>

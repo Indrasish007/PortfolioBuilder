@@ -257,17 +257,17 @@ export default function PortfolioEditor() {
                   <div className="flex-1 min-w-0">
                     <div className="text-[10px] uppercase font-bold text-muted-foreground/75 tracking-wider mb-0.5">Deployment Domain</div>
                     <a
-                      href={`/p/s/${portfolio.slug}`}
+                      href={`/p/${portfolio.slug}`}
                       target="_blank"
                       rel="noreferrer"
                       className="text-brand hover:underline font-mono text-sm font-semibold truncate block"
                     >
-                      {window.location.origin}/p/s/{portfolio.slug}
+                      {window.location.origin}/p/{portfolio.slug}
                     </a>
                   </div>
                   <button
                     onClick={() => {
-                      const liveUrl = `${window.location.origin}/p/s/${portfolio.slug}`;
+                      const liveUrl = `${window.location.origin}/p/${portfolio.slug}`;
                       navigator.clipboard.writeText(liveUrl);
                       toast({
                         title: "Link copied!",
@@ -284,7 +284,7 @@ export default function PortfolioEditor() {
                 <div className="grid grid-cols-2 gap-2 mt-4">
                   <Button
                     as="a"
-                    href={`/p/s/${portfolio.slug}`}
+                    href={`/p/${portfolio.slug}`}
                     target="_blank"
                     rel="noreferrer"
                     variant="outline"

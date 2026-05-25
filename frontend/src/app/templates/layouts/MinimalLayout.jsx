@@ -18,7 +18,7 @@ export default function MinimalLayout({ p, t, id, portfolioId }) {
 
         {/* ── Hero ── */}
         <div style={{ marginBottom:gap }}>
-          <img src={u.avatar || getDefaultAvatar(t.ac)} alt="" style={{ width:300, height:360, borderRadius:"20px", objectFit:"cover", marginBottom:28, border:`1px solid ${t.fg}15`, boxShadow:"0 10px 30px rgba(0,0,0,0.08)" }} />
+          <img src={u.avatar || getDefaultAvatar(t.ac)} alt={`${u.name || "User"} profile picture`} loading="lazy" style={{ width:300, height:360, borderRadius:"20px", objectFit:"cover", marginBottom:28, border:`1px solid ${t.fg}15`, boxShadow:"0 10px 30px rgba(0,0,0,0.08)" }} />
 
 
           <div style={{ fontSize:12, opacity:0.45, marginBottom:6, letterSpacing:"0.1em" }}>{u.title}</div>
@@ -73,7 +73,7 @@ export default function MinimalLayout({ p, t, id, portfolioId }) {
               <div key={i} style={{ display:"grid", gridTemplateColumns:"130px 1fr", gap:16, marginBottom:28 }}>
                 <div style={{ fontSize:12, opacity:0.4, paddingTop:3 }}>{e.period}</div>
                 <div>
-                  <div style={{ fontWeight:600 }}>{e.role} <span style={{ opacity:0.45, fontWeight:400 }}>· {e.company}</span></div>
+                  <h3 style={{ fontWeight:600, fontSize:"inherit", margin:0 }}>{e.role} <span style={{ opacity:0.45, fontWeight:400 }}>· {e.company}</span></h3>
                   <div style={{ fontSize:13, opacity:0.65, marginTop:6, lineHeight:1.75 }}>{e.description}</div>
                 </div>
               </div>
@@ -88,7 +88,7 @@ export default function MinimalLayout({ p, t, id, portfolioId }) {
             {p.projects.map((proj,i) => (
               <div key={i} style={{ borderTop:`1px solid ${t.fg}12`, paddingTop:24, marginBottom:24 }}>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:12 }}>
-                  <div style={{ fontWeight:600, fontSize:16 }}>{proj.title}</div>
+                  <h3 style={{ fontWeight:600, fontSize:16, margin:0 }}>{proj.title}</h3>
                   <div style={{ display:"flex", gap:10, opacity:0.45, flexShrink:0 }}>
                     {proj.github && <a href={proj.github} target="_blank" rel="noreferrer" style={{ color:t.fg, fontSize:12 }}>↗ code</a>}
                     {proj.live   && <a href={proj.live}   target="_blank" rel="noreferrer" style={{ color:t.fg, fontSize:12 }}>↗ live</a>}
@@ -108,7 +108,7 @@ export default function MinimalLayout({ p, t, id, portfolioId }) {
             {p.blogs.map((b,i) => (
               <div key={i} style={{ borderTop:`1px solid ${t.fg}12`, paddingTop:24, marginBottom:24 }}>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:12 }}>
-                  <div style={{ fontWeight:600, fontSize:16 }}>{b.title}</div>
+                  <h3 style={{ fontWeight:600, fontSize:16, margin:0 }}>{b.title}</h3>
                   {b.url && <a href={b.url} target="_blank" rel="noreferrer" style={{ color:t.fg, fontSize:12, flexShrink:0 }}>↗ read</a>}
                 </div>
                 {b.date && <div style={{ fontSize:12, opacity:0.4, marginTop:4 }}>{b.date}</div>}
@@ -126,7 +126,7 @@ export default function MinimalLayout({ p, t, id, portfolioId }) {
               <div key={i} style={{ display:"grid", gridTemplateColumns:"130px 1fr", gap:16, marginBottom:18 }}>
                 <div style={{ fontSize:12, opacity:0.4 }}>{e.period}</div>
                 <div>
-                  <div style={{ fontWeight:600 }}>{e.school}</div>
+                  <h3 style={{ fontWeight:600, fontSize:"inherit", margin:0 }}>{e.school}</h3>
                   <div style={{ fontSize:13, opacity:0.6 }}>{e.degree}</div>
                 </div>
               </div>
@@ -141,7 +141,7 @@ export default function MinimalLayout({ p, t, id, portfolioId }) {
             <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))", gap:16 }}>
               {p.services.map((s,i) => (
                 <div key={i} style={{ border:`1px solid ${t.fg}12`, padding:20, borderRadius:4 }}>
-                  <div style={{ fontWeight:600, marginBottom:4 }}>{s.name}</div>
+                  <h3 style={{ fontWeight:600, marginBottom:4, fontSize:"inherit", margin:0 }}>{s.name}</h3>
                   {s.price && <div style={{ fontSize:12, color:t.ac, marginBottom:8 }}>{s.price}</div>}
                   <p style={{ fontSize:13, opacity:0.65, lineHeight:1.65 }}>{s.description}</p>
                 </div>

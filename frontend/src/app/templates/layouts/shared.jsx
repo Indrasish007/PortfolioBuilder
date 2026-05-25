@@ -119,9 +119,9 @@ function FAQItem({ f, fg }) {
 
 export function SectionLabel({ text, style = {} }) {
   return (
-    <div style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", opacity: 0.45, marginBottom: 16, ...style }}>
+    <h2 style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", opacity: 0.45, marginBottom: 16, fontWeight: 600, margin: "0 0 16px", display: "block", ...style }}>
       {text}
-    </div>
+    </h2>
   );
 }
 
@@ -174,14 +174,14 @@ export function GalleryAlbum({ images, fg }) {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: "12px" }}>
         {images.map((img, i) => (
           <div key={i} onClick={() => setSelected(img)} style={{ aspectRatio: "1/1", cursor: "pointer", borderRadius: "8px", overflow: "hidden", border: `1px solid ${fg}20` }}>
-            <img src={img} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.3s" }} onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.05)"} onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"} />
+            <img src={img} alt={`Gallery item ${i + 1}`} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.3s" }} onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.05)"} onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"} />
           </div>
         ))}
       </div>
       {selected && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.9)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px" }} onClick={() => setSelected(null)}>
           <button style={{ position: "absolute", top: "20px", right: "20px", background: "none", border: "none", color: "#fff", fontSize: "32px", cursor: "pointer" }} onClick={() => setSelected(null)}>&times;</button>
-          <img src={selected} alt="" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: "4px" }} />
+          <img src={selected} alt="Gallery preview full size" loading="lazy" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: "4px" }} />
         </div>
       )}
     </>

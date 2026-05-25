@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     PortfolioViewSet, PublicPortfolioView, PublicPortfolioBySlugView,
     PublicPortfolioByDomainView, PublishPortfolioView, UnpublishPortfolioView,
-    AnalyticsView, DashboardStatsView
+    AnalyticsView, DashboardStatsView, PublicPortfolioListView
 )
 
 router = DefaultRouter()
@@ -11,6 +11,7 @@ router.register(r'', PortfolioViewSet, basename='portfolio')
 
 urlpatterns = [
     # Public access — by id, slug or domain
+    path('public/list/', PublicPortfolioListView.as_view(), name='public_portfolios_list'),
     path('public/<int:pk>/', PublicPortfolioView.as_view(), name='public_portfolio'),
     path('public/slug/<slug:slug>/', PublicPortfolioBySlugView.as_view(), name='public_portfolio_slug'),
     path('public/domain/<path:domain>/', PublicPortfolioByDomainView.as_view(), name='public_portfolio_domain'),
