@@ -87,6 +87,12 @@ export const usePortfolioStore = create((set, get) => ({
             website: data.user.website || state.portfolio.user?.social?.website || "",
           };
         }
+        // Safety net: always keep the email that was in the store (entered in the form or
+        // parsed from CV) — never let the API response overwrite it with the auth email.
+        const preSaveEmail = state.portfolio.user?.email;
+        if (preSaveEmail !== undefined) {
+          mergedUser.email = preSaveEmail;
+        }
         set({ portfolio: { ...state.portfolio, ...data, user: mergedUser, contact: state.portfolio.contact } });
       };
 

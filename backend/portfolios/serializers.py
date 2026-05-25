@@ -38,7 +38,10 @@ class BlogSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'date', 'dateRaw', 'excerpt', 'url']
 
 class ProfileSerializer(serializers.ModelSerializer):
-    email = serializers.CharField(source='user.email', read_only=True)
+    # `email` is stored on the Profile model itself — NOT sourced from user.email (the auth/sign-in email).
+    # This means CV-parsed or manually entered contact emails are preserved on save and never
+    # silently overwritten by the auth email.
+    email = serializers.EmailField(required=False, allow_null=True, allow_blank=True)
     username = serializers.CharField(source='user.username', read_only=True)
 
     class Meta:
