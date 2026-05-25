@@ -24,12 +24,12 @@ class AnalyticsView(APIView):
         for d in date_list:
             day_str = d.strftime('%b %d') # e.g. "May 19"
             
-            # Deduplicate by visitor_id so double-tracked events count as 1 view
+            # Count raw view events per day — consistent with portfolio.views total
             day_views = PortfolioEvent.objects.filter(
                 portfolio__in=portfolios,
                 event_type='view',
                 created_at__date=d
-            ).values('visitor_id').distinct().count()
+            ).count()
             
             # Visitors count on day d (distinct visitor_ids)
             day_visitors = PortfolioEvent.objects.filter(
@@ -131,6 +131,53 @@ class AnalyticsView(APIView):
         else:
             suggestions.append("Desktop users form the majority of your traffic. Ensure your portfolio layout looks wide and spacious.")
 
+        # 7. Per-portfolio breakdown
+        per_portfolio = []
+        for p in portfolios:
+            p_views_chart = []
+            for d in date_list:
+                day_str = d.strftime('%b %d')
+                day_views = PortfolioEvent.objects.filter(
+                    portfolio=p,
+                    event_type='view',
+                    created_at__date=d
+                ).count()
+                p_views_chart.append({"day": day_str, "views": day_views})
+
+            p_visitors = PortfolioEvent.objects.filter(
+                portfolio=p,
+                created_at__date__gte=today - datetime.timedelta(days=13)
+            ).values('visitor_id').distinct().count()
+
+            p_downloads = PortfolioEvent.objects.filter(
+                portfolio=p,
+                event_type='resume_download',
+                created_at__date__gte=today - datetime.timedelta(days=13)
+            ).count()
+
+            p_country_counts = PortfolioEvent.objects.filter(
+                portfolio=p,
+                event_type='view',
+                created_at__date__gte=today - datetime.timedelta(days=13)
+            ).values('country').annotate(visits=Count('id')).order_by('-visits')[:5]
+
+            p_countries = [
+                {"country": item['country'], "visits": item['visits']}
+                for item in p_country_counts if item['country']
+            ]
+
+            per_portfolio.append({
+                "id": p.id,
+                "name": p.name,
+                "slug": p.slug or str(p.id),
+                "status": p.status,
+                "views": p.views,
+                "visitors": p_visitors,
+                "downloads": p_downloads,
+                "countries": p_countries,
+                "views_chart": p_views_chart,
+            })
+
         data = {
             "views": views_chart,
             "visitors": visitors_chart,
@@ -141,6 +188,7 @@ class AnalyticsView(APIView):
             "total_visitors": total_visitors,
             "avg_session": int(avg_session),
             "suggestions": suggestions,
+            "per_portfolio": per_portfolio,
         }
         return Response(data)
 
