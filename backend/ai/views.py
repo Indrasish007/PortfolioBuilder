@@ -714,6 +714,8 @@ class AICVParsingView(APIView):
 
         return {
             "bio": bio,
+            "email": email,
+            "phone": phone,
             "skills": clean_skills[:12],
             "languages": clean_languages,
             "experience": cleaned_experience,
@@ -816,8 +818,8 @@ class ResumeParseView(APIView):
             "full_name": "",
             "headline": "",
             "bio": heuristic.get("bio", ""),
-            "email": "",
-            "phone": "",
+            "email": heuristic.get("email", ""),
+            "phone": heuristic.get("phone", ""),
             "location": "",
             "skills": heuristic.get("skills", []),
             "languages": heuristic.get("languages", []),

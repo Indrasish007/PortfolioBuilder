@@ -415,6 +415,7 @@ export default function TemplateMarketplace() {
           updateField("user.email", r.email);
           updateField("contact.email", r.email);
         }
+        if (r.phone) updateField("user.phone", r.phone);
         if (r.location) updateField("user.location", r.location);
         if (r.skills?.length) updateField("skills", r.skills);
         if (r.languages?.length) updateField("languages", r.languages);
