@@ -10,8 +10,8 @@ import re
 from django.conf import settings
 
 
-_PROMPT_TEMPLATE = """You are a professional resume parser.
-Extract structured information from the resume text below and return ONLY a valid JSON object.
+_PROMPT_TEMPLATE = """You are a professional resume and portfolio parser.
+Extract structured information from the text below and return ONLY a valid JSON object.
 Do NOT include any explanation, markdown fences, or extra text — just raw JSON.
 
 Return this exact JSON structure (use null for missing fields, empty arrays for missing lists):
@@ -23,6 +23,7 @@ Return this exact JSON structure (use null for missing fields, empty arrays for 
   "email": "string or null",
   "phone": "string or null — extract any phone number exactly as written, including country code prefix (e.g. +91 9876543210)",
   "location": "string — full address or city/region (e.g. B-3/45 Kalyani, Nadia, WB 741235)",
+  "profile_picture": "string or null — URL of the person's profile/avatar image if found in the text (e.g. from og:image, twitter:image, or any direct image URL that appears to be a headshot). Return null if not found.",
   "skills": ["string", "..."],
   "languages": [
     {{
@@ -57,6 +58,13 @@ Return this exact JSON structure (use null for missing fields, empty arrays for 
       "live_url": "string or null"
     }}
   ],
+  "certifications": [
+    {{
+      "name": "string — certification/course title",
+      "issuer": "string or null — issuing organization (e.g. Google, AWS, Coursera, Udemy)",
+      "year": "string or null — year issued or completed"
+    }}
+  ],
   "social_links": [
     {{
       "platform": "github | linkedin | twitter | instagram | youtube | website | other",
@@ -70,7 +78,7 @@ CRITICAL LANGUAGE CLASSIFICATION RULES:
 - A language entry may include proficiency level if mentioned (e.g., "Bengali - Native", "English - Fluent", "Hindi - Intermediate"). If no proficiency is mentioned, default to "Fluent".
 - Programming languages (e.g., Python, JavaScript, Java, C++) are NOT human languages — classify them under "skills".
 
-Resume text:
+Text to parse:
 {resume_text}
 """
 
@@ -242,18 +250,20 @@ def _sanitise(data: dict) -> dict:
     clean_skills, clean_languages = differentiate_skills_and_languages(raw_skills, raw_languages)
 
     return {
-        "full_name":    _str(data.get("full_name")),
-        "headline":     _str(data.get("headline")),
-        "bio":          _str(data.get("bio")),
-        "email":        _str(data.get("email")),
-        "phone":        _str(data.get("phone")),
-        "location":     _str(data.get("location")),
-        "skills":       clean_skills,
-        "languages":    clean_languages,
-        "experience":   [_sanitise_exp(e) for e in (data.get("experience") or [])],
-        "education":    [_sanitise_edu(e) for e in (data.get("education") or [])],
-        "projects":     [_sanitise_proj(p) for p in (data.get("projects") or [])],
-        "social_links": [_sanitise_link(lnk) for lnk in (data.get("social_links") or [])],
+        "full_name":       _str(data.get("full_name")),
+        "headline":        _str(data.get("headline")),
+        "bio":             _str(data.get("bio")),
+        "email":           _str(data.get("email")),
+        "phone":           _str(data.get("phone")),
+        "location":        _str(data.get("location")),
+        "profile_picture": _str(data.get("profile_picture")),
+        "skills":          clean_skills,
+        "languages":       clean_languages,
+        "experience":      [_sanitise_exp(e) for e in (data.get("experience") or [])],
+        "education":       [_sanitise_edu(e) for e in (data.get("education") or [])],
+        "projects":        [_sanitise_proj(p) for p in (data.get("projects") or [])],
+        "certifications":  [_sanitise_cert(c) for c in (data.get("certifications") or [])],
+        "social_links":    [_sanitise_link(lnk) for lnk in (data.get("social_links") or [])],
     }
 
 
@@ -298,6 +308,16 @@ def _sanitise_proj(p: dict) -> dict:
         "tech_stack":  _str(p.get("tech_stack")),
         "github_url":  _str(p.get("github_url")),
         "live_url":    _str(p.get("live_url")),
+    }
+
+
+def _sanitise_cert(c: dict) -> dict:
+    if isinstance(c, str):
+        return {"name": c.strip(), "issuer": "", "year": ""}
+    return {
+        "name":   _str(c.get("name")),
+        "issuer": _str(c.get("issuer")),
+        "year":   _str(c.get("year")),
     }
 
 
