@@ -82,7 +82,7 @@ export default function Analytics() {
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { l: "Total views", v: (data.total_views || 0).toLocaleString(), i: Eye, color: "#a78bfa" },
           { l: "Unique visitors", v: (data.total_visitors || 0).toLocaleString(), i: Users, color: "#22d3ee" },

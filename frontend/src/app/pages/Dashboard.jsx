@@ -219,7 +219,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label: "Total views", value: statsData.total_views, delta: "--", up: true, icon: Eye },
           { label: "Unique visitors", value: statsData.unique_visitors, delta: "--", up: true, icon: MousePointerClick },
@@ -327,53 +327,66 @@ export default function Dashboard() {
                         isSelected ? "bg-brand/5 hover:bg-brand/8" : "hover:bg-accent/30"
                       }`}
                     >
-                      <div className="flex items-center gap-3">
-                        {/* Custom checkbox */}
-                        <button
-                          onClick={() => setSelectedIds(isSelected ? selectedIds.filter(id => id !== p.id) : [...selectedIds, p.id])}
-                          className="shrink-0 text-muted-foreground hover:text-brand transition"
-                        >
-                          {isSelected
-                            ? <CheckSquare className="w-4 h-4 text-brand" />
-                            : <Square className="w-4 h-4" />
-                          }
-                        </button>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                        {/* Top row / Left group: checkbox + logo + text */}
+                        <div className="flex items-start gap-3 flex-1 min-w-0">
+                          {/* Custom checkbox */}
+                          <button
+                            onClick={() => setSelectedIds(isSelected ? selectedIds.filter(id => id !== p.id) : [...selectedIds, p.id])}
+                            className="shrink-0 text-muted-foreground hover:text-brand transition mt-1 sm:mt-0"
+                          >
+                            {isSelected
+                              ? <CheckSquare className="w-4.5 h-4.5 text-brand" />
+                              : <Square className="w-4.5 h-4.5" />
+                            }
+                          </button>
 
-                        <div className="w-10 h-10 rounded-lg gradient-bg shadow-glow shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium truncate">{p.name}</span>
-                            <Badge variant={p.status === "Published" ? "success" : "warn"}>{p.status}</Badge>
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-0.5">
-                            {p.template} · {p.views || 0} views · Updated {new Date(p.updated_at).toLocaleDateString()}
+                          <div className="w-10 h-10 rounded-lg gradient-bg shadow-glow shrink-0 hidden xs:block" />
+
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-semibold text-sm sm:text-base truncate text-foreground">{p.name}</span>
+                              <Badge variant={p.status === "Published" ? "success" : "warn"}>{p.status}</Badge>
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1 flex flex-wrap gap-x-2 gap-y-0.5">
+                              <span>{p.template}</span>
+                              <span className="opacity-40">•</span>
+                              <span>{p.views || 0} views</span>
+                              <span className="opacity-40">•</span>
+                              <span>Updated {new Date(p.updated_at).toLocaleDateString()}</span>
+                            </div>
                           </div>
                         </div>
-                        <Button as={Link} to={`/editor/${p.id}`} size="sm" variant="outline">Edit</Button>
-                        <Button
-                          as="a"
-                          href={p.status === "Published" && p.slug ? `/p/s/${p.slug}` : `/p/${p.id}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          size="sm"
-                          variant="ghost"
-                          title="Preview portfolio"
-                        >
-                          <ExternalLink className="w-3.5 h-3.5" />
-                        </Button>
-                        <PortfolioMenu portfolio={p} onDelete={handleDelete} />
+
+                        {/* Action buttons: bottom on mobile, right on tablet/desktop */}
+                        <div className="flex items-center justify-end gap-2 border-t border-border/40 pt-3 sm:border-t-0 sm:pt-0 shrink-0">
+                          <Button as={Link} to={`/editor/${p.id}`} size="sm" variant="outline" className="flex-1 sm:flex-initial justify-center py-2.5 h-11 sm:h-9">Edit</Button>
+                          <Button
+                            as="a"
+                            href={p.status === "Published" && p.slug ? `/p/s/${p.slug}` : `/p/${p.id}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            size="sm"
+                            variant="ghost"
+                            className="w-11 h-11 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg border border-border/40 sm:border-0"
+                            title="Preview portfolio"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                          </Button>
+                          <PortfolioMenu portfolio={p} onDelete={handleDelete} />
+                        </div>
                       </div>
 
                       {p.status === "Published" && (
-                        <div className="mt-2.5 ml-7 md:ml-14 p-2 px-3 rounded-lg bg-emerald-500/5 border border-emerald-500/10 flex items-center justify-between gap-3 flex-wrap">
-                          <div className="flex items-center gap-2 text-xs">
+                        <div className="mt-3 ml-0 sm:ml-7 md:ml-14 p-2 px-3 rounded-lg bg-emerald-500/5 border border-emerald-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div className="flex items-center gap-2 text-xs min-w-0 w-full sm:w-auto">
                             <Globe className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                            <span className="text-muted-foreground font-medium shrink-0">Live URL:</span>
+                            <span className="text-muted-foreground font-medium shrink-0">Live:</span>
                             <a
                               href={p.slug ? `/p/s/${p.slug}` : `/p/${p.id}`}
                               target="_blank"
                               rel="noreferrer"
-                              className="text-brand hover:underline font-mono truncate max-w-[200px] sm:max-w-xs md:max-w-md lg:max-w-lg"
+                              className="text-brand hover:underline font-mono truncate break-all block flex-1"
                             >
                               {window.location.origin}{p.slug ? `/p/s/${p.slug}` : `/p/${p.id}`}
                             </a>
@@ -388,7 +401,7 @@ export default function Dashboard() {
                                 type: "success"
                               });
                             }}
-                            className="text-[11px] px-2.5 py-1 rounded bg-brand/10 hover:bg-brand/20 text-brand font-semibold transition"
+                            className="text-[11px] px-3 py-1.5 rounded bg-brand/10 hover:bg-brand/20 text-brand font-semibold transition w-full sm:w-auto text-center shrink-0"
                           >
                             Copy Link
                           </button>

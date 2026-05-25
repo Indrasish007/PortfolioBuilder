@@ -25,11 +25,13 @@ export default function Settings() {
         <p className="text-muted-foreground text-sm">Manage your account, billing and preferences.</p>
       </div>
       <div className="grid lg:grid-cols-[220px_1fr] gap-4">
-        <GlassCard className="p-2 h-fit">
+        <GlassCard className="p-2 h-fit flex flex-row overflow-x-auto lg:flex-col lg:overflow-x-visible gap-1.5 no-scrollbar">
           {tabs.map((t) => (
             <button key={t.id} onClick={() => setTab(t.id)}
-              className={`w-full flex items-center gap-3 px-3 h-10 rounded-md text-sm transition ${tab === t.id ? "bg-accent" : "hover:bg-accent/40"}`}>
-              <t.icon className="w-4 h-4" /> {t.label}
+              className={`flex-shrink-0 lg:w-full flex items-center gap-2.5 px-4 lg:px-3 h-10 rounded-lg text-sm transition ${
+                tab === t.id ? "bg-accent text-foreground font-semibold" : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
+              }`}>
+              <t.icon className="w-4 h-4 flex-shrink-0" /> {t.label}
             </button>
           ))}
         </GlassCard>

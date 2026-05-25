@@ -1,5 +1,5 @@
 import { Outlet, NavLink, Link, useNavigate } from "react-router-dom";
-import { LayoutDashboard, PenSquare, LayoutTemplate, BarChart3, Bell, Plus, ChevronDown, LogOut, Sparkles, Upload, FileText, X } from "lucide-react";
+import { LayoutDashboard, PenSquare, LayoutTemplate, BarChart3, Bell, Plus, ChevronDown, LogOut, Sparkles, Upload, FileText, X, Menu } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import Logo from "../components/Logo.jsx";
 import ThemeToggle from "../components/ThemeToggle.jsx";
@@ -23,6 +23,7 @@ export default function DashboardLayout() {
   const logout = useAuthStore((s) => s.logout);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 768);
   const [isParsing, setIsParsing] = useState(false);
   const [hasPendingCV, setHasPendingCV] = useState(
     () => !!sessionStorage.getItem("pendingParsedCV")
@@ -30,6 +31,21 @@ export default function DashboardLayout() {
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const lastWidth = useRef(window.innerWidth);
+  useEffect(() => {
+    const handleResize = () => {
+      const w = window.innerWidth;
+      const wasMobile = lastWidth.current < 768;
+      const isMobile = w < 768;
+      if (wasMobile !== isMobile) {
+        setSidebarOpen(!isMobile);
+      }
+      lastWidth.current = w;
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     if (!localStorage.getItem("access_token")) {
@@ -107,10 +123,31 @@ export default function DashboardLayout() {
     <div className="relative min-h-screen flex bg-background">
       <div className="absolute inset-0 -z-10 hero-bg opacity-40" />
 
+      {/* Backdrop overlay on mobile */}
+      {sidebarOpen && (
+        <div
+          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden transition-opacity duration-300"
+        />
+      )}
+
       {/* ── Sidebar ── */}
-      <aside className="hidden lg:flex w-64 flex-col border-r border-border/50 bg-background/60 backdrop-blur-xl sticky top-0 h-screen">
-        <div className="p-5">
-          <Logo />
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col border-r border-border/50 bg-background/95 md:bg-background/60 backdrop-blur-xl transition-all duration-300 ${
+          sidebarOpen 
+            ? "translate-x-0 w-64 md:sticky md:h-screen md:translate-x-0 md:w-20 lg:w-64" 
+            : "-translate-x-full w-64 md:sticky md:h-screen md:translate-x-0 md:w-0 md:overflow-hidden md:border-r-0"
+        }`}
+      >
+        <div className="p-5 flex items-center justify-between md:block md:p-5">
+          <Logo className="flex md:justify-center lg:justify-start" />
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="md:hidden p-1.5 rounded-lg glass text-muted-foreground hover:text-foreground"
+            aria-label="Close sidebar"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
 
         {/* Nav links */}
@@ -120,22 +157,23 @@ export default function DashboardLayout() {
               key={n.to}
               to={n.to}
               end={n.to === "/dashboard"}
+              onClick={() => setSidebarOpen(false)}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition ${
+                `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition md:justify-center lg:justify-start ${
                   isActive
-                    ? "bg-accent text-foreground shadow-card"
+                    ? "bg-accent text-foreground shadow-card font-semibold"
                     : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
                 }`
               }
             >
-              <n.icon className="w-4 h-4" />
-              {n.label}
+              <n.icon className="w-4 h-4 flex-shrink-0" />
+              <span className="md:hidden lg:inline">{n.label}</span>
             </NavLink>
           ))}
         </nav>
 
         {/* ── Parse CV with AI card ── */}
-        <div className="px-3 pb-5">
+        <div className="px-3 pb-5 md:hidden lg:block">
           {/* Gradient border via padding trick */}
           <div
             onClick={handleCVParsingClick}
@@ -295,18 +333,49 @@ export default function DashboardLayout() {
       <div className="flex-1 flex flex-col min-w-0">
         <header className="sticky top-0 z-30 border-b border-border/50 bg-background/70 backdrop-blur-xl">
           <div className="h-16 px-4 lg:px-6 flex items-center gap-3">
+            {/* Hamburger trigger + Back / Title */}
             <div className="flex items-center gap-2">
+              <button
+                onClick={() => setSidebarOpen((open) => !open)}
+                className={`p-2 rounded-lg glass text-muted-foreground hover:text-foreground mr-1 flex flex-col justify-center items-center w-9 h-9 gap-1 transition-all duration-500 ease-in-out ${
+                  sidebarOpen ? "rotate-180 scale-105" : "hover:rotate-12"
+                }`}
+                aria-label="Toggle sidebar"
+              >
+                <span
+                  className={`block w-5 h-0.5 bg-current rounded transition-all duration-500 ease-in-out origin-center ${
+                    sidebarOpen ? "rotate-45 translate-y-1.5" : ""
+                  }`}
+                />
+                <span
+                  className={`block w-5 h-0.5 bg-current rounded transition-all duration-500 ease-in-out ${
+                    sidebarOpen ? "opacity-0 scale-x-0" : ""
+                  }`}
+                />
+                <span
+                  className={`block w-5 h-0.5 bg-current rounded transition-all duration-500 ease-in-out origin-center ${
+                    sidebarOpen ? "-rotate-45 -translate-y-1.5" : ""
+                  }`}
+                />
+              </button>
               <BackButton fallback="/" className="md:hidden" />
-              <div className="w-8 h-8 rounded-lg bg-brand flex items-center justify-center text-white font-bold">P</div>
+              <div className="w-8 h-8 rounded-lg bg-brand flex items-center justify-center text-white font-bold flex-shrink-0">P</div>
               <span className="font-semibold text-lg hidden md:block">PortfolioBuilder</span>
             </div>
-            <div className="flex-1 flex justify-end gap-3">
-              <Button as={Link} to="/editor" size="sm" className="hidden md:inline-flex">
+
+            {/* Actions group */}
+            <div className="flex-1 flex justify-end gap-2.5">
+              {/* Plus button with text on tablet/desktop */}
+              <Button as={Link} to="/editor" size="sm" className="hidden sm:inline-flex">
                 <Plus className="w-4 h-4" /> New portfolio
+              </Button>
+              {/* Plus button icon-only on mobile */}
+              <Button as={Link} to="/editor" size="sm" className="sm:hidden inline-flex w-9 h-9 items-center justify-center p-0">
+                <Plus className="w-4 h-4" />
               </Button>
             </div>
             <ThemeToggle />
-            <button className="relative w-9 h-9 inline-flex items-center justify-center rounded-lg glass">
+            <button className="relative w-9 h-9 inline-flex items-center justify-center rounded-lg glass hidden sm:inline-flex">
               <Bell className="w-4 h-4" />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-brand-3 animate-pulse" />
             </button>

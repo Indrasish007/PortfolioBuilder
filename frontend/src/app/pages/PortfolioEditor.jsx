@@ -418,6 +418,25 @@ export default function PortfolioEditor() {
     <div className="grid lg:grid-cols-[400px_1fr] gap-4 h-[calc(100vh-120px)]">
       <div className="flex flex-col gap-3 min-h-0">
         <BackButton fallback="/dashboard" className="mb-0 w-max" />
+        
+        {/* Responsive action controls for mobile/tablet */}
+        <div className="lg:hidden">
+          <GlassCard className="p-2 flex items-center justify-between gap-1.5 flex-wrap">
+            <div className="flex items-center gap-1">
+              <Button size="sm" variant="ghost" onClick={undo} aria-label="Undo"><Undo2 className="w-4 h-4" /></Button>
+              <Button size="sm" variant="ghost" onClick={redo} aria-label="Redo"><Redo2 className="w-4 h-4" /></Button>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Button size="sm" variant="ghost" onClick={handleSave} disabled={isLoading} className="text-emerald-400">
+                {isLoading ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Save className="w-3.5 h-3.5 mr-1" />}
+                Save
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setPreviewOpen(true)}><Eye className="w-3.5 h-3.5 mr-1" /> Preview</Button>
+              <Button size="sm" onClick={handlePublishClick}>Publish</Button>
+            </div>
+          </GlassCard>
+        </div>
+
         <GlassCard className="p-3 flex items-center gap-1">
           {[
             { id: "content", l: "Content", i: Type },
@@ -611,7 +630,7 @@ export default function PortfolioEditor() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 min-h-0">
+      <div className="hidden lg:flex flex-col gap-3 min-h-0">
         <GlassCard className="p-2 flex items-center gap-2">
           <Button size="sm" variant="ghost" onClick={undo}><Undo2 className="w-4 h-4" /></Button>
           <Button size="sm" variant="ghost" onClick={redo}><Redo2 className="w-4 h-4" /></Button>
