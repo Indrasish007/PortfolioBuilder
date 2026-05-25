@@ -90,6 +90,25 @@ export default function GlassLayout({ p, t, id, portfolioId }) {
           </div>
         )}
 
+        {/* Languages */}
+        {p.languages?.length > 0 && (
+          <div style={{ marginBottom:48 }}>
+            {lbl("Languages")}
+            <div style={{ display:"flex", flexWrap:"wrap", gap:10 }}>
+              {p.languages.map((l,i) => (
+                <span key={i} style={{
+                  ...card, padding:"6px 16px", fontSize:13,
+                  border: id==="holographic" ? "1px solid rgba(255,255,255,0.15)" : `1px solid rgba(255,255,255,0.2)`,
+                  color: fg, borderRadius:999,
+                  backgroundImage: id==="holographic" ? "linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))" : "none",
+                }}>
+                  {l.name} <span style={{ opacity: 0.5, fontSize: 11 }}>({l.proficiency})</span>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Experience */}
         {p.experience?.length > 0 && (
           <div style={{ marginBottom:48 }}>

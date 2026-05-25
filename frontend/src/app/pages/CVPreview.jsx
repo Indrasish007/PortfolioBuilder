@@ -4,7 +4,7 @@ import {
   User, Mail, Phone, MapPin, Briefcase, GraduationCap, Code2,
   FolderOpen, Link2, Sparkles, ChevronRight, Check, ArrowLeft,
   Github, Globe, Linkedin, Twitter, Instagram, X,
-  Pencil, Plus, Trash2, Save, Calendar,
+  Pencil, Plus, Trash2, Save, Calendar, Languages,
 } from "lucide-react";
 import { useState } from "react";
 import { templates, themes, templateCategories } from "../services/templates.js";
@@ -127,6 +127,7 @@ export default function CVPreview() {
   const [editData, setEditData] = useState(() => ({
     ...rawCV,
     skills: rawCV.skills ? [...rawCV.skills] : [],
+    languages: rawCV.languages ? rawCV.languages.map((l) => ({ ...l })) : [],
     social_links: rawCV.social_links ? rawCV.social_links.map((l) => ({ ...l })) : [],
     experience: rawCV.experience ? rawCV.experience.map((e) => ({ ...e })) : [],
     education: rawCV.education ? rawCV.education.map((e) => ({ ...e })) : [],
@@ -139,6 +140,8 @@ export default function CVPreview() {
   const [step, setStep] = useState("review");
   const [importing, setImporting] = useState(false);
   const [newSkill, setNewSkill] = useState("");
+  const [newLangName, setNewLangName] = useState("");
+  const [newLangProf, setNewLangProf] = useState("");
 
   // ── Array helpers ─────────────────────────────────────────────────────────
   const updateExperience = (idx, field, value) =>
@@ -170,6 +173,18 @@ export default function CVPreview() {
     setNewSkill("");
   };
   const removeSkill = (idx) => setEditData((d) => ({ ...d, skills: d.skills.filter((_, i) => i !== idx) }));
+
+  const addLanguage = () => {
+    const name = newLangName.trim();
+    const prof = newLangProf.trim() || "Fluent";
+    if (!name) return;
+    setEditData((d) => ({ ...d, languages: [...(d.languages || []), { name, proficiency: prof }] }));
+    setNewLangName("");
+    setNewLangProf("");
+  };
+  const removeLanguage = (idx) => {
+    setEditData((d) => ({ ...d, languages: (d.languages || []).filter((_, i) => i !== idx) }));
+  };
 
   const updateProjectTech = (pIdx, techIdx, value) =>
     setEditData((d) => ({ ...d, projects: d.projects.map((p, i) => i !== pIdx ? p : { ...p, tech: p.tech.map((t, j) => j === techIdx ? value : t) }) }));
@@ -204,6 +219,7 @@ export default function CVPreview() {
         if (editData.experience?.length > 0) updateField("experience", editData.experience);
         if (editData.education?.length > 0)  updateField("education",  editData.education);
         if (editData.projects?.length > 0)   updateField("projects",   editData.projects);
+        if (editData.languages?.length > 0)  updateField("languages",  editData.languages);
       });
 
       toast({ title: "Imported!", description: "Your CV data has been loaded into the editor.", type: "success" });
@@ -518,6 +534,51 @@ export default function CVPreview() {
                   editData.skills?.length > 0
                     ? <div className="flex flex-wrap gap-2">{editData.skills.map((s, i) => <Pill key={i}>{s}</Pill>)}</div>
                     : <Empty />
+                )}
+              </SectionCard>
+
+              {/* ── Languages ── */}
+              <SectionCard
+                icon={Languages} title="Languages" accent="var(--brand)"
+                editing={editingSection === "languages"}
+                onEdit={() => setEditingSection("languages")}
+                onSave={() => setEditingSection(null)}
+              >
+                {editingSection === "languages" ? (
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap gap-2">
+                      {(editData.languages || []).map((l, i) => (
+                        <Pill key={i} onRemove={() => removeLanguage(i)}>
+                          {l.name} <span className="opacity-60 text-[10px]">({l.proficiency})</span>
+                        </Pill>
+                      ))}
+                      {(editData.languages || []).length === 0 && <Empty />}
+                    </div>
+                    <div className="flex gap-2">
+                      <InlineInput value={newLangName} onChange={setNewLangName} placeholder="Language (e.g. Spanish)" />
+                      <InlineInput value={newLangProf} onChange={setNewLangProf} placeholder="Proficiency (e.g. Fluent)" />
+                      <button
+                        onClick={addLanguage}
+                        className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition"
+                        style={{ background: "linear-gradient(135deg,var(--brand),var(--brand-2))" }}
+                      >
+                        <Plus className="w-3 h-3" /> Add
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">Press Add to add a language. Click × on a tag to remove it.</p>
+                  </div>
+                ) : (
+                  (editData.languages || []).length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {editData.languages.map((l, i) => (
+                        <Pill key={i}>
+                          {l.name} <span className="opacity-60 text-[10px]">({l.proficiency})</span>
+                        </Pill>
+                      ))}
+                    </div>
+                  ) : (
+                    <Empty />
+                  )
                 )}
               </SectionCard>
 

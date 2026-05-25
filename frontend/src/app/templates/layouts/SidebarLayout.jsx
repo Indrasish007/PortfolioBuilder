@@ -101,6 +101,25 @@ export default function SidebarLayout({ p, t, id, portfolioId }) {
           </div>
         )}
 
+        {/* Languages */}
+        {p.languages?.length > 0 && (
+          <div style={{ marginBottom:36 }}>
+            {lbl("Languages")}
+            {id === "terminal"
+              ? <div style={{ fontFamily:"ui-monospace,monospace", fontSize:12 }}>
+                  {p.languages.map((l,i)=><span key={i} style={{ marginRight:16, color:ac }}>{l.name} ({l.proficiency})</span>)}
+                </div>
+              : <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {p.languages.map((l, i) => (
+                    <span key={i} style={{ background: `${ac}08`, color: t.fg, padding: "4px 12px", borderRadius: radius, fontSize: 12, border: `1px solid ${ac}20`, lineHeight: 1.5 }}>
+                      {l.name} <span style={{ opacity: 0.5, fontSize: 11 }}>({l.proficiency})</span>
+                    </span>
+                  ))}
+                </div>
+            }
+          </div>
+        )}
+
         {/* Experience */}
         {p.experience?.length > 0 && (
           <div style={{ marginBottom:36 }} id="experience">

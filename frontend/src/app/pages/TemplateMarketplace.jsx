@@ -417,6 +417,7 @@ export default function TemplateMarketplace() {
         }
         if (r.location) updateField("user.location", r.location);
         if (r.skills?.length) updateField("skills", r.skills);
+        if (r.languages?.length) updateField("languages", r.languages);
         if (r.experience?.length) {
           updateField("experience", r.experience.map((e) => ({
             role: e.role || "",

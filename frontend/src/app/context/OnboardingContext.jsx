@@ -22,6 +22,7 @@ const DEFAULT_REVIEWED_DATA = {
   experience: [],
   projects: [],
   social_links: [],
+  languages: [],
 };
 
 export function OnboardingProvider({ children }) {

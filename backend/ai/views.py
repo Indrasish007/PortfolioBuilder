@@ -218,6 +218,7 @@ class AICVParsingView(APIView):
                 # Portfolio sections
                 "bio":        structured.get("bio", ""),
                 "skills":     structured.get("skills", []),
+                "languages":  structured.get("languages", []),
                 "experience": experience,
                 "education":  education,
                 "projects":   projects,
@@ -691,9 +692,30 @@ class AICVParsingView(APIView):
                 seen_platforms.add("website")
                 break
 
+        # Extract languages heuristically
+        from ai.services.ai_parser import differentiate_skills_and_languages, HUMAN_LANGUAGES
+        found_languages = []
+        text_lower = text.lower()
+        for hl in HUMAN_LANGUAGES:
+            pattern = rf"\b{hl}\b"
+            if re.search(pattern, text_lower):
+                proficiency = "Fluent"
+                for line in lines:
+                    line_lower = line.lower()
+                    if hl in line_lower:
+                        prof_match = re.search(r'\b(native|fluent|intermediate|conversational|bilingual|basic|advanced|limited|professional)\b', line_lower)
+                        if prof_match:
+                            proficiency = prof_match.group(0).capitalize()
+                            break
+                found_languages.append({"name": hl.capitalize(), "proficiency": proficiency})
+
+        # Differentiate between skills and human languages
+        clean_skills, clean_languages = differentiate_skills_and_languages(found_skills, found_languages)
+
         return {
             "bio": bio,
-            "skills": found_skills[:12],
+            "skills": clean_skills[:12],
+            "languages": clean_languages,
             "experience": cleaned_experience,
             "education": cleaned_education,
             "projects": cleaned_projects,
@@ -770,7 +792,7 @@ class ResumeParseView(APIView):
             parsed = parse_resume_with_ai(raw_text)
 
             # Ensure list fields are actually lists (belt-and-suspenders)
-            for list_field in ["skills", "experience", "projects", "social_links"]:
+            for list_field in ["skills", "languages", "experience", "projects", "social_links"]:
                 if not isinstance(parsed.get(list_field), list):
                     parsed[list_field] = []
 
@@ -798,6 +820,7 @@ class ResumeParseView(APIView):
             "phone": "",
             "location": "",
             "skills": heuristic.get("skills", []),
+            "languages": heuristic.get("languages", []),
             "experience": [
                 {
                     "company":     e.get("company", ""),
@@ -979,6 +1002,7 @@ class FetchGlobalPortfolioView(APIView):
             "phone": "",
             "location": "",
             "skills": heuristic.get("skills", []),
+            "languages": heuristic.get("languages", []),
             "experience": heuristic.get("experience", []),
             "education": heuristic.get("education", []),
             "projects": heuristic.get("projects", []),

@@ -84,6 +84,29 @@ export default function BrutalistLayout({ p, t, id, portfolioId }) {
           </div>
         )}
 
+        {/* Languages */}
+        {p.languages?.length > 0 && (
+          <div style={{ marginBottom:48, borderBottom: isMono?"1px solid #ddd":"none", paddingBottom:isMono?48:0 }}>
+            {lbl("Languages")}
+            {isMono
+              ? <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))", gap:8 }}>
+                  {p.languages.map((l,i) => (
+                    <span key={i} style={{ padding:"8px 12px", border:"2px solid #111", fontSize:12, fontWeight:700, fontFamily:"Inter,sans-serif" }}>
+                      {l.name} ({l.proficiency})
+                    </span>
+                  ))}
+                </div>
+              : <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+                  {p.languages.map((l,i) => (
+                    <span key={i} style={{ padding:"4px 14px", background:"rgba(250,204,21,0.15)", border:"2px solid #facc15", color:fg, fontSize:13, fontWeight:700, fontFamily:"Inter,sans-serif" }}>
+                      {l.name} <span style={{ opacity: 0.7, fontSize: 11 }}>({l.proficiency})</span>
+                    </span>
+                  ))}
+                </div>
+            }
+          </div>
+        )}
+
         {/* Experience */}
         {p.experience?.length > 0 && (
           <div style={{ marginBottom:48, borderBottom: isMono?"1px solid #ddd":"none", paddingBottom:isMono?48:0 }}>

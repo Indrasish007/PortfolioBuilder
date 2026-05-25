@@ -70,6 +70,19 @@ export default function SplitLayout({ p, t, id, portfolioId }) {
               </div>
             </div>
           )}
+
+          {p.languages?.length > 0 && (
+            <div>
+              {lbl("Languages")}
+              <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+                {p.languages.map((l,i) => (
+                  <span key={i} style={{ padding:"5px 14px", background:`rgba(255,255,255,0.05)`, border:`1px solid rgba(255,255,255,0.1)`, color:fg, borderRadius:4, fontSize:12 }}>
+                    {l.name} <span style={{ opacity: 0.5, fontSize: 10 }}>({l.proficiency})</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
           {p.projects?.[0] && (
             <div>
               {lbl("Featured Project")}

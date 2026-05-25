@@ -149,6 +149,7 @@ export default function PortfolioEditor() {
         }
         // Portfolio sections
         if (cvData.skills     && cvData.skills.length > 0)     updateField("skills",     cvData.skills);
+        if (cvData.languages  && cvData.languages.length > 0)  updateField("languages",  cvData.languages);
         if (cvData.experience && cvData.experience.length > 0) updateField("experience", cvData.experience);
         if (cvData.education  && cvData.education.length > 0)  updateField("education",  cvData.education);
         if (cvData.projects   && cvData.projects.length > 0)   updateField("projects",   cvData.projects);

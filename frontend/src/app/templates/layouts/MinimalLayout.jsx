@@ -51,6 +51,20 @@ export default function MinimalLayout({ p, t, id, portfolioId }) {
           </div>
         )}
 
+        {/* ── Languages ── */}
+        {p.languages?.length > 0 && (
+          <div style={sec}>
+            {lbl("Languages")}
+            <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+              {p.languages.map((l,i) => (
+                <span key={i} style={{ background:`${t.fg}08`, color:t.fg, padding:"4px 14px", borderRadius: serif ? "3px" : "999px", fontSize:13 }}>
+                  {l.name} <span style={{ opacity: 0.5, fontSize: 11 }}>({l.proficiency})</span>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* ── Experience ── */}
         {p.experience?.length > 0 && (
           <div style={sec}>

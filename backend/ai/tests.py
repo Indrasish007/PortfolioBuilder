@@ -144,6 +144,29 @@ class CVParserTestCase(TestCase):
         """
         res = self.parser.fallback_parse_cv(text)
         # We assert that contact details and address parts are NOT in skills
-        for bad_skill in ["B-3/45", "Kalyani", "Nadia", "Pin:", "741235", "indrasishadhya770@gmail.com", "7439667724", "Github"]:
+        for bad_skill in ["B-3/45", "Kalyani", "Nadia", "Pin:", "741235", "indrasishadhya770@gmail.com", "7439667724", "Github", "Bengali", "English", "Hindi"]:
             self.assertNotIn(bad_skill, res["skills"])
+
+        # Assert human languages are separated from skills
+        self.assertEqual(len(res["languages"]), 3)
+        self.assertEqual({l["name"] for l in res["languages"]}, {"Bengali", "English", "Hindi"})
+        for l in res["languages"]:
+            self.assertEqual(l["proficiency"], "Fluent")
+
+    def test_differentiate_skills_and_languages(self):
+        from ai.services.ai_parser import differentiate_skills_and_languages
+        skills = ["Python", "JavaScript", "English - Native", "Spanish (Conversational)", "React", "French"]
+        languages = [{"name": "Bengali", "proficiency": "Native"}]
+        
+        clean_skills, clean_languages = differentiate_skills_and_languages(skills, languages)
+        
+        # Human languages should be separated from skills
+        self.assertEqual(clean_skills, ["Python", "JavaScript", "React"])
+        
+        self.assertEqual(len(clean_languages), 4)
+        self.assertEqual(clean_languages[0], {"name": "Bengali", "proficiency": "Native"})
+        self.assertEqual(clean_languages[1], {"name": "English", "proficiency": "Native"})
+        self.assertEqual(clean_languages[2], {"name": "Spanish", "proficiency": "Conversational"})
+        self.assertEqual(clean_languages[3], {"name": "French", "proficiency": "Fluent"})
+
 

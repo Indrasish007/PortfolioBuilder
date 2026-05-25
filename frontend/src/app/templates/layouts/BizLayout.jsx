@@ -87,6 +87,23 @@ export default function BizLayout({ p, t, id, portfolioId }) {
           </div>
         )}
 
+        {/* Languages */}
+        {p.languages?.length > 0 && (
+          <div style={{ marginBottom: 56 }}>
+            {lbl("Languages")}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+              {p.languages.map((l, i) => (
+                <span key={i} style={{
+                  padding: "6px 16px", background: `${ac}08`, border: `1px solid ${ac}20`,
+                  color: fg, borderRadius: radius, fontSize: 13
+                }}>
+                  {l.name} <span style={{ opacity: 0.5, fontSize: 11 }}>({l.proficiency})</span>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Projects */}
         {p.projects?.length > 0 && (
           <div style={{ marginBottom: 56 }} id="projects">

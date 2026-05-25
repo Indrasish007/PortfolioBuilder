@@ -62,7 +62,7 @@ export default function BoldLayout({ p, t, id, portfolioId }) {
       {/* ── Content ── */}
       <div style={{ padding:"80px 56px" }}>
 
-        {/* Skills */}
+        {/* // Skills */}
         {p.skills?.length > 0 && (
           <div style={{ marginBottom:64 }}>
             <SLabel>Skills</SLabel>
@@ -73,6 +73,23 @@ export default function BoldLayout({ p, t, id, portfolioId }) {
                   fontSize:13, color:ac, fontFamily:font,
                   boxShadow: id==="neon"?`0 0 8px ${ac}40`:"none"
                 }}>{typeof s==="object"?s.name:s}</span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Languages */}
+        {p.languages?.length > 0 && (
+          <div style={{ marginBottom:64 }}>
+            <SLabel>Languages</SLabel>
+            <div style={{ display:"flex", flexWrap:"wrap", gap:10 }}>
+              {p.languages.map((l,i) => (
+                <span key={i} style={{
+                  padding:"6px 18px", border:`1px solid ${ac}30`, borderRadius:2,
+                  fontSize:13, color:t.fg, fontFamily:font,
+                }}>
+                  {l.name} <span style={{ opacity: 0.5, fontSize: 11 }}>({l.proficiency})</span>
+                </span>
               ))}
             </div>
           </div>

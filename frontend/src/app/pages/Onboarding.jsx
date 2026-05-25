@@ -413,6 +413,20 @@ function StepReview({ reviewedData, setReviewedData, onContinue }) {
   const removeSkill = (s) =>
     update("skills", reviewedData.skills.filter((x) => x !== s));
 
+  /* Languages */
+  const [newLangName, setNewLangName] = useState("");
+  const [newLangProf, setNewLangProf] = useState("");
+  const addLanguage = () => {
+    const name = newLangName.trim();
+    const prof = newLangProf.trim() || "Fluent";
+    if (!name) return;
+    update("languages", [...(reviewedData.languages || []), { name, proficiency: prof }]);
+    setNewLangName("");
+    setNewLangProf("");
+  };
+  const removeLanguage = (idx) =>
+    update("languages", (reviewedData.languages || []).filter((_, i) => i !== idx));
+
   /* Experience */
   const updateExp = (i, field, val) => {
     const arr = [...reviewedData.experience];
@@ -560,6 +574,60 @@ function StepReview({ reviewedData, setReviewedData, onContinue }) {
             <button
               type="button"
               onClick={addSkill}
+              className="h-10 px-3 rounded-lg gradient-bg text-white text-sm flex items-center gap-1 hover:opacity-90 transition"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          </div>
+        </ReviewSection>
+
+        {/* ── Languages ──────────────────────────────────────────────────── */}
+        <ReviewSection
+          title={`Languages (${reviewedData.languages?.length || 0})`}
+          icon={Globe}
+          defaultOpen={(reviewedData.languages || []).length > 0}
+        >
+          <div className="flex flex-wrap gap-2 mb-3">
+            <AnimatePresence>
+              {(reviewedData.languages || []).map((lang, idx) => (
+                <motion.span
+                  key={idx}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ duration: 0.15 }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-brand/10 text-brand border border-brand/20"
+                >
+                  {lang.name} <span className="opacity-60">({lang.proficiency})</span>
+                  <button
+                    type="button"
+                    onClick={() => removeLanguage(idx)}
+                    className="hover:text-destructive transition"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </motion.span>
+              ))}
+            </AnimatePresence>
+          </div>
+          <div className="flex gap-2">
+            <input
+              value={newLangName}
+              onChange={(e) => setNewLangName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && addLanguage()}
+              placeholder="Language (e.g. Spanish)"
+              className="flex-1 bg-input/40 border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+            <input
+              value={newLangProf}
+              onChange={(e) => setNewLangProf(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && addLanguage()}
+              placeholder="Proficiency (e.g. Fluent)"
+              className="flex-1 bg-input/40 border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+            <button
+              type="button"
+              onClick={addLanguage}
               className="h-10 px-3 rounded-lg gradient-bg text-white text-sm flex items-center gap-1 hover:opacity-90 transition"
             >
               <Plus className="w-4 h-4" />
