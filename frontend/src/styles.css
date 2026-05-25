@@ -281,7 +281,7 @@
 }
 
 /* ── Theme switch transition ──────────────────────────────
-   Only active for ~300ms while .theme-transitioning is set
+   Only active for ~500ms while .theme-transitioning is set
    on <html> by ThemeToggle. This avoids interfering with
    Tailwind transitions on hover, focus, etc.
 ─────────────────────────────────────────────────────────── */
@@ -290,24 +290,12 @@ html.theme-transitioning *,
 html.theme-transitioning *::before,
 html.theme-transitioning *::after {
   transition:
-    background-color 0.2s ease,
-    color 0.18s ease,
-    border-color 0.2s ease !important;
-  transition-delay: 0s !important;
-}
-
-/* Exclude heavy/non-color elements to prevent repaint lag */
-html.theme-transitioning canvas,
-html.theme-transitioning video,
-html.theme-transitioning img,
-html.theme-transitioning svg,
-html.theme-transitioning iframe,
-html.theme-transitioning [class*="recharts"],
-html.theme-transitioning [class*="chart"],
-html.theme-transitioning [class*="graph"],
-html.theme-transitioning [class*="animation"],
-html.theme-transitioning [class*="animate-"] {
-  transition: none !important;
+    background-color 0.35s ease,
+    color 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease,
+    fill 0.3s ease,
+    stroke 0.3s ease !important;
 }
 
 /* Respect user's OS reduced-motion preference */

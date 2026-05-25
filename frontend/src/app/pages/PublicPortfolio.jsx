@@ -123,25 +123,32 @@ export default function PublicPortfolio() {
     jsonLdScript.textContent = JSON.stringify(schema, null, 2);
   }, [p, isPreview]);
 
+  // Use sessionStorage (not useRef) so the guard survives React StrictMode's
+  // full unmount+remount cycle. useRef resets on remount; sessionStorage does not.
   useEffect(() => {
     if (!p || isPreview) return;
-    
+
+    const trackKey = `tracked_view_${p.id}`;
+    if (sessionStorage.getItem(trackKey)) return;
+    sessionStorage.setItem(trackKey, '1');
+
     let visitorId = localStorage.getItem("visitorId");
     if (!visitorId) {
       visitorId = Math.random().toString(36).substring(2) + Date.now().toString(36);
       localStorage.setItem("visitorId", visitorId);
     }
-    
+
     api.post(`/portfolios/${p.id}/analytics/`, { event_type: 'view', visitor_id: visitorId }).catch(() => {});
-    
+
     let duration = 0;
     const interval = setInterval(() => {
       duration += 10;
       api.post(`/portfolios/${p.id}/analytics/`, { event_type: 'session_ping', visitor_id: visitorId, duration }).catch(() => {});
     }, 10000);
-    
+
     return () => clearInterval(interval);
   }, [p, isPreview]);
+
 
   if (loading) {
     return (

@@ -160,9 +160,23 @@ class AnalyticsView(APIView):
                 device = 'Desktop'
         
         if event_type == 'view':
-            PortfolioEvent.objects.create(portfolio=portfolio, event_type=event_type, visitor_id=visitor_id, device=device, country=country)
-            portfolio.views += 1
-            portfolio.save()
+            import datetime as dt
+            from django.utils import timezone as tz
+            # Dedup: if this visitor already recorded a view on this portfolio
+            # within the last 5 minutes, treat it as a duplicate and skip it.
+            # This handles React StrictMode double-fire and browser refresh storms.
+            cutoff = tz.now() - dt.timedelta(minutes=5)
+            already_recorded = PortfolioEvent.objects.filter(
+                portfolio=portfolio,
+                event_type='view',
+                visitor_id=visitor_id,
+                created_at__gte=cutoff
+            ).exists()
+            if not already_recorded:
+                PortfolioEvent.objects.create(portfolio=portfolio, event_type=event_type, visitor_id=visitor_id, device=device, country=country)
+                portfolio.views += 1
+                portfolio.save()
+
         elif event_type == 'session_ping':
             # Store ping
             PortfolioEvent.objects.create(portfolio=portfolio, event_type=event_type, visitor_id=visitor_id, duration=duration, device=device, country=country)

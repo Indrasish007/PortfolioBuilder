@@ -18,11 +18,11 @@ export default function ThemeToggle({ className = "" }) {
       toggle();
     }, 150);
 
-    // Remove transitioning class after animation (0.2s + small buffer)
+    // Remove transitioning class and reset spin state after animation
     setTimeout(() => {
       document.documentElement.classList.remove("theme-transitioning");
       setSpinning(false);
-    }, 300);
+    }, 500);
   };
 
   const isDark = theme === "dark";

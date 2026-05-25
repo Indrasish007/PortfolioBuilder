@@ -24,12 +24,12 @@ class AnalyticsView(APIView):
         for d in date_list:
             day_str = d.strftime('%b %d') # e.g. "May 19"
             
-            # Views count on day d
+            # Deduplicate by visitor_id so double-tracked events count as 1 view
             day_views = PortfolioEvent.objects.filter(
                 portfolio__in=portfolios,
                 event_type='view',
                 created_at__date=d
-            ).count()
+            ).values('visitor_id').distinct().count()
             
             # Visitors count on day d (distinct visitor_ids)
             day_visitors = PortfolioEvent.objects.filter(
@@ -59,12 +59,13 @@ class AnalyticsView(APIView):
                 {"name": "Tablet", "value": 10},
             ]
 
-        # 3. Countries — count only actual page views, not pings or downloads
+        # 3. Countries — total view count per country
         country_counts = PortfolioEvent.objects.filter(
             portfolio__in=portfolios,
             event_type='view',
             created_at__date__gte=today - datetime.timedelta(days=13)
         ).values('country').annotate(visits=Count('id')).order_by('-visits')[:10]
+
         
         countries_data = []
         for item in country_counts:
@@ -76,12 +77,11 @@ class AnalyticsView(APIView):
                 {"country": "India", "visits": 0}
             ]
 
-        # 4. Total views, visitors, and downloads in last 14 days
-        total_views = PortfolioEvent.objects.filter(
-            portfolio__in=portfolios,
-            event_type='view',
-            created_at__date__gte=today - datetime.timedelta(days=13)
-        ).count()
+        # Use portfolio.views (same source as Dashboard) so both pages
+        # always report an identical total — avoids counting stale duplicate
+        # PortfolioEvent rows that existed before the dedup fix.
+        total_views = sum(p.views for p in portfolios)
+
 
         total_visitors = PortfolioEvent.objects.filter(
             portfolio__in=portfolios,
