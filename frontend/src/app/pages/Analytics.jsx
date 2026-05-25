@@ -4,6 +4,7 @@ import GlassCard from "../components/GlassCard.jsx";
 import Badge from "../components/Badge.jsx";
 import { useState, useEffect, useCallback } from "react";
 import api from "../services/api.js";
+import FeaturedProjectSuggestion from "../components/FeaturedProjectSuggestion.jsx";
 
 const DEVICE_COLORS = ["#a78bfa", "#22d3ee", "#f472b6"];
 const COUNTRY_COLORS = ["#a78bfa", "#22d3ee", "#f472b6", "#34d399", "#fb923c", "#60a5fa", "#e879f9", "#facc15", "#4ade80", "#f87171"];
@@ -65,6 +66,9 @@ export default function Analytics() {
 
   return (
     <div className="space-y-6">
+      {/* Featured project suggestions — self-hides if no data qualifies */}
+      <FeaturedProjectSuggestion variant="analytics" />
+
       {/* Header */}
       <div className="flex items-end justify-between flex-wrap gap-3">
         <div>

@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     PortfolioViewSet, PublicPortfolioView, PublicPortfolioBySlugView,
     PublicPortfolioByDomainView, PublishPortfolioView, UnpublishPortfolioView,
-    AnalyticsView, DashboardStatsView, PublicPortfolioListView
+    AnalyticsView, DashboardStatsView, PublicPortfolioListView, ProjectSetFeaturedView
 )
 
 router = DefaultRouter()
@@ -21,5 +21,7 @@ urlpatterns = [
     # Analytics & stats
     path('<int:pk>/analytics/', AnalyticsView.as_view(), name='analytics'),
     path('stats/dashboard/', DashboardStatsView.as_view(), name='dashboard_stats'),
+    # Project actions
+    path('projects/<int:project_id>/set-featured/', ProjectSetFeaturedView.as_view(), name='set_project_featured'),
     path('', include(router.urls)),
 ]

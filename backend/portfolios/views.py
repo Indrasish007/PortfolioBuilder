@@ -207,3 +207,24 @@ class PublicPortfolioListView(APIView):
             for p in portfolios if p.slug
         ]
         return Response(data)
+
+
+class ProjectSetFeaturedView(APIView):
+    """POST /portfolios/projects/<int:project_id>/set-featured/ — marks a project as featured."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, project_id):
+        from .models import Project
+        try:
+            project = Project.objects.select_related('portfolio').get(
+                id=project_id,
+                portfolio__user=request.user
+            )
+        except Project.DoesNotExist:
+            return Response(
+                {'error': 'Project not found or permission denied'},
+                status=http_status.HTTP_404_NOT_FOUND
+            )
+        project.featured = True
+        project.save(update_fields=['featured'])
+        return Response({'success': True, 'project_id': project.id})

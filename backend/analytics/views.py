@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 import datetime
 from django.utils import timezone
 from django.db.models import Count, Sum
-from portfolios.models import Portfolio, PortfolioEvent
+from portfolios.models import Portfolio, PortfolioEvent, Project
 
 class AnalyticsView(APIView):
     permission_classes = [IsAuthenticated]
@@ -143,3 +143,48 @@ class AnalyticsView(APIView):
             "suggestions": suggestions,
         }
         return Response(data)
+
+
+class ProjectClicksSummaryView(APIView):
+    """Returns all projects across the user's portfolios sorted by portfolio view count."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        portfolios = Portfolio.objects.filter(user=user).prefetch_related('projects')
+
+        results = []
+        for portfolio in portfolios:
+            # Count actual tracked views from PortfolioEvent as click metric
+            view_count = PortfolioEvent.objects.filter(
+                portfolio=portfolio,
+                event_type='view'
+            ).count()
+
+            for project in portfolio.projects.all():
+                results.append({
+                    'project_id': project.id,
+                    'project_title': project.title,
+                    'project_description': (project.description or '')[:120],
+                    'portfolio_id': portfolio.id,
+                    'portfolio_name': portfolio.name,
+                    'portfolio_slug': portfolio.slug or str(portfolio.id),
+                    'portfolio_url': f'/p/{portfolio.slug}' if portfolio.slug else f'/p/{portfolio.id}',
+                    'click_count': view_count,
+                    'github': project.github or '',
+                    'live': project.live or '',
+                    'tech': project.tech or [],
+                    'featured': project.featured,
+                    'image': project.image or '',
+                })
+
+        # Sort by click_count descending, then featured projects first on ties
+        results.sort(key=lambda x: (x['click_count'], x['featured']), reverse=True)
+
+        badge_count = sum(1 for r in results if r['click_count'] > 0)
+
+        return Response({
+            'projects': results,
+            'badge_count': badge_count,
+            'total_projects': len(results),
+        })

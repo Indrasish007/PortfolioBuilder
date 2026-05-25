@@ -1,11 +1,12 @@
 import { Outlet, NavLink, Link, useNavigate } from "react-router-dom";
-import { LayoutDashboard, PenSquare, LayoutTemplate, BarChart3, Bell, Plus, ChevronDown, LogOut, Sparkles, Upload, FileText, X, Menu } from "lucide-react";
+import { LayoutDashboard, PenSquare, LayoutTemplate, BarChart3, Plus, ChevronDown, LogOut, Sparkles, Upload, FileText, X, Menu } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import Logo from "../components/Logo.jsx";
 import ThemeToggle from "../components/ThemeToggle.jsx";
 import Button from "../components/Button.jsx";
 import { useAuthStore } from "../store/authStore.js";
 import CommandPalette from "../components/CommandPalette.jsx";
+import NotificationBell from "../components/NotificationBell.jsx";
 import api from "../services/api.js";
 import { useToast } from "../context/ToasterContext.jsx";
 
@@ -139,7 +140,7 @@ export default function DashboardLayout() {
         }`}
       >
         <div className="p-5 flex items-center justify-between md:block md:p-5">
-          <Logo className="flex md:justify-center lg:justify-start" />
+          <Logo className="flex md:justify-center lg:justify-start" to="/dashboard" />
           <button
             onClick={() => setSidebarOpen(false)}
             className="md:hidden p-1.5 rounded-lg glass text-muted-foreground hover:text-foreground"
@@ -373,10 +374,7 @@ export default function DashboardLayout() {
               </Button>
             </div>
             <ThemeToggle />
-            <button className="relative w-9 h-9 inline-flex items-center justify-center rounded-lg glass hidden sm:inline-flex">
-              <Bell className="w-4 h-4" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-brand-3 animate-pulse" />
-            </button>
+            <NotificationBell />
             <div className="relative">
               <button
                 onClick={() => setProfileOpen((o) => !o)}
