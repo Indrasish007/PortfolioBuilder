@@ -461,16 +461,31 @@ export default function TemplateMarketplace() {
     navigate("/editor");
   }, [isFromResume, reviewedData, updateField, resetPortfolio, setTemplate, resetOnboarding, navigate]);
 
-  const handleTemplateSelect = useCallback((templateId) => {
+  const handleTemplateSelect = useCallback((templateId, templateObj) => {
     if (isOnboarding) {
       handleOnboardingSelect(templateId);
-    } else {
-      // setTemplate already updates the store; navigate to editor without
-      // appending ?template= so the editor's useEffect doesn't fire resetPortfolio
-      setTemplate(templateId);
-      navigate("/editor");
+      return;
     }
-  }, [isOnboarding, handleOnboardingSelect, setTemplate, navigate]);
+
+    // ── Non-onboarding path: create a brand-new portfolio ────────────────
+    // Show a confirmation dialog so the user knows their existing portfolio
+    // is safe and this will open a fresh separate editor.
+    const templateName = templateObj?.name || templateId;
+    const confirmed = window.confirm(
+      `This will open a new blank portfolio using the "${templateName}" template.\n\nYour current portfolio will NOT be affected — it remains saved in your dashboard.\n\nContinue?`
+    );
+    if (!confirmed) return;
+
+    // Reset the Zustand store to a completely blank slate so no data from
+    // the previously-open portfolio leaks into this new one.
+    resetPortfolio();
+
+    // Navigate to /editor?template=X so the editor's useEffect picks up
+    // the template param and applies it to the fresh blank state.
+    // Using ?template= (query param path) guarantees the editor does NOT
+    // attempt to load any existing portfolio ID from the store.
+    navigate(`/editor?template=${encodeURIComponent(templateId)}`);
+  }, [isOnboarding, handleOnboardingSelect, resetPortfolio, navigate]);
 
   const handleHover = (t, rect) => {
     clearTimeout(popupTimer.current);
@@ -622,7 +637,7 @@ export default function TemplateMarketplace() {
               <TemplatePopup
                 t={popup.t}
                 anchorRect={popup.rect}
-                onSelect={setTemplate}
+                onSelect={handleTemplateSelect}
                 onClose={() => setPopup(null)}
               />
             </div>

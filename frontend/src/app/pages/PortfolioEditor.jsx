@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, Reorder, AnimatePresence } from "framer-motion";
-import { Undo2, Redo2, Save, Eye, EyeOff, Smartphone, Tablet, Monitor, Plus, GripVertical, Image as ImageIcon, Sparkles, Trash2, Github, Globe, Linkedin, Twitter, Facebook, Instagram, Type, Palette, Settings2, CheckCircle2, Loader2, ChevronDown, ChevronUp, ArrowUp, ArrowDown, FileText, X, Calendar, ExternalLink } from "lucide-react";
+import { Undo2, Redo2, RotateCcw, Save, Eye, EyeOff, Smartphone, Tablet, Monitor, Plus, GripVertical, Image as ImageIcon, Sparkles, Trash2, Github, Globe, Linkedin, Twitter, Facebook, Instagram, Type, Palette, Settings2, CheckCircle2, Loader2, ChevronDown, ChevronUp, ArrowUp, ArrowDown, FileText, X, Calendar, ExternalLink } from "lucide-react";
 import { useNavigate, useParams, useSearchParams, useLocation } from "react-router-dom";
 import GlassCard from "../components/GlassCard.jsx";
 import Button from "../components/Button.jsx";
@@ -116,6 +116,13 @@ export default function PortfolioEditor() {
     }
   };
 
+  const handleReset = () => {
+    if (window.confirm("Are you sure you want to clear the editor? This will wipe all current fields.")) {
+      resetPortfolio();
+      toast({ title: "Editor Cleared", description: "All fields have been reset to empty.", type: "success" });
+    }
+  };
+
   const hasInitialised = useRef(false);
 
   useEffect(() => {
@@ -158,9 +165,27 @@ export default function PortfolioEditor() {
       return;
     }
 
-    // ── Returning from template marketplace or a plain /editor visit ──────
-    // Only reset if the store has no real content yet (i.e. truly blank slate).
-    // This prevents wiping CV data when the user just switched templates.
+    // ── Arriving via "Use This Template" (?template= query param) ────────
+    // This path is ALWAYS a brand-new portfolio request.  resetPortfolio()
+    // was already called by TemplateMarketplace before navigating here, but
+    // we enforce it again as a safety net in case the store still holds a
+    // previously-open portfolio's data (e.g. race conditions, direct URL
+    // entry with a ?template= param, etc.).
+    const templateParam = searchParams.get("template");
+    if (templateParam) {
+      // Unconditional reset — the user explicitly asked for a new portfolio.
+      // This must NOT be gated on alreadyHasData because that data belongs
+      // to a DIFFERENT (previously-loaded) portfolio, not this new one.
+      resetPortfolio();
+      hasInitialised.current = true;
+      Promise.resolve().then(() => setTemplate(templateParam));
+      return;
+    }
+
+    // ── Plain /editor visit (no id, no template param) ────────────────────
+    // Only reset if the store has no real content yet (i.e. truly blank
+    // slate). This prevents wiping CV data when the user just navigated
+    // here after a CV parse without a ?template= param.
     const alreadyHasData = (
       portfolio?.user?.name ||
       (portfolio?.skills?.length > 0) ||
@@ -173,13 +198,6 @@ export default function PortfolioEditor() {
       resetPortfolio();
     }
     hasInitialised.current = true;
-
-    // Apply ?template= query param from the marketplace (legacy path, now only
-    // reached when opening /editor fresh from a bookmark/link)
-    const templateParam = searchParams.get("template");
-    if (templateParam) {
-      Promise.resolve().then(() => setTemplate(templateParam));
-    }
   }, [id, location.state]);
 
   // Close preview overlay on Escape key
@@ -425,6 +443,9 @@ export default function PortfolioEditor() {
             <div className="flex items-center gap-1">
               <Button size="sm" variant="ghost" onClick={undo} aria-label="Undo"><Undo2 className="w-4 h-4" /></Button>
               <Button size="sm" variant="ghost" onClick={redo} aria-label="Redo"><Redo2 className="w-4 h-4" /></Button>
+              <Button size="sm" variant="ghost" onClick={handleReset} aria-label="Clear Editor" title="Clear Editor" className="text-rose-400 hover:text-rose-300 hover:bg-rose-500/10">
+                <RotateCcw className="w-4 h-4" />
+              </Button>
             </div>
             <div className="flex items-center gap-1.5">
               <Button size="sm" variant="ghost" onClick={handleSave} disabled={isLoading} className="text-emerald-400">
@@ -632,8 +653,11 @@ export default function PortfolioEditor() {
 
       <div className="hidden lg:flex flex-col gap-3 min-h-0">
         <GlassCard className="p-2 flex items-center gap-2">
-          <Button size="sm" variant="ghost" onClick={undo}><Undo2 className="w-4 h-4" /></Button>
-          <Button size="sm" variant="ghost" onClick={redo}><Redo2 className="w-4 h-4" /></Button>
+          <Button size="sm" variant="ghost" onClick={undo} title="Undo"><Undo2 className="w-4 h-4" /></Button>
+          <Button size="sm" variant="ghost" onClick={redo} title="Redo"><Redo2 className="w-4 h-4" /></Button>
+          <Button size="sm" variant="ghost" onClick={handleReset} title="Clear Editor" className="text-rose-400 hover:text-rose-300 hover:bg-rose-500/10">
+            <RotateCcw className="w-4 h-4" />
+          </Button>
           <Button size="sm" variant="ghost" onClick={handleSave} disabled={isLoading} className="text-emerald-400">
             {isLoading ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Save className="w-3 h-3 mr-1" />}
             Save
