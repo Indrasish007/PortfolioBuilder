@@ -177,8 +177,8 @@ class AnalyticsView(APIView):
                 portfolio.views += 1
                 portfolio.save()
 
-        elif event_type == 'session_ping':
-            # Store ping
+        elif event_type in ('session_ping', 'session_end'):
+            # Store one final duration record per session exit
             PortfolioEvent.objects.create(portfolio=portfolio, event_type=event_type, visitor_id=visitor_id, duration=duration, device=device, country=country)
         elif event_type == 'resume_download':
             PortfolioEvent.objects.create(portfolio=portfolio, event_type=event_type, visitor_id=visitor_id, device=device, country=country)
@@ -196,10 +196,17 @@ class DashboardStatsView(APIView):
         unique_visitors = PortfolioEvent.objects.filter(portfolio__in=portfolios).values('visitor_id').distinct().count()
         resume_downloads = PortfolioEvent.objects.filter(portfolio__in=portfolios, event_type='resume_download').count()
         
-        pings = PortfolioEvent.objects.filter(portfolio__in=portfolios, event_type='session_ping')
+        # Average session duration: filter valid session records (duration > 0),
+        # divide total time by count of sessions (not distinct visitors).
+        pings = PortfolioEvent.objects.filter(
+            portfolio__in=portfolios,
+            event_type__in=['session_ping', 'session_end'],
+            duration__gt=0
+        )
         avg_session = 0
         if pings.exists():
-            avg_session = pings.aggregate(Sum('duration'))['duration__sum'] / max(1, pings.values('visitor_id').distinct().count())
+            total_duration = pings.aggregate(Sum('duration'))['duration__sum'] or 0
+            avg_session = total_duration / pings.count()
             
         return Response({
             'total_views': total_views,

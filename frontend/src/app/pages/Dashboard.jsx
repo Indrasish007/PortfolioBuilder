@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Eye, MousePointerClick, Download, Plus, ExternalLink, MoreHorizontal, ArrowUp, Sparkles, Globe, Pencil, Trash2, Loader2, Search, CheckSquare, Square, X } from "lucide-react";
+import { Eye, MousePointerClick, Download, Plus, ExternalLink, ArrowUp, Sparkles, Globe, Trash2, Loader2, Search, CheckSquare, Square, X } from "lucide-react";
 import GlassCard from "../components/GlassCard.jsx";
 import Button from "../components/Button.jsx";
 import Badge from "../components/Badge.jsx";
@@ -11,70 +11,10 @@ import { useToast } from "../context/ToasterContext.jsx";
 
 // stats will be fetched from backend
 
-function PortfolioMenu({ portfolio, onDelete }) {
-  const [open, setOpen] = useState(false);
-  const menuRef = useRef(null);
-  const navigate = useNavigate();
-
-  // Close on outside click
-  useEffect(() => {
-    function handleClickOutside(e) {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
-        setOpen(false);
-      }
-    }
-    if (open) document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [open]);
-
-  const pId = portfolio.id;
-
-  return (
-    <div className="relative" ref={menuRef}>
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="text-muted-foreground hover:text-foreground p-2 rounded-lg hover:bg-accent/40 transition"
-        title="More options"
-      >
-        <MoreHorizontal className="w-4 h-4" />
-      </button>
-
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.92, y: -4 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.92, y: -4 }}
-            transition={{ duration: 0.12 }}
-            className="absolute right-0 top-full mt-1 z-50 min-w-[160px] rounded-xl border border-border bg-card/90 backdrop-blur-md shadow-xl overflow-hidden"
-          >
-            <button
-              onClick={() => { setOpen(false); navigate(`/editor/${portfolio.id}`); }}
-              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-accent/50 transition text-left"
-            >
-              <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
-              Edit
-            </button>
-            <button
-              onClick={() => { setOpen(false); window.open(`/p/${pId}`, "_blank"); }}
-              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-accent/50 transition text-left"
-            >
-              <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
-              Preview
-            </button>
-            <div className="border-t border-border/50 my-0.5" />
-            <button
-              onClick={() => { setOpen(false); onDelete([portfolio.id]); }}
-              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-red-500/10 text-red-400 transition text-left"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              Delete portfolio
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
+function formatDuration(seconds) {
+  if (!seconds || seconds <= 0) return "--";
+  if (seconds < 60) return `${seconds}s`;
+  return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
 }
 
 export default function Dashboard() {
@@ -93,17 +33,21 @@ export default function Dashboard() {
 
   useEffect(() => {
     async function load() {
+      // Load portfolios and stats independently so one failure doesn't block the other
       try {
-        const [portRes, statsRes] = await Promise.all([
-          api.get('/portfolios/'),
-          api.get('/portfolios/stats/dashboard/')
-        ]);
+        const portRes = await api.get('/portfolios/');
         setPortfolios(portRes.data);
-        setStatsData(statsRes.data);
       } catch (err) {
-        console.error(err);
+        console.error('Failed to load portfolios:', err);
       } finally {
         setLoading(false);
+      }
+
+      try {
+        const statsRes = await api.get('/portfolios/stats/dashboard/');
+        setStatsData(statsRes.data);
+      } catch (err) {
+        console.error('Failed to load dashboard stats:', err);
       }
     }
     load();
@@ -224,7 +168,7 @@ export default function Dashboard() {
           { label: "Total views", value: statsData.total_views, delta: "--", up: true, icon: Eye },
           { label: "Unique visitors", value: statsData.unique_visitors, delta: "--", up: true, icon: MousePointerClick },
           { label: "Resume downloads", value: statsData.resume_downloads, delta: "--", up: true, icon: Download },
-          { label: "Avg. session", value: `${Math.floor(statsData.avg_session / 60)}m ${statsData.avg_session % 60}s`, delta: "--", up: true, icon: Sparkles },
+          { label: "Avg. session", value: formatDuration(statsData.avg_session), delta: "--", up: true, icon: Sparkles },
         ].map((s, i) => (
           <motion.div key={s.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
             <GlassCard className="p-5">
@@ -373,7 +317,7 @@ export default function Dashboard() {
                           >
                             <ExternalLink className="w-4 h-4" />
                           </Button>
-                          <PortfolioMenu portfolio={p} onDelete={handleDelete} />
+                          
                         </div>
                       </div>
 

@@ -95,16 +95,18 @@ class AnalyticsView(APIView):
         ).count()
 
         # 5. Average session duration
+        # Include both legacy session_ping events and new session_end events.
+        # Filter duration > 0 to exclude bounces. Divide by session count (not unique visitors).
         pings = PortfolioEvent.objects.filter(
             portfolio__in=portfolios,
-            event_type='session_ping',
+            event_type__in=['session_ping', 'session_end'],
+            duration__gt=0,
             created_at__date__gte=today - datetime.timedelta(days=13)
         )
         avg_session = 0
         if pings.exists():
             total_duration = pings.aggregate(Sum('duration'))['duration__sum'] or 0
-            distinct_pingers = pings.values('visitor_id').distinct().count()
-            avg_session = total_duration / max(1, distinct_pingers)
+            avg_session = total_duration / pings.count()
 
         # 6. Suggestions
         suggestions = []

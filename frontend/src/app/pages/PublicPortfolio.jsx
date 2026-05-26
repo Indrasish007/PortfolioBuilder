@@ -123,6 +123,7 @@ export default function PublicPortfolio() {
     jsonLdScript.textContent = JSON.stringify(schema, null, 2);
   }, [p, isPreview]);
 
+  // ── View tracking ──────────────────────────────────────────────────────────
   // Use sessionStorage (not useRef) so the guard survives React StrictMode's
   // full unmount+remount cycle. useRef resets on remount; sessionStorage does not.
   useEffect(() => {
@@ -139,14 +140,54 @@ export default function PublicPortfolio() {
     }
 
     api.post(`/portfolios/${p.id}/analytics/`, { event_type: 'view', visitor_id: visitorId }).catch(() => {});
+  }, [p, isPreview]);
 
-    let duration = 0;
-    const interval = setInterval(() => {
-      duration += 10;
-      api.post(`/portfolios/${p.id}/analytics/`, { event_type: 'session_ping', visitor_id: visitorId, duration }).catch(() => {});
-    }, 10000);
+  // ── Session duration tracking ───────────────────────────────────────────────
+  // Records start time on mount and sends a single final duration on page exit.
+  // Uses fetch + keepalive:true which is reliable during beforeunload and works
+  // with an explicit absolute URL (navigator.sendBeacon only works with relative
+  // URLs pointing to the page's own origin, which is the Vite dev server, not Django).
+  useEffect(() => {
+    if (!p || isPreview) return;
 
-    return () => clearInterval(interval);
+    const startTime = Date.now();
+    let hasSent = false;
+
+    let visitorId = localStorage.getItem("visitorId");
+    if (!visitorId) {
+      visitorId = Math.random().toString(36).substring(2) + Date.now().toString(36);
+      localStorage.setItem("visitorId", visitorId);
+    }
+
+    // Full backend URL — same base that axios api.js uses
+    const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+    const endpoint = `${API_BASE}/portfolios/${p.id}/analytics/`;
+    const token = localStorage.getItem('access_token');
+
+    const sendSession = () => {
+      if (hasSent) return;
+      hasSent = true;
+      const duration = Math.max(1, Math.floor((Date.now() - startTime) / 1000));
+      const body = JSON.stringify({ event_type: 'session_end', visitor_id: visitorId, duration });
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      // keepalive:true ensures the request completes even if the page is being unloaded
+      fetch(endpoint, { method: 'POST', headers, body, keepalive: true }).catch(() => {});
+    };
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'hidden') sendSession();
+    };
+
+    window.addEventListener('beforeunload', sendSession);
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      // React unmount (SPA navigation) — send final duration
+      sendSession();
+      window.removeEventListener('beforeunload', sendSession);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
   }, [p, isPreview]);
 
 
