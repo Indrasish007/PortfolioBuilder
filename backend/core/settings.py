@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     'analytics',
     'ai',
     'themes',
+    'resumes',
 ]
 
 SITE_ID = 1
