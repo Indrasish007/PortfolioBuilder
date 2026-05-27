@@ -152,24 +152,20 @@ export default function PublicPortfolio() {
   }, [p, isPreview]);
 
   // ── View time tracking ─────────────────────────────────────────────────────
-  // SEGMENT-BASED APPROACH (more reliable than accumulate-and-flush-once):
+  // Three-layer reliability design:
   //
-  // Instead of accumulating all visible time and flushing it in a single send
-  // at the end, we send each "visible segment" immediately when the tab is
-  // hidden (visibilitychange) or when the component unmounts / page unloads.
+  // 1. PRIMARY: api.post() via Axios — the SAME instance used for the 'view'
+  //    event which already works on Vercel → Railway. Used for visibilitychange
+  //    (tab hide) and SPA navigation (component unmount). Raw fetch() was
+  //    failing cross-origin on Vercel due to CORS preflight behaviour when
+  //    called from page-lifecycle events; Axios avoids that.
   //
-  // WHY: beforeunload is suppressed on mobile and in some desktop browsers
-  // (especially on fast navigation). The old approach accumulated time but
-  // never sent it because beforeunload never fired. visibilitychange fires
-  // reliably on ALL browsers when the user:
-  //   - switches tabs
-  //   - navigates to a different page in SPA routing
-  //   - minimizes the browser
-  //   - locks the phone screen
-  //   - switches apps on mobile
+  // 2. SAFETY NET: setInterval every 30 s — flushes accumulated time
+  //    periodically so even if every lifecycle event fails, at most 30 s of
+  //    data is lost.
   //
-  // The backend sums ALL session_time events, so multiple small segments per
-  // visit accumulate correctly in the database.
+  // 3. FALLBACK: fetch+keepalive (+ sendBeacon) only for beforeunload (actual
+  //    tab/window close). keepalive lets the request outlive the page.
   useEffect(() => {
     if (!p || isPreview) return;
 
@@ -179,28 +175,58 @@ export default function PublicPortfolio() {
       localStorage.setItem("visitorId", visitorId);
     }
 
+    // Relative path for Axios (uses api.defaults.baseURL automatically)
+    const apiPath = `/portfolios/${p.id}/analytics/`;
+    // Full URL for fetch+keepalive / sendBeacon fallbacks
     const beaconUrl = getAnalyticsUrl(p.id);
 
-    // Track the start of the current visible segment
+    // segmentStart = timestamp when current visible segment began (null = hidden)
     let segmentStart = document.hidden ? null : Date.now();
 
-    // Send the current segment duration to the backend, then reset.
-    // Called on: tab hidden, component unmount, and beforeunload.
-    const sendSegment = () => {
-      if (segmentStart === null) return;
+    // ── Flush via Axios api.post() ──────────────────────────────────────────
+    // restart=true → periodic ping: reset timer and keep accumulating
+    // restart=false → final flush: timer stops
+    const flushAxios = (restart = false) => {
+      if (segmentStart === null) {
+        // Tab is already hidden; if restarting for a ping, nothing to do yet
+        if (restart && !document.hidden) segmentStart = Date.now();
+        return;
+      }
       const duration = Math.floor((Date.now() - segmentStart) / 1000);
-      segmentStart = null; // prevent double-send
+      // Reset the timer: restart it for pings, null it for final flushes
+      segmentStart = (restart && !document.hidden) ? Date.now() : null;
       if (duration < 1) return;
 
-      const payload = JSON.stringify({
+      api.post(apiPath, {
         event_type: 'session_time',
         visitor_id: visitorId,
         duration,
+      }).catch(() => {
+        // Axios failed — fall back to keepalive fetch so it still gets saved
+        const payload = JSON.stringify({ event_type: 'session_time', visitor_id: visitorId, duration });
+        try {
+          fetch(beaconUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: payload,
+            keepalive: true,
+          }).catch(() => {
+            try { navigator.sendBeacon(beaconUrl, new Blob([payload], { type: 'application/json' })); } catch (_) {}
+          });
+        } catch (_) {
+          try { navigator.sendBeacon(beaconUrl, new Blob([payload], { type: 'application/json' })); } catch (_) {}
+        }
       });
+    };
 
-      // Use fetch+keepalive as primary (correct Content-Type so DRF parses it).
-      // sendBeacon is fallback only (sends as text/plain which DRF cannot parse).
-      let sent = false;
+    // ── Flush via keepalive fetch (beforeunload only) ───────────────────────
+    // Async Axios cannot be used during page unload; keepalive survives it.
+    const flushBeacon = () => {
+      if (segmentStart === null) return;
+      const duration = Math.floor((Date.now() - segmentStart) / 1000);
+      segmentStart = null;
+      if (duration < 1) return;
+      const payload = JSON.stringify({ event_type: 'session_time', visitor_id: visitorId, duration });
       try {
         fetch(beaconUrl, {
           method: 'POST',
@@ -208,47 +234,34 @@ export default function PublicPortfolio() {
           body: payload,
           keepalive: true,
         }).catch(() => {
-          try {
-            navigator.sendBeacon(beaconUrl, new Blob([payload], { type: 'application/json' }));
-          } catch (_) {}
+          try { navigator.sendBeacon(beaconUrl, new Blob([payload], { type: 'application/json' })); } catch (_) {}
         });
-        sent = true;
-      } catch (_) {}
-      if (!sent) {
-        try {
-          navigator.sendBeacon(beaconUrl, new Blob([payload], { type: 'application/json' }));
-        } catch (_) {}
+      } catch (_) {
+        try { navigator.sendBeacon(beaconUrl, new Blob([payload], { type: 'application/json' })); } catch (_) {}
       }
     };
 
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        // Tab became hidden → send the segment we just accumulated
-        sendSegment();
+        flushAxios(false);   // tab hidden → send current segment via Axios
       } else {
-        // Tab visible again → start a new segment
-        segmentStart = Date.now();
+        segmentStart = Date.now();  // tab visible → start new segment
       }
     };
 
-    const handleBeforeUnload = () => {
-      // Page is closing — send any remaining time
-      sendSegment();
-    };
+    // Periodic safety-net ping: send accumulated time every 30 s while visible
+    const interval = setInterval(() => flushAxios(true), 30000);
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('beforeunload', flushBeacon);
 
     return () => {
+      clearInterval(interval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      // SPA navigation: component unmounts → flush remaining segment
-      sendSegment();
+      window.removeEventListener('beforeunload', flushBeacon);
+      flushAxios(false);  // SPA navigation: component unmounts → flush via Axios
     };
   }, [p, isPreview]);
-
-
-
 
   if (loading) {
     return (
