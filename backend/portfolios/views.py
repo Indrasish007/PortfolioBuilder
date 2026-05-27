@@ -126,11 +126,24 @@ class AnalyticsView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request, pk):
-        import hashlib
+        import hashlib, json as _json
         portfolio = generics.get_object_or_404(Portfolio, pk=pk)
-        event_type = request.data.get('event_type')
-        visitor_id = request.data.get('visitor_id', 'anonymous')
-        duration = request.data.get('duration', 0)
+
+        # --- Robust body parsing ---
+        # navigator.sendBeacon() sends the body as a Blob. Some browsers/CDNs
+        # strip the Content-Type header so DRF cannot parse it and request.data
+        # ends up as an empty dict. We fall back to parsing the raw body so that
+        # session_time events are always recorded in production (Vercel/Railway).
+        data = request.data
+        if not data and request.body:
+            try:
+                data = _json.loads(request.body)
+            except (_json.JSONDecodeError, ValueError):
+                data = {}
+
+        event_type = data.get('event_type')
+        visitor_id = data.get('visitor_id', 'anonymous')
+        duration = data.get('duration', 0)
 
         # Detect IP
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
@@ -183,7 +196,11 @@ class AnalyticsView(APIView):
         elif event_type == 'session_time':
             # Record how long this visitor spent on the portfolio (in seconds).
             # Duration is capped at 1 hour to avoid runaway values from idle tabs.
-            capped_duration = min(int(duration or 0), 3600)
+            # duration may arrive as a string when sendBeacon encodes the payload.
+            try:
+                capped_duration = min(int(float(duration or 0)), 3600)
+            except (ValueError, TypeError):
+                capped_duration = 0
             if capped_duration > 0:
                 PortfolioEvent.objects.create(
                     portfolio=portfolio,

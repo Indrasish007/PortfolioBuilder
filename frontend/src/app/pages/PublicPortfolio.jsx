@@ -180,9 +180,25 @@ export default function PublicPortfolio() {
 
       const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
       const beaconUrl = `${apiBase}/portfolios/${p.id}/analytics/`;
-      const sent = navigator.sendBeacon(beaconUrl, new Blob([payload], { type: 'application/json' }));
+
+      // Primary: fetch with keepalive=true — properly sends Content-Type: application/json
+      // so DRF can parse request.data on the backend. Works cross-origin on Vercel.
+      // sendBeacon is only a fallback because it sends Content-Type: text/plain
+      // which causes DRF to return empty request.data → duration always 0.
+      let sent = false;
+      try {
+        fetch(beaconUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: payload,
+          keepalive: true,
+        }).catch(() => {});
+        sent = true;
+      } catch (_) {
+        sent = false;
+      }
       if (!sent) {
-        fetch(beaconUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, keepalive: true }).catch(() => {});
+        navigator.sendBeacon(beaconUrl, new Blob([payload], { type: 'application/json' }));
       }
     };
 

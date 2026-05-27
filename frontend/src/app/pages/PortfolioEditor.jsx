@@ -436,7 +436,20 @@ export default function PortfolioEditor() {
     <div className="grid lg:grid-cols-[400px_1fr] gap-4 h-[calc(100vh-120px)]">
       <div className="flex flex-col gap-3 min-h-0">
         <BackButton fallback="/dashboard" className="mb-0 w-max" />
-        
+
+        {/* Portfolio name title */}
+        {(portfolio?.name || portfolio?.id) && (
+          <div className="flex items-center gap-2 px-1">
+            <div className="w-1.5 h-5 rounded-full gradient-bg flex-shrink-0" />
+            <div className="min-w-0">
+              <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-0.5">Editing</div>
+              <h1 className="text-base font-bold leading-tight truncate" title={portfolio?.name || "Untitled Portfolio"}>
+                {portfolio?.name || "Untitled Portfolio"}
+              </h1>
+            </div>
+          </div>
+        )}
+
         {/* Responsive action controls for mobile/tablet */}
         <div className="lg:hidden">
           <GlassCard className="p-2 flex items-center justify-between gap-1.5 flex-wrap">
