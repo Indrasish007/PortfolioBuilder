@@ -145,6 +145,10 @@ class AnalyticsView(APIView):
         visitor_id = data.get('visitor_id', 'anonymous')
         duration = data.get('duration', 0)
 
+        # Log every analytics POST for Vercel function log visibility
+        import sys
+        print(f"[Analytics] POST pk={pk} event_type={event_type!r} duration={duration!r} visitor={visitor_id!r} content_type={request.content_type!r}", flush=True, file=sys.stderr)
+
         # Detect IP
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
         if x_forwarded_for:
@@ -201,6 +205,7 @@ class AnalyticsView(APIView):
                 capped_duration = min(int(float(duration or 0)), 3600)
             except (ValueError, TypeError):
                 capped_duration = 0
+            print(f"[Analytics] session_time capped_duration={capped_duration} for portfolio pk={pk}", flush=True, file=sys.stderr)
             if capped_duration > 0:
                 PortfolioEvent.objects.create(
                     portfolio=portfolio,
@@ -210,6 +215,7 @@ class AnalyticsView(APIView):
                     device=device,
                     country=country,
                 )
+                print(f"[Analytics] session_time saved: {capped_duration}s for portfolio pk={pk}", flush=True, file=sys.stderr)
 
         return Response({'status': 'ok'})
 

@@ -224,15 +224,17 @@ function PortfolioAnalyticsCard({ portfolio, index }) {
                       <stop offset="100%" stopColor={accent} stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                  <XAxis dataKey="day" stroke="rgba(255,255,255,0.35)" fontSize={10} tick={{ fontSize: 10 }} interval={2} />
-                  <YAxis stroke="rgba(255,255,255,0.35)" fontSize={10} allowDecimals={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                  <XAxis dataKey="day" stroke="var(--muted-foreground)" tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} interval={2} />
+                  <YAxis stroke="var(--muted-foreground)" tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} allowDecimals={false} />
                   <Tooltip
                     contentStyle={{
-                      background: "rgba(20,20,30,0.92)",
-                      border: "1px solid rgba(255,255,255,0.1)",
+                      background: "var(--card)",
+                      border: "1px solid var(--border)",
                       borderRadius: 10,
+                      color: "var(--foreground)",
                     }}
+                    labelStyle={{ color: "var(--foreground)" }}
                   />
                   <Area
                     type="monotone"
@@ -413,10 +415,10 @@ export default function Analytics() {
                       <stop offset="100%" stopColor="#a78bfa" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-                  <XAxis dataKey="day" stroke="rgba(255,255,255,0.4)" fontSize={11} />
-                  <YAxis stroke="rgba(255,255,255,0.4)" fontSize={11} allowDecimals={false} />
-                  <Tooltip contentStyle={{ background: "rgba(20,20,30,0.9)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12 }} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                  <XAxis dataKey="day" stroke="var(--muted-foreground)" tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} />
+                  <YAxis stroke="var(--muted-foreground)" tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} allowDecimals={false} />
+                  <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 12, color: "var(--foreground)" }} labelStyle={{ color: "var(--foreground)" }} />
                   <Area type="monotone" dataKey="views" stroke="#a78bfa" strokeWidth={2} fill="url(#g1)" />
                 </AreaChart>
               </ResponsiveContainer>

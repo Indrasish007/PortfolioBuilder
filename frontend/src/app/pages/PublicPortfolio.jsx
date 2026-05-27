@@ -4,6 +4,15 @@ import { useState, useEffect } from "react";
 import api from "../services/api.js";
 import LivePortfolio from "../templates/LivePortfolio.jsx";
 
+// Derive the analytics beacon URL from the api instance's baseURL —
+// single source of truth, avoids the Vercel bug where a separate
+// import.meta.env.VITE_API_URL read could resolve to undefined at
+// build-time and fall back to http://localhost:8000/api in production.
+function getAnalyticsUrl(portfolioId) {
+  const base = (api.defaults.baseURL || 'http://localhost:8000/api').replace(/\/$/, '');
+  return `${base}/portfolios/${portfolioId}/analytics/`;
+}
+
 export default function PublicPortfolio() {
   const { idOrSlug } = useParams();
   const [searchParams] = useSearchParams();
@@ -147,6 +156,14 @@ export default function PublicPortfolio() {
   // ONCE per visit (on beforeunload or SPA navigation / component unmount).
   // Tab-hide events only pause the timer — they no longer trigger a send,
   // which was causing a second session_time record per single page visit.
+  //
+  // IMPORTANT: the beacon URL is derived from api.defaults.baseURL (the same
+  // Axios instance used for every other request) rather than re-reading
+  // import.meta.env.VITE_API_URL inline.  On Vercel, if VITE_API_URL is not
+  // added as a build-time environment variable, the inline read resolves to
+  // undefined and the fallback http://localhost:8000/api is baked into the
+  // bundle — causing every session_time POST to hit localhost instead of the
+  // real backend, silently failing, and making view time always show 0.
   useEffect(() => {
     if (!p || isPreview) return;
 
@@ -155,6 +172,10 @@ export default function PublicPortfolio() {
       visitorId = Math.random().toString(36).substring(2) + Date.now().toString(36);
       localStorage.setItem("visitorId", visitorId);
     }
+
+    // Capture the beacon URL once at effect setup time using the shared
+    // api instance — this is the single source of truth for the backend URL.
+    const beaconUrl = getAnalyticsUrl(p.id);
 
     let accumulated = 0;
     let hidden = document.hidden;
@@ -178,9 +199,6 @@ export default function PublicPortfolio() {
         duration: accumulated,
       });
 
-      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
-      const beaconUrl = `${apiBase}/portfolios/${p.id}/analytics/`;
-
       // Primary: fetch with keepalive=true — properly sends Content-Type: application/json
       // so DRF can parse request.data on the backend. Works cross-origin on Vercel.
       // sendBeacon is only a fallback because it sends Content-Type: text/plain
@@ -192,13 +210,22 @@ export default function PublicPortfolio() {
           headers: { 'Content-Type': 'application/json' },
           body: payload,
           keepalive: true,
-        }).catch(() => {});
+        }).catch((err) => {
+          // fetch+keepalive failed (e.g. payload too large) — fall back to sendBeacon
+          console.warn('[ViewTime] fetch+keepalive failed, falling back to sendBeacon:', err);
+          try {
+            navigator.sendBeacon(beaconUrl, new Blob([payload], { type: 'application/json' }));
+          } catch (_) {}
+        });
         sent = true;
       } catch (_) {
         sent = false;
       }
+      // If fetch() itself threw synchronously (very rare), use sendBeacon
       if (!sent) {
-        navigator.sendBeacon(beaconUrl, new Blob([payload], { type: 'application/json' }));
+        try {
+          navigator.sendBeacon(beaconUrl, new Blob([payload], { type: 'application/json' }));
+        } catch (_) {}
       }
     };
 
