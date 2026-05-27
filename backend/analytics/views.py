@@ -7,12 +7,169 @@ from django.db.models import Count, Sum, IntegerField
 from django.db.models.functions import Coalesce
 from portfolios.models import Portfolio, PortfolioEvent, Project
 
+
+# ── Portfolio Score ───────────────────────────────────────────────────────────
+
+_SCORE_CRITERIA = [
+    {
+        "key": "avatar",
+        "max": 10,
+        "emoji": "📸",
+        "label": "Add a profile picture",
+        "tip": "Add a profile picture to earn 10 points",
+    },
+    {
+        "key": "bio",
+        "max": 15,
+        "emoji": "📝",
+        "label": "Write an About section (min 50 chars)",
+        "tip": "Write a longer About section (min 50 characters) to earn 15 points",
+    },
+    {
+        "key": "skills_3",
+        "max": 10,
+        "emoji": "🛠️",
+        "label": "Add at least 3 skills",
+        "tip": "Add at least 3 skills to earn 10 points",
+    },
+    {
+        "key": "project_1",
+        "max": 15,
+        "emoji": "🚀",
+        "label": "Add your first project",
+        "tip": "Add at least 1 project to earn 15 points",
+    },
+    {
+        "key": "projects_3",
+        "max": 10,
+        "emoji": "🚀",
+        "label": "Add at least 3 projects",
+        "tip": "Add at least 3 projects to earn 10 more points",
+    },
+    {
+        "key": "project_image",
+        "max": 5,
+        "emoji": "🖼️",
+        "label": "Add an image to a project",
+        "tip": "Add an image to at least one project to earn 5 points",
+    },
+    {
+        "key": "project_live",
+        "max": 5,
+        "emoji": "🔗",
+        "label": "Add a live link to a project",
+        "tip": "Add a live demo link to at least one project to earn 5 points",
+    },
+    {
+        "key": "email",
+        "max": 10,
+        "emoji": "📧",
+        "label": "Add a contact email",
+        "tip": "Add your contact email to earn 10 points",
+    },
+    {
+        "key": "social",
+        "max": 10,
+        "emoji": "🔗",
+        "label": "Add LinkedIn or GitHub link",
+        "tip": "Add your LinkedIn or GitHub link to earn 10 points",
+    },
+    {
+        "key": "theme",
+        "max": 5,
+        "emoji": "🎨",
+        "label": "Select a custom theme",
+        "tip": "Choose a custom theme (not the default Midnight) to earn 5 points",
+    },
+    {
+        "key": "viewed",
+        "max": 5,
+        "emoji": "👁️",
+        "label": "Get your first portfolio view",
+        "tip": "Share your portfolio link to get your first view and earn 5 points",
+    },
+]
+
+_SCORE_LABEL = [
+    (91, "Excellent"),
+    (71, "Good"),
+    (41, "Average"),
+    (0,  "Weak"),
+]
+
+
+def _score_portfolio(p) -> dict:
+    """
+    Compute a 0-100 completeness score for a Portfolio instance.
+    Expects p to have prefetched: skills, projects, user__profile.
+    """
+    try:
+        profile = p.user.profile
+    except Exception:
+        profile = None
+
+    projects = list(p.projects.all())
+    n_projects = len(projects)
+    n_skills = p.skills.count()
+
+    checks = {
+        "avatar":        bool(p.avatar or (profile and profile.avatar)),
+        "bio":           bool(profile and profile.bio and len((profile.bio or "").strip()) >= 50),
+        "skills_3":      n_skills >= 3,
+        "project_1":     n_projects >= 1,
+        "projects_3":    n_projects >= 3,
+        "project_image": any(proj.image for proj in projects),
+        "project_live":  any(proj.live for proj in projects),
+        "email":         bool(profile and (profile.email or "").strip()),
+        "social":        bool(profile and ((profile.linkedin or "").strip() or (profile.github or "").strip())),
+        "theme":         p.theme not in ("", "Midnight", None),
+        "viewed":        p.views >= 1,
+    }
+
+    breakdown = []
+    total = 0
+    suggestions = []
+
+    for c in _SCORE_CRITERIA:
+        done = checks.get(c["key"], False)
+        earned = c["max"] if done else 0
+        total += earned
+        breakdown.append({
+            "key":    c["key"],
+            "label":  c["label"],
+            "emoji":  c["emoji"],
+            "earned": earned,
+            "max":    c["max"],
+            "done":   done,
+        })
+        if not done:
+            suggestions.append({
+                "emoji": c["emoji"],
+                "text":  c["tip"],
+                "pts":   c["max"],
+            })
+
+    label = "Weak"
+    for threshold, lbl in _SCORE_LABEL:
+        if total >= threshold:
+            label = lbl
+            break
+
+    return {
+        "score":       total,
+        "label":       label,
+        "breakdown":   breakdown,
+        "suggestions": suggestions,
+    }
+
 class AnalyticsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         user = request.user
-        portfolios = Portfolio.objects.filter(user=user)
+        portfolios = Portfolio.objects.filter(user=user).prefetch_related(
+            'skills', 'projects', 'user__profile'
+        )
         
         # Last 14 days range
         today = timezone.localdate()
@@ -173,6 +330,7 @@ class AnalyticsView(APIView):
                 "views_chart": p_views_chart,
                 "total_view_time_seconds": p_view_time,
                 "visit_count": p_visit_count,
+                "portfolio_score": _score_portfolio(p),
             })
 
         # Overall total view time across all portfolios

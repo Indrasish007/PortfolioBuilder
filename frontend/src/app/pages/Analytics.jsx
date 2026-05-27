@@ -5,7 +5,7 @@ import {
 import {
   Eye, Users, Download, Globe,
   TrendingUp, RefreshCw, LayoutGrid, ChevronDown, ChevronUp,
-  ExternalLink, BookOpen, Clock,
+  ExternalLink, BookOpen, Clock, CheckCircle2, Trophy,
 } from "lucide-react";
 import GlassCard from "../components/GlassCard.jsx";
 import Badge from "../components/Badge.jsx";
@@ -77,6 +77,203 @@ function SectionHeading({ icon: Icon, title, subtitle, accentColor = "#a78bfa" }
         className="flex-1 h-px ml-2 rounded"
         style={{ background: `color-mix(in oklch, ${accentColor} 20%, transparent)` }}
       />
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────── */
+/* Portfolio Score ring + suggestions                        */
+/* ────────────────────────────────────────────────────── */
+const SCORE_COLORS = {
+  Weak:      "#f87171",
+  Average:   "#fbbf24",
+  Good:      "#34d399",
+  Excellent: "#a855f7",
+};
+
+const SCORE_GLOWS = {
+  Weak:      "rgba(248,113,113,0.35)",
+  Average:   "rgba(251,191,36,0.35)",
+  Good:      "rgba(52,211,153,0.35)",
+  Excellent: "rgba(168,85,247,0.45)",
+};
+
+const SCORE_BG = {
+  Weak:      "rgba(248,113,113,0.08)",
+  Average:   "rgba(251,191,36,0.08)",
+  Good:      "rgba(52,211,153,0.08)",
+  Excellent: "rgba(168,85,247,0.10)",
+};
+
+function PortfolioScorePanel({ scoreData, accent }) {
+  const { score, label, suggestions } = scoreData;
+  const color = SCORE_COLORS[label] || "#a78bfa";
+  const glow  = SCORE_GLOWS[label]  || "rgba(167,139,250,0.3)";
+  const bg    = SCORE_BG[label]     || "rgba(167,139,250,0.08)";
+
+  // SVG ring params
+  const R = 48;
+  const STROKE = 7;
+  const CIRC = 2 * Math.PI * R;
+
+  // Animate the ring on mount
+  const [animScore, setAnimScore] = useState(0);
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => {
+      setTimeout(() => setAnimScore(score), 80);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [score]);
+
+  const offset = CIRC - (animScore / 100) * CIRC;
+  const perfect = score >= 100;
+
+  const earned = scoreData.breakdown.filter(item => item.done);
+  const missing = scoreData.breakdown.filter(item => !item.done);
+
+  return (
+    <div
+      className="rounded-2xl p-4 border"
+      style={{ background: bg, borderColor: `${color}30` }}
+    >
+      {/* Header */}
+      <div className="flex items-center gap-2 mb-4">
+        <div
+          className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+          style={{ background: `${color}20` }}
+        >
+          <Trophy className="w-3.5 h-3.5" style={{ color }} />
+        </div>
+        <span className="text-xs font-bold uppercase tracking-wider" style={{ color }}>
+          Portfolio Score
+        </span>
+      </div>
+
+      {/* Ring + label row */}
+      <div className="flex items-center gap-5 mb-5">
+        {/* SVG Ring */}
+        <div className="relative flex-shrink-0">
+          <svg width={112} height={112} className="-rotate-90">
+            <circle cx={56} cy={56} r={R} fill="none" stroke={`${color}18`} strokeWidth={STROKE} />
+            <circle
+              cx={56} cy={56} r={R}
+              fill="none"
+              stroke={color}
+              strokeWidth={STROKE}
+              strokeLinecap="round"
+              strokeDasharray={CIRC}
+              strokeDashoffset={offset}
+              style={{
+                transition: "stroke-dashoffset 1.1s cubic-bezier(.4,0,.2,1)",
+                filter: `drop-shadow(0 0 6px ${glow})`,
+              }}
+            />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className="text-2xl font-black tabular-nums" style={{ color }}>
+              {perfect ? "100" : animScore}
+            </span>
+            <span className="text-[10px] text-muted-foreground font-medium -mt-0.5">/100</span>
+          </div>
+        </div>
+
+        {/* Label + totals */}
+        <div className="flex-1 min-w-0">
+          <span
+            className="text-sm font-bold px-3 py-1.5 rounded-full inline-block mb-2"
+            style={{ background: `${color}22`, color }}
+          >
+            {perfect ? "⭐ Excellent" : label}
+          </span>
+          <div className="text-xs text-muted-foreground">
+            <span className="font-semibold" style={{ color }}>{earned.length}</span> of{" "}
+            <span className="font-semibold">{scoreData.breakdown.length}</span> criteria met
+          </div>
+          <div className="text-xs text-muted-foreground mt-0.5">
+            <span className="font-semibold" style={{ color }}>{score} pts</span> earned ·{" "}
+            <span className="font-semibold">{100 - score} pts</span> remaining
+          </div>
+        </div>
+      </div>
+
+      {/* Perfect message */}
+      {perfect && (
+        <div
+          className="flex items-center gap-2 rounded-xl px-4 py-3 mb-4"
+          style={{ background: `${color}12`, border: `1px solid ${color}30` }}
+        >
+          <span className="text-lg">🎉</span>
+          <div>
+            <div className="text-sm font-bold" style={{ color }}>Perfect Score!</div>
+            <div className="text-xs text-muted-foreground mt-0.5">Your portfolio is complete!</div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Points Earned ── */}
+      {earned.length > 0 && (
+        <div className="mb-4">
+          <div
+            className="text-[10px] font-bold uppercase tracking-wider mb-2 flex items-center gap-1.5"
+            style={{ color }}
+          >
+            <CheckCircle2 className="w-3 h-3" />
+            Points Earned
+          </div>
+          <div className="space-y-1.5">
+            {earned.map(item => (
+              <div
+                key={item.key}
+                className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs"
+                style={{ background: `${color}0d`, border: `1px solid ${color}25` }}
+              >
+                <span className="text-sm leading-none flex-shrink-0">{item.emoji}</span>
+                <span className="flex-1 font-medium leading-snug" style={{ color: "var(--foreground)" }}>
+                  {item.label}
+                </span>
+                <span
+                  className="font-bold tabular-nums flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded-full"
+                  style={{ background: `${color}25`, color }}
+                >
+                  +{item.earned}
+                </span>
+                <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" style={{ color }} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── How to Reach 100 ── */}
+      {!perfect && missing.length > 0 && (
+        <div>
+          <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
+            How to reach 100
+          </div>
+          <div className="space-y-1.5">
+            {missing.map(item => (
+              <div
+                key={item.key}
+                className="flex items-start gap-2 rounded-lg px-3 py-2 text-xs"
+                style={{ background: "rgba(255,255,255,0.03)", border: "1px solid var(--border)" }}
+              >
+                <span className="text-sm leading-none mt-0.5 flex-shrink-0 opacity-50">{item.emoji}</span>
+                <span className="flex-1 text-muted-foreground leading-snug">
+                  {/* use the tip from suggestions for this key */}
+                  {scoreData.suggestions.find(s => s.emoji === item.emoji && s.pts === item.max)?.text
+                    || item.label}
+                </span>
+                <span
+                  className="font-bold tabular-nums flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded-full text-muted-foreground"
+                  style={{ background: "rgba(255,255,255,0.06)" }}
+                >
+                  +{item.max}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -162,6 +359,17 @@ function PortfolioAnalyticsCard({ portfolio, index }) {
       {/* Expanded content */}
       {expanded && (
         <div className="px-5 pb-5 space-y-5 border-t border-border/40">
+
+          {/* ── Portfolio Score ── */}
+          {portfolio.portfolio_score && (
+            <div className="pt-4">
+              <PortfolioScorePanel
+                scoreData={portfolio.portfolio_score}
+                accent={accent}
+              />
+            </div>
+          )}
+
           {/* Mini stat row */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 pt-4">
             {stats.map(s => (

@@ -926,11 +926,75 @@ function EducationEditor({ education, updateField }) {
 }
 
 function ProjectsEditor({ projects, updateField }) {
+  const [rewritingIdx, setRewritingIdx] = useState(null); // which project is rewriting
+  const [originalDescs, setOriginalDescs] = useState({}); // { [i]: original description }
+  const { toast } = useToast();
+
   const updateItem = (i, field, val) => {
     const newArr = [...projects];
     newArr[i] = { ...newArr[i], [field]: val };
     updateField("projects", newArr);
   };
+
+  const handleRewrite = async (i) => {
+    const proj = projects[i];
+    const desc = proj.description || "";
+    const githubUrl = proj.github || "";
+
+    if (!desc.trim() && !githubUrl.trim()) {
+      toast({
+        title: "Nothing to rewrite",
+        description: "Please add a project description or a GitHub URL first",
+        type: "error",
+      });
+      return;
+    }
+
+    // Snapshot current description for undo
+    setOriginalDescs((prev) => ({ ...prev, [i]: desc }));
+    setRewritingIdx(i);
+
+    try {
+      const res = await api.post("/ai/rewrite-project/", {
+        text: desc,
+        title: proj.title || "",
+        github: githubUrl,
+      });
+
+      if (res.data?.error) {
+        toast({ title: "AI rewrite failed", description: res.data.error, type: "error" });
+        setOriginalDescs((prev) => { const n = { ...prev }; delete n[i]; return n; });
+        return;
+      }
+
+      if (res.data?.rewritten) {
+        updateItem(i, "description", res.data.rewritten);
+        const usedGithub = res.data?.github_used;
+        toast({
+          title: usedGithub ? "✨ Description generated from GitHub!" : "✨ Description rewritten!",
+          description: usedGithub
+            ? "AI scanned your repo and wrote a description based on the actual code."
+            : "Your project description has been polished by AI. You can undo below.",
+          type: "success",
+        });
+      }
+    } catch (e) {
+      console.error("[ProjectsEditor] rewrite-project failed:", e);
+      toast({ title: "AI rewrite failed", description: "AI rewrite failed. Please try again.", type: "error" });
+      setOriginalDescs((prev) => { const n = { ...prev }; delete n[i]; return n; });
+    } finally {
+      setRewritingIdx(null);
+    }
+  };
+
+  const handleUndo = (i) => {
+    if (originalDescs[i] !== undefined) {
+      updateItem(i, "description", originalDescs[i]);
+      setOriginalDescs((prev) => { const n = { ...prev }; delete n[i]; return n; });
+      toast({ title: "Reverted", description: "Original project description restored.", type: "success" });
+    }
+  };
+
   return (
     <div>
       <div className="flex justify-end mb-3">
@@ -943,7 +1007,50 @@ function ProjectsEditor({ projects, updateField }) {
             <button onClick={() => updateField("projects", projects.filter((_, idx) => idx !== i))} className="text-muted-foreground hover:text-destructive"><Trash2 className="w-3 h-3" /></button>
           </div>
           <textarea value={proj.description} onChange={(e) => updateItem(i, "description", e.target.value)} rows={2} className="w-full bg-input/40 border border-border rounded p-2 text-xs focus:outline-none resize-none" placeholder="Description" />
-          <input value={proj.tech ? proj.tech.join(", ") : ""} onChange={(e) => updateItem(i, "tech", e.target.value.split(",").map(t=>t.trim()))} className="w-full bg-input/40 border border-border rounded p-2 text-xs focus:outline-none" placeholder="Tech stack (comma separated)" />
+
+          {/* AI Rewrite button for this project's description */}
+          <div className="flex flex-col gap-1">
+            <button
+              id={`rewrite-project-ai-btn-${i}`}
+              onClick={() => handleRewrite(i)}
+              disabled={rewritingIdx !== null}
+              className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-semibold text-white transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.98]"
+              style={{
+                background: rewritingIdx === i
+                  ? "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)"
+                  : "linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%)",
+                boxShadow: rewritingIdx === i
+                  ? "none"
+                  : "0 3px 10px rgba(99, 102, 241, 0.35), 0 0 0 1px rgba(168, 85, 247, 0.15)",
+              }}
+            >
+              {rewritingIdx === i ? (
+                <>
+                  <Loader2 className="w-3 h-3 animate-spin shrink-0" />
+                  <span>{proj.github ? "Scanning GitHub & Rewriting..." : "Rewriting..."}</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-3 h-3 shrink-0" />
+                  <span>{proj.github ? "✨ Rewrite with AI  (GitHub scan)" : "✨ Rewrite with AI"}</span>
+                </>
+              )}
+            </button>
+
+            {/* Undo — only shown after a successful rewrite for this specific project */}
+            {originalDescs[i] !== undefined && rewritingIdx !== i && (
+              <button
+                type="button"
+                onClick={() => handleUndo(i)}
+                className="flex items-center justify-center gap-1.5 w-full py-1 px-3 rounded-md border border-border/60 text-[11px] text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-all duration-150"
+              >
+                <Undo2 className="w-3 h-3" />
+                Undo — restore original
+              </button>
+            )}
+          </div>
+
+          <input value={proj.tech ? proj.tech.join(", ") : ""} onChange={(e) => updateItem(i, "tech", e.target.value.split(",").map(t => t.trim()))} className="w-full bg-input/40 border border-border rounded p-2 text-xs focus:outline-none" placeholder="Tech stack (comma separated)" />
           <div className="flex gap-2">
             <input value={proj.github} onChange={(e) => updateItem(i, "github", e.target.value)} className="w-full bg-input/40 border border-border rounded p-2 text-xs focus:outline-none" placeholder="GitHub URL" />
             <input value={proj.live} onChange={(e) => updateItem(i, "live", e.target.value)} className="w-full bg-input/40 border border-border rounded p-2 text-xs focus:outline-none" placeholder="Live URL" />
@@ -953,26 +1060,69 @@ function ProjectsEditor({ projects, updateField }) {
     </div>
   );
 }
+
 function AboutEditor({ bio, resume, updateField }) {
   const [isRewriting, setIsRewriting] = useState(false);
+  const [originalBio, setOriginalBio] = useState(null); // for undo
   const { toast } = useToast();
 
   const handleRewrite = async () => {
     if (!bio || !bio.trim()) {
-      toast({ title: "Bio is empty", description: "Please enter some text in your bio first.", type: "error" });
+      toast({
+        title: "About section is empty",
+        description: "Please write something in the About section first",
+        type: "error",
+      });
       return;
     }
+
+    // Snapshot the current text so we can undo
+    setOriginalBio(bio);
     setIsRewriting(true);
+
     try {
-      const res = await api.post("/ai/rewrite/", { text: bio });
-      if (res.data && res.data.rewritten) {
+      const res = await api.post("/ai/rewrite-about/", { text: bio });
+
+      if (res.data?.error) {
+        toast({
+          title: "AI rewrite failed",
+          description: res.data.error,
+          type: "error",
+        });
+        setOriginalBio(null);
+        return;
+      }
+
+      if (res.data?.rewritten) {
         updateField("user.bio", res.data.rewritten);
-        toast({ title: "Bio Rewritten", description: "Successfully improved your bio using AI.", type: "success" });
+        toast({
+          title: "✨ About section rewritten!",
+          description: "Your about text has been polished by AI. You can undo below.",
+          type: "success",
+        });
       }
     } catch (e) {
-      toast({ title: "Rewrite failed", description: "Something went wrong while rewriting your bio.", type: "error" });
+      console.error("[AboutEditor] rewrite-about failed:", e);
+      toast({
+        title: "AI rewrite failed",
+        description: "AI rewrite failed. Please try again.",
+        type: "error",
+      });
+      setOriginalBio(null);
     } finally {
       setIsRewriting(false);
+    }
+  };
+
+  const handleUndo = () => {
+    if (originalBio !== null) {
+      updateField("user.bio", originalBio);
+      setOriginalBio(null);
+      toast({
+        title: "Reverted",
+        description: "Your original About text has been restored.",
+        type: "success",
+      });
     }
   };
 
@@ -1008,24 +1158,24 @@ function ProjectsEditor({ projects, updateField }) {
               <FileText className="w-5 h-5 mb-1" /> Drop PDF or click to upload
             </>
           )}
-          <input 
-            type="file" 
-            className="hidden" 
-            accept="application/pdf" 
-            onChange={handleFileChange} 
+          <input
+            type="file"
+            className="hidden"
+            accept="application/pdf"
+            onChange={handleFileChange}
           />
         </label>
-        
+
         {/* Buttons section below the upload box */}
         <div className="flex items-center justify-between mt-2 min-h-[32px]">
           <div>
             {resume && (
-              <button 
+              <button
                 type="button"
                 onClick={() => {
                   updateField("user.resume_link", "");
                   toast({ title: "CV Removed", description: "Your CV has been removed from your portfolio.", type: "success" });
-                }} 
+                }}
                 className="text-[10px] text-destructive hover:underline"
               >
                 Remove CV
@@ -1034,25 +1184,54 @@ function ProjectsEditor({ projects, updateField }) {
           </div>
         </div>
       </div>
+
       <Field label="Bio" multiline value={bio || ""} onChange={(v) => updateField("user.bio", v)} />
-      <button 
-        onClick={handleRewrite}
-        disabled={isRewriting}
-        className="mt-2 text-xs inline-flex items-center gap-1 text-brand hover:underline disabled:opacity-50"
-      >
-        {isRewriting ? (
-          <>
-            <Loader2 className="w-3 h-3 animate-spin" /> Rewriting...
-          </>
-        ) : (
-          <>
-            <Sparkles className="w-3 h-3" /> Rewrite with AI
-          </>
+
+      {/* AI Rewrite Button */}
+      <div className="mt-3 flex flex-col gap-2">
+        <button
+          id="rewrite-about-ai-btn"
+          onClick={handleRewrite}
+          disabled={isRewriting}
+          className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold text-white transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.98]"
+          style={{
+            background: isRewriting
+              ? "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)"
+              : "linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%)",
+            boxShadow: isRewriting
+              ? "none"
+              : "0 4px 15px rgba(99, 102, 241, 0.4), 0 0 0 1px rgba(168, 85, 247, 0.2)",
+          }}
+        >
+          {isRewriting ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+              <span>Rewriting...</span>
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-4 h-4 shrink-0" />
+              <span>✨ Rewrite with AI</span>
+            </>
+          )}
+        </button>
+
+        {/* Undo option — only shown after a successful rewrite */}
+        {originalBio !== null && !isRewriting && (
+          <button
+            type="button"
+            onClick={handleUndo}
+            className="flex items-center justify-center gap-1.5 w-full py-1.5 px-3 rounded-lg border border-border/60 text-xs text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-all duration-150"
+          >
+            <Undo2 className="w-3.5 h-3.5" />
+            Undo — restore original text
+          </button>
         )}
-      </button>
+      </div>
     </div>
   );
 }
+
 
 function ContactEditor({ email, phone, location, updateField }) {
   return (

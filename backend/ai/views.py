@@ -10,7 +10,7 @@ import json
 import pypdf
 import requests
 
-def get_ai_response(prompt, system_instruction=None, json_mode=False):
+def get_ai_response(prompt, system_instruction=None, json_mode=False, model="gemini-2.0-flash"):
     # Try Gemini API Key first
     gemini_key = os.getenv("GEMINI_API_KEY")
     if not gemini_key:
@@ -19,7 +19,7 @@ def get_ai_response(prompt, system_instruction=None, json_mode=False):
         gemini_key = os.getenv("GEMINI_API_KEY")
         
     if gemini_key and not gemini_key.startswith("your_") and gemini_key != "mock_key":
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={gemini_key}"
         headers = {"Content-Type": "application/json"}
         payload = {
             "contents": [{"parts": [{"text": prompt}]}]
@@ -128,6 +128,374 @@ class AIRewriteView(APIView):
             skills_str = f" using {', '.join(skills_found[:3])}" if skills_found else ""
             rewritten = f"Experienced software engineer focused on building robust, high-performance applications{skills_str}. Dedicated to translating complex requirements into elegant, maintainable code while delivering exceptional user experiences."
         return Response({"rewritten": rewritten})
+
+
+class AIRewriteAboutView(APIView):
+    """
+    POST /api/ai/rewrite-about/
+    Rewrites the About section of a portfolio using Gemini (gemini-2.0-flash preferred).
+    Uses the google-genai SDK with the same multi-model fallback chain as the
+    resume parser, so a 429 on one model automatically tries the next one.
+    """
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    # Same priority order as ai_parser.py — first available quota wins
+    _MODEL_CANDIDATES = [
+        "gemini-2.5-flash-lite",
+        "gemini-2.5-flash",
+        "gemini-flash-lite-latest",
+        "gemini-flash-latest",
+        "gemini-2.0-flash-lite",
+        "gemini-2.0-flash",
+        "gemini-1.5-flash",
+    ]
+
+    def post(self, request):
+        text = request.data.get('text', '')
+        if not text.strip():
+            return Response(
+                {"error": "Please write something in the About section first"},
+                status=400
+            )
+
+        prompt = (
+            "Rewrite the following portfolio about section to make it more professional, "
+            "engaging, and impressive for potential clients or employers. Keep the "
+            "person's original meaning and key points but improve the tone, clarity, "
+            "and impact. Return only the rewritten text, nothing else:\n\n"
+            + text.strip()
+        )
+
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            from dotenv import load_dotenv
+            load_dotenv()
+            api_key = os.getenv("GEMINI_API_KEY")
+
+        if api_key and not api_key.startswith("your_") and api_key != "mock_key":
+            try:
+                from google import genai
+                from google.genai import types
+
+                client = genai.Client(api_key=api_key)
+                last_error = None
+
+                for model_name in self._MODEL_CANDIDATES:
+                    try:
+                        response = client.models.generate_content(
+                            model=model_name,
+                            contents=prompt,
+                            config=types.GenerateContentConfig(
+                                temperature=0.7,
+                                max_output_tokens=1024,
+                            ),
+                        )
+                        raw = (response.text or "").strip()
+                        if raw:
+                            # Strip surrounding quotes if the model added them
+                            if raw.startswith('"') and raw.endswith('"'):
+                                raw = raw[1:-1]
+                            print(f"[AIRewriteAboutView] Success with model: {model_name}")
+                            return Response({"rewritten": raw})
+                    except Exception as exc:
+                        err_str = str(exc)
+                        if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str or "quota" in err_str.lower():
+                            print(f"[AIRewriteAboutView] Quota exhausted for {model_name}, trying next...")
+                            last_error = exc
+                            continue
+                        print(f"[AIRewriteAboutView] Error with {model_name}: {exc}")
+                        last_error = exc
+                        continue
+
+                print(f"[AIRewriteAboutView] All Gemini models exhausted. Last error: {last_error}")
+
+            except ImportError:
+                print("[AIRewriteAboutView] google-genai not installed, falling back to requests.")
+
+        # Fallback: raw HTTP requests (catches cases where google-genai isn't installed)
+        fallback_models = ["gemini-2.0-flash", "gemini-1.5-flash"]
+        for model_name in fallback_models:
+            ai_reply = get_ai_response(prompt, model=model_name)
+            if ai_reply:
+                rewritten = ai_reply.strip()
+                if rewritten.startswith('"') and rewritten.endswith('"'):
+                    rewritten = rewritten[1:-1]
+                return Response({"rewritten": rewritten})
+
+        return Response(
+            {"error": "AI rewrite failed. Please try again."},
+            status=502
+        )
+
+
+class AIRewriteProjectView(APIView):
+    """
+    POST /api/ai/rewrite-project/
+    Rewrites a project description using Gemini.
+    If a GitHub URL is provided, first scans the repo (README, languages,
+    metadata) via the public GitHub API to build a richer, more accurate prompt.
+    Falls back to manual text if the GitHub fetch fails or no URL is given.
+    """
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    _MODEL_CANDIDATES = [
+        "gemini-2.5-flash-lite",
+        "gemini-2.5-flash",
+        "gemini-flash-lite-latest",
+        "gemini-flash-latest",
+        "gemini-2.0-flash-lite",
+        "gemini-2.0-flash",
+        "gemini-1.5-flash",
+    ]
+
+    # ── GitHub helpers ────────────────────────────────────────────────────────
+
+    def _parse_github_url(self, url: str):
+        """Extract (owner, repo) from a GitHub URL. Returns (None, None) on failure."""
+        import re
+        url = url.strip().rstrip("/")
+        m = re.match(
+            r"(?:https?://)?(?:www\.)?github\.com/([^/]+)/([^/?\s#]+)",
+            url, re.IGNORECASE
+        )
+        if m:
+            return m.group(1), m.group(2)
+        return None, None
+
+    def _fetch_github_context(self, github_url: str) -> dict | None:
+        """
+        Fetches repo metadata, README, and language stats from the GitHub API.
+        Returns a dict with keys: name, description, topics, languages, readme.
+        Returns None on any error.
+        """
+        import base64
+        owner, repo = self._parse_github_url(github_url)
+        if not owner or not repo:
+            print(f"[AIRewriteProjectView] Could not parse GitHub URL: {github_url}")
+            return None
+
+        headers = {
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
+            "User-Agent": "PortfolioBuilder-AI/1.0",
+        }
+        # Optional: use a GitHub token if configured to raise rate limits
+        gh_token = os.getenv("GITHUB_TOKEN") or os.getenv("GITHUB_API_TOKEN")
+        if gh_token:
+            headers["Authorization"] = f"Bearer {gh_token}"
+
+        base = f"https://api.github.com/repos/{owner}/{repo}"
+        ctx = {}
+
+        try:
+            # 1. Repo metadata
+            r = requests.get(base, headers=headers, timeout=10)
+            if r.status_code == 200:
+                data = r.json()
+                ctx["name"] = data.get("name", repo)
+                ctx["description"] = data.get("description") or ""
+                ctx["topics"] = data.get("topics") or []
+                ctx["stars"] = data.get("stargazers_count", 0)
+                ctx["default_branch"] = data.get("default_branch", "main")
+            else:
+                print(f"[AIRewriteProjectView] GitHub repo fetch returned {r.status_code}")
+                return None
+
+            # 2. Language breakdown
+            r_langs = requests.get(f"{base}/languages", headers=headers, timeout=10)
+            if r_langs.status_code == 200:
+                langs = r_langs.json()  # {"Python": 12345, "JavaScript": 6789}
+                total = sum(langs.values()) or 1
+                ctx["languages"] = [
+                    f"{lang} ({round(bytes_/total*100)}%)"
+                    for lang, bytes_ in sorted(langs.items(), key=lambda x: -x[1])
+                ]
+            else:
+                ctx["languages"] = []
+
+            # 3. README (first 4000 chars to stay within prompt limits)
+            r_readme = requests.get(f"{base}/readme", headers=headers, timeout=10)
+            if r_readme.status_code == 200:
+                readme_data = r_readme.json()
+                raw_content = readme_data.get("content", "")
+                encoding = readme_data.get("encoding", "base64")
+                if encoding == "base64":
+                    decoded = base64.b64decode(raw_content).decode("utf-8", errors="replace")
+                else:
+                    decoded = raw_content
+                # Strip markdown image/badge lines and collapse whitespace
+                import re as _re
+                decoded = _re.sub(r"!\[.*?\]\(.*?\)", "", decoded)   # images
+                decoded = _re.sub(r"\[!\[.*?\]\(.*?\)\]\(.*?\)", "", decoded)  # badge links
+                decoded = _re.sub(r"\n{3,}", "\n\n", decoded).strip()
+                ctx["readme"] = decoded[:4000]
+            else:
+                ctx["readme"] = ""
+
+        except Exception as e:
+            print(f"[AIRewriteProjectView] GitHub fetch error: {e}")
+            return None
+
+        return ctx
+
+    def _build_prompt(self, title: str, text: str, github_ctx: dict | None) -> str:
+        """Build the Gemini prompt, enriched with GitHub data when available."""
+        title_part = f" titled \"{title}\"" if title else ""
+
+        if github_ctx:
+            lang_str = ", ".join(github_ctx.get("languages", [])) or "Not detected"
+            topics_str = ", ".join(github_ctx.get("topics", [])) or "None"
+            repo_desc = github_ctx.get("description", "")
+            readme = github_ctx.get("readme", "")
+
+            github_block = (
+                f"--- GitHub Repository Data ---\n"
+                f"Repository name : {github_ctx.get('name', title)}\n"
+                f"GitHub description: {repo_desc or '(none)'}\n"
+                f"Topics/Tags     : {topics_str}\n"
+                f"Languages       : {lang_str}\n"
+            )
+            if readme:
+                github_block += f"\nREADME (excerpt):\n{readme}\n"
+            github_block += "--- End of GitHub Data ---\n"
+
+            user_note = f"\nThe developer also wrote this short description:\n{text.strip()}\n" if text.strip() else ""
+
+            return (
+                f"You are a professional technical writer creating a portfolio project description"
+                f" for a project{title_part}.\n\n"
+                f"You have been given the actual GitHub repository data below. Use it to write an "
+                f"accurate, detailed, and impressive description.\n\n"
+                f"{github_block}"
+                f"{user_note}\n"
+                f"Write a polished project description (3-5 complete sentences as a single paragraph) that:\n"
+                f"- Clearly explains what the project does and its real-world purpose\n"
+                f"- Mentions the actual languages and technologies from the GitHub data\n"
+                f"- Highlights technical complexity, key features, or methodologies\n"
+                f"- Sounds impressive to potential employers or clients\n"
+                f"- Is written in third person (not 'I')\n\n"
+                f"IMPORTANT: Return ONLY the paragraph text. No title, no headings, no bullet points, "
+                f"no markdown, no extra commentary — just the descriptive paragraph."
+            )
+        else:
+            # No GitHub data — fallback to description-only prompt
+            title_context = f" for a project titled \"{title}\"" if title else ""
+            return (
+                f"You are a professional technical writer rewriting a portfolio project description"
+                f"{title_context}.\n\n"
+                "Write a polished, detailed project description (3-5 complete sentences as a paragraph) that:\n"
+                "- Explains what the project does and its core purpose\n"
+                "- Highlights the specific technologies, algorithms, or methods used\n"
+                "- Emphasises the technical complexity and real-world impact\n"
+                "- Sounds impressive to potential employers or clients\n"
+                "- Is written in third person or as a project description (not first person 'I')\n\n"
+                "IMPORTANT: Return ONLY the rewritten paragraph text. Do NOT include a project title, "
+                "headings, bullet points, markdown formatting, or any extra commentary. "
+                "Just the full descriptive paragraph.\n\n"
+                "Original description to rewrite:\n"
+                + text.strip()
+            )
+
+    # ── Main handler ──────────────────────────────────────────────────────────
+
+    def post(self, request):
+        text = request.data.get('text', '').strip()
+        title = request.data.get('title', '').strip()
+        github_url = request.data.get('github', '').strip()
+
+        if not text and not github_url:
+            return Response(
+                {"error": "Please add a project description or a GitHub link first"},
+                status=400
+            )
+
+        # Try to enrich with GitHub data
+        github_ctx = None
+        if github_url:
+            print(f"[AIRewriteProjectView] Fetching GitHub data from: {github_url}")
+            github_ctx = self._fetch_github_context(github_url)
+            if github_ctx:
+                print(f"[AIRewriteProjectView] GitHub data fetched — "
+                      f"langs: {github_ctx.get('languages')}, "
+                      f"readme: {len(github_ctx.get('readme',''))} chars")
+            else:
+                print("[AIRewriteProjectView] GitHub fetch failed, using manual text only")
+
+        # If GitHub fetch worked but user gave no manual description, that's fine
+        if not text and not github_ctx:
+            return Response(
+                {"error": "Please write something in the project description first"},
+                status=400
+            )
+
+        prompt = self._build_prompt(title, text, github_ctx)
+
+        # ── Gemini call ───────────────────────────────────────────────────────
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            from dotenv import load_dotenv
+            load_dotenv()
+            api_key = os.getenv("GEMINI_API_KEY")
+
+        if api_key and not api_key.startswith("your_") and api_key != "mock_key":
+            try:
+                from google import genai
+                from google.genai import types
+
+                client = genai.Client(api_key=api_key)
+                last_error = None
+
+                for model_name in self._MODEL_CANDIDATES:
+                    try:
+                        response = client.models.generate_content(
+                            model=model_name,
+                            contents=prompt,
+                            config=types.GenerateContentConfig(
+                                temperature=0.7,
+                                max_output_tokens=1500,
+                            ),
+                        )
+                        raw = (response.text or "").strip()
+                        if raw:
+                            if raw.startswith('"') and raw.endswith('"'):
+                                raw = raw[1:-1]
+                            print(f"[AIRewriteProjectView] Success with model: {model_name}")
+                            return Response({
+                                "rewritten": raw,
+                                "github_used": github_ctx is not None,
+                            })
+                    except Exception as exc:
+                        err_str = str(exc)
+                        if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str or "quota" in err_str.lower():
+                            print(f"[AIRewriteProjectView] Quota exhausted for {model_name}, trying next...")
+                            last_error = exc
+                            continue
+                        print(f"[AIRewriteProjectView] Error with {model_name}: {exc}")
+                        last_error = exc
+                        continue
+
+                print(f"[AIRewriteProjectView] All Gemini models exhausted. Last error: {last_error}")
+
+            except ImportError:
+                print("[AIRewriteProjectView] google-genai not installed, falling back to requests.")
+
+        # Fallback: raw HTTP requests
+        fallback_models = ["gemini-2.0-flash", "gemini-1.5-flash"]
+        for model_name in fallback_models:
+            ai_reply = get_ai_response(prompt, model=model_name)
+            if ai_reply:
+                rewritten = ai_reply.strip()
+                if rewritten.startswith('"') and rewritten.endswith('"'):
+                    rewritten = rewritten[1:-1]
+                return Response({"rewritten": rewritten, "github_used": github_ctx is not None})
+
+        return Response(
+            {"error": "AI rewrite failed. Please try again."},
+            status=502
+        )
+
 
 class AICVParsingView(APIView):
     permission_classes = [AllowAny]
