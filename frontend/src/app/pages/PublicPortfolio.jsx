@@ -152,18 +152,24 @@ export default function PublicPortfolio() {
   }, [p, isPreview]);
 
   // ── View time tracking ─────────────────────────────────────────────────────
-  // Accumulates only the time the tab is actually visible. Flushes exactly
-  // ONCE per visit (on beforeunload or SPA navigation / component unmount).
-  // Tab-hide events only pause the timer — they no longer trigger a send,
-  // which was causing a second session_time record per single page visit.
+  // SEGMENT-BASED APPROACH (more reliable than accumulate-and-flush-once):
   //
-  // IMPORTANT: the beacon URL is derived from api.defaults.baseURL (the same
-  // Axios instance used for every other request) rather than re-reading
-  // import.meta.env.VITE_API_URL inline.  On Vercel, if VITE_API_URL is not
-  // added as a build-time environment variable, the inline read resolves to
-  // undefined and the fallback http://localhost:8000/api is baked into the
-  // bundle — causing every session_time POST to hit localhost instead of the
-  // real backend, silently failing, and making view time always show 0.
+  // Instead of accumulating all visible time and flushing it in a single send
+  // at the end, we send each "visible segment" immediately when the tab is
+  // hidden (visibilitychange) or when the component unmounts / page unloads.
+  //
+  // WHY: beforeunload is suppressed on mobile and in some desktop browsers
+  // (especially on fast navigation). The old approach accumulated time but
+  // never sent it because beforeunload never fired. visibilitychange fires
+  // reliably on ALL browsers when the user:
+  //   - switches tabs
+  //   - navigates to a different page in SPA routing
+  //   - minimizes the browser
+  //   - locks the phone screen
+  //   - switches apps on mobile
+  //
+  // The backend sums ALL session_time events, so multiple small segments per
+  // visit accumulate correctly in the database.
   useEffect(() => {
     if (!p || isPreview) return;
 
@@ -173,36 +179,27 @@ export default function PublicPortfolio() {
       localStorage.setItem("visitorId", visitorId);
     }
 
-    // Capture the beacon URL once at effect setup time using the shared
-    // api instance — this is the single source of truth for the backend URL.
     const beaconUrl = getAnalyticsUrl(p.id);
 
-    let accumulated = 0;
-    let hidden = document.hidden;
-    let visibleSince = hidden ? null : Date.now();
-    let flushed = false; // guard: send at most once per effect lifecycle
+    // Track the start of the current visible segment
+    let segmentStart = document.hidden ? null : Date.now();
 
-    const flush = () => {
-      if (flushed) return;
-      // Add any remaining visible time before flushing
-      const now = Date.now();
-      if (!hidden && visibleSince !== null) {
-        accumulated += Math.floor((now - visibleSince) / 1000);
-        visibleSince = null; // prevent double-counting if flush called twice
-      }
-      if (accumulated < 1) return;
-      flushed = true;
+    // Send the current segment duration to the backend, then reset.
+    // Called on: tab hidden, component unmount, and beforeunload.
+    const sendSegment = () => {
+      if (segmentStart === null) return;
+      const duration = Math.floor((Date.now() - segmentStart) / 1000);
+      segmentStart = null; // prevent double-send
+      if (duration < 1) return;
 
       const payload = JSON.stringify({
         event_type: 'session_time',
         visitor_id: visitorId,
-        duration: accumulated,
+        duration,
       });
 
-      // Primary: fetch with keepalive=true — properly sends Content-Type: application/json
-      // so DRF can parse request.data on the backend. Works cross-origin on Vercel.
-      // sendBeacon is only a fallback because it sends Content-Type: text/plain
-      // which causes DRF to return empty request.data → duration always 0.
+      // Use fetch+keepalive as primary (correct Content-Type so DRF parses it).
+      // sendBeacon is fallback only (sends as text/plain which DRF cannot parse).
       let sent = false;
       try {
         fetch(beaconUrl, {
@@ -210,18 +207,13 @@ export default function PublicPortfolio() {
           headers: { 'Content-Type': 'application/json' },
           body: payload,
           keepalive: true,
-        }).catch((err) => {
-          // fetch+keepalive failed (e.g. payload too large) — fall back to sendBeacon
-          console.warn('[ViewTime] fetch+keepalive failed, falling back to sendBeacon:', err);
+        }).catch(() => {
           try {
             navigator.sendBeacon(beaconUrl, new Blob([payload], { type: 'application/json' }));
           } catch (_) {}
         });
         sent = true;
-      } catch (_) {
-        sent = false;
-      }
-      // If fetch() itself threw synchronously (very rare), use sendBeacon
+      } catch (_) {}
       if (!sent) {
         try {
           navigator.sendBeacon(beaconUrl, new Blob([payload], { type: 'application/json' }));
@@ -230,29 +222,28 @@ export default function PublicPortfolio() {
     };
 
     const handleVisibilityChange = () => {
-      const now = Date.now();
       if (document.hidden) {
-        // Tab hidden — pause the timer (do NOT flush; wait for final unload)
-        if (!hidden && visibleSince !== null) {
-          accumulated += Math.floor((now - visibleSince) / 1000);
-          visibleSince = null;
-        }
-        hidden = true;
+        // Tab became hidden → send the segment we just accumulated
+        sendSegment();
       } else {
-        // Tab visible again — resume the timer
-        hidden = false;
-        visibleSince = now;
+        // Tab visible again → start a new segment
+        segmentStart = Date.now();
       }
     };
 
+    const handleBeforeUnload = () => {
+      // Page is closing — send any remaining time
+      sendSegment();
+    };
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('beforeunload', flush);
+    window.addEventListener('beforeunload', handleBeforeUnload);
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('beforeunload', flush);
-      // Flush on SPA navigation (component unmount)
-      flush();
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      // SPA navigation: component unmounts → flush remaining segment
+      sendSegment();
     };
   }, [p, isPreview]);
 
