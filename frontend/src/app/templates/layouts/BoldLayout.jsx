@@ -5,16 +5,20 @@ import { Soc, Tags, FAQList, SectionLabel, VideoEmbed, MusicEmbed, GalleryAlbum,
 export default function BoldLayout({ p, t, id, portfolioId }) {
   const u = p.user || {};
 
-  const cfg = {
-    bold:      { hero:"linear-gradient(135deg,#7c3aed 0%,#db2777 50%,#f97316 100%)", ac:"#f97316", font:"Inter,sans-serif",       heroSz:76, fw:900 },
-    cyberpunk: { hero:"linear-gradient(135deg,#facc15,#ec4899)",                     ac:"#facc15", font:"Impact,ui-sans-serif",    heroSz:68, fw:900 },
-    space:     { hero:"radial-gradient(ellipse at 60% 40%,#312e81 0%,#0f0a1e 100%)", ac:"#818cf8", font:"Inter,sans-serif",       heroSz:64, fw:800 },
-    retro:     { hero:"linear-gradient(170deg,#7e22ce,#db2777,#f97316)",             ac:"#ec4899", font:"'Courier New',monospace", heroSz:60, fw:700 },
-    neon:      { hero:"linear-gradient(135deg,#0a0a0a,#042f2e)",                     ac:"#22d3ee", font:"Inter,sans-serif",       heroSz:64, fw:800 },
-    quantum:   { hero:"linear-gradient(135deg,#1e1b4b,#0c4a6e,#042f2e)",            ac:"#818cf8", font:"Inter,sans-serif",       heroSz:60, fw:700 },
-  }[id] || { hero:"linear-gradient(135deg,#7c3aed,#22d3ee)", ac:t.ac, font:"Inter,sans-serif", heroSz:60, fw:800 };
-
-  const { hero, ac, font, heroSz, fw } = cfg;
+  // Hero gradient stays template-specific; all colours come from theme `t`
+  const heroGrad = {
+    bold:      "linear-gradient(135deg,#7c3aed 0%,#db2777 50%,#f97316 100%)",
+    cyberpunk: "linear-gradient(135deg,#facc15,#ec4899)",
+    space:     "radial-gradient(ellipse at 60% 40%,#312e81 0%,#0f0a1e 100%)",
+    retro:     "linear-gradient(170deg,#7e22ce,#db2777,#f97316)",
+    neon:      "linear-gradient(135deg,#0a0a0a,#042f2e)",
+    quantum:   "linear-gradient(135deg,#1e1b4b,#0c4a6e,#042f2e)",
+  }[id] || "linear-gradient(135deg,#7c3aed,#22d3ee)";
+  const heroSz = { bold:76, cyberpunk:68, space:64, retro:60, neon:64, quantum:60 }[id] || 60;
+  const fw     = { bold:900, cyberpunk:900, retro:700 }[id] || 800;
+  const font   = (id === "retro" ? "'Courier New',monospace" : id === "cyberpunk" ? "Impact,ui-sans-serif" : "Inter,sans-serif");
+  const hero   = heroGrad;
+  const ac     = t.ac;
 
   const SLabel = ({ children }) => (
     <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:24 }}>

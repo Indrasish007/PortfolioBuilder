@@ -5,16 +5,19 @@ import { Soc, Tags, FAQList, SectionLabel, VideoEmbed, MusicEmbed, GalleryAlbum,
 export default function SplitLayout({ p, t, id, portfolioId }) {
   const u = p.user || {};
 
-  const cfg = {
-    creative: { ac:"#f97316", left:"#0f0f0f", right:"#141414", accent2:"#d946ef" },
-    dusk:     { ac:"#f59e0b", left:"#1c0a00", right:"#130500", accent2:"#f43f5e" },
-    coral:    { ac:"#f97316", left:"#1a0800", right:"#120600", accent2:"#ef4444" },
-    sakura:   { ac:"#fb7185", left:"#1a0010", right:"#130008", accent2:"#e879f9" },
-  }[id] || { ac:t.ac, left:"#0f0f0f", right:"#141414", accent2:"#d946ef" };
+  // Accent2 stays template-specific for gradient variety; ac/fg/bg come from theme `t`
+  const accent2 = {
+    creative: "#d946ef",
+    dusk:     "#f43f5e",
+    coral:    "#ef4444",
+    sakura:   "#e879f9",
+  }[id] || t.ac;
 
-  const { ac, left, right, accent2 } = cfg;
-  const fg = "#f5f5f5";
-  const grad = `linear-gradient(135deg, ${ac}, ${accent2})`;
+  const ac   = t.ac;
+  const fg   = t.fg;
+  const left  = t.bg;   // slightly darker variation would require CSS filter; use t.bg for simplicity
+  const right = t.bg;
+  const grad  = `linear-gradient(135deg, ${ac}, ${accent2})`;
 
   const lbl = (txt) => <SectionLabel text={txt} style={{ color:ac, opacity:1 }} />;
 

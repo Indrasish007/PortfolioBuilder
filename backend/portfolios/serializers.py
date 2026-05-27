@@ -66,8 +66,26 @@ class PortfolioSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'user', 'name', 'template', 'theme', 'status', 'slug', 'domain', 'views', 'updated_at',
             'skills', 'experience', 'education', 'projects', 'certifications', 'testimonials', 'blogs',
-            'sections', 'custom', 'gallery', 'videos', 'music', 'services', 'languages', 'volunteer', 'awards', 'references', 'faqs'
+            'sections', 'custom', 'gallery', 'videos', 'music', 'services', 'languages', 'volunteer',
+            'awards', 'references', 'faqs', 'avatar',
         ]
+
+    def to_representation(self, instance):
+        """Inject portfolio.avatar into user.avatar so the frontend always
+        reads the portfolio-specific DP, not the shared profile avatar."""
+        ret = super().to_representation(instance)
+        # portfolio.avatar takes priority; fall back to profile.avatar for
+        # portfolios that were created before this fix.
+        portfolio_avatar = instance.avatar
+        if not portfolio_avatar:
+            try:
+                portfolio_avatar = instance.user.profile.avatar or ""
+            except Exception:
+                portfolio_avatar = ""
+        if ret.get('user') is None:
+            ret['user'] = {}
+        ret['user']['avatar'] = portfolio_avatar or ""
+        return ret
 
     def create(self, validated_data):
         skills_data = validated_data.pop('skills', [])
@@ -93,9 +111,16 @@ class PortfolioSerializer(serializers.ModelSerializer):
 
         portfolio = Portfolio.objects.create(user=portfolio_user, **validated_data)
 
-        # Update profile fields if a profile dict was sent by the client
+        # Update profile fields if a profile dict was sent by the client.
+        # Strip out 'avatar' before writing to Profile — avatar is now
+        # per-portfolio and stored on the Portfolio row, not the Profile.
         if user_data and isinstance(user_data, dict):
             profile_data = user_data.get('profile', user_data)
+            avatar_value = profile_data.pop('avatar', None)  # intercept avatar
+            # Save the avatar on the Portfolio itself
+            if avatar_value is not None:
+                portfolio.avatar = avatar_value
+                portfolio.save(update_fields=['avatar'])
             try:
                 profile = portfolio_user.profile if portfolio_user else portfolio.user.profile
                 for attr, value in profile_data.items():
@@ -122,9 +147,19 @@ class PortfolioSerializer(serializers.ModelSerializer):
         return portfolio
 
     def update(self, instance, validated_data):
+        # Discard any top-level 'avatar' the client sent.  After the first save
+        # the store keeps portfolio.avatar in its state and re-sends it on every
+        # subsequent save — but it's stale.  The authoritative source is always
+        # user.avatar (the field the editor writes to).  Without this pop the
+        # stale value would win and the newly-uploaded image would be discarded.
+        validated_data.pop('avatar', None)
+
+        avatar_value = None  # will be set below from user.avatar if provided
         user_data = validated_data.pop('user', None)
         if user_data and isinstance(user_data, dict):
             profile_data = user_data.get('profile', user_data)
+            # Intercept avatar — it lives on Portfolio, not Profile
+            avatar_value = profile_data.pop('avatar', None)
             try:
                 profile = instance.user.profile
                 changed_fields = []
@@ -151,6 +186,14 @@ class PortfolioSerializer(serializers.ModelSerializer):
             if vd_key in validated_data:
                 setattr(instance, field_name, validated_data[vd_key])
                 changed_flat.append(field_name)
+
+        # Always persist the avatar that came through user.avatar.
+        # It is saved as part of the same UPDATE if other fields changed too,
+        # otherwise in its own minimal UPDATE so it's never silently skipped.
+        if avatar_value is not None:
+            instance.avatar = avatar_value
+            if 'avatar' not in changed_flat:
+                changed_flat.append('avatar')
 
         if changed_flat:
             instance.save(update_fields=changed_flat)

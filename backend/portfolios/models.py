@@ -27,6 +27,10 @@ class Portfolio(models.Model):
     awards = models.JSONField(default=list, blank=True)
     references = models.JSONField(default=list, blank=True)
     faqs = models.JSONField(default=list, blank=True)
+    # Per-portfolio avatar — independent of the shared Profile avatar.
+    # Storing it here ensures that changing the DP of one portfolio
+    # never affects any other portfolio of the same user.
+    avatar = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return f"{self.user.email} - {self.name}"

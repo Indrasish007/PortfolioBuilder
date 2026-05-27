@@ -5,15 +5,17 @@ import { Soc, Tags, FAQList, SectionLabel, VideoEmbed, MusicEmbed, GalleryAlbum,
 export default function GlassLayout({ p, t, id, portfolioId }) {
   const u = p.user || {};
 
-  const cfg = {
-    gradient:      { orb:"linear-gradient(135deg,#7c3aed,#22d3ee)", ac:"#a78bfa", bg:"#0f0a2e" },
-    aurora:        { orb:"linear-gradient(135deg,#2dd4bf,#3b82f6,#a78bfa)", ac:"#2dd4bf", bg:"#071428" },
-    glassmorphism: { orb:"linear-gradient(135deg,#a78bfa,#f472b6,#22d3ee)", ac:"#f472b6", bg:"#080818" },
-    holographic:   { orb:"linear-gradient(135deg,#22d3ee,#f472b6,#facc15,#22d3ee)", ac:"#f472b6", bg:"#0a0a18" },
-  }[id] || { orb:"linear-gradient(135deg,#7c3aed,#22d3ee)", ac:t.ac, bg:"#0f0a2e" };
+  // Orb gradient stays template-specific for visual distinction; bg/fg/ac come from theme `t`
+  const orb = {
+    gradient:      "linear-gradient(135deg,#7c3aed,#22d3ee)",
+    aurora:        "linear-gradient(135deg,#2dd4bf,#3b82f6,#a78bfa)",
+    glassmorphism: "linear-gradient(135deg,#a78bfa,#f472b6,#22d3ee)",
+    holographic:   "linear-gradient(135deg,#22d3ee,#f472b6,#facc15,#22d3ee)",
+  }[id] || "linear-gradient(135deg,#7c3aed,#22d3ee)";
 
-  const { orb, ac, bg } = cfg;
-  const fg = "#f0f4ff";
+  const ac = t.ac;
+  const fg = t.fg;
+
 
   const card = {
     background: "rgba(255,255,255,0.07)",
@@ -34,7 +36,7 @@ export default function GlassLayout({ p, t, id, portfolioId }) {
   );
 
   return (
-    <div style={{ background:bg, color:fg, fontFamily:"Inter,sans-serif", minHeight:"100%" }}>
+    <div style={{ background:t.bg, color:fg, fontFamily:"Inter,sans-serif", minHeight:"100%" }}>
 
       {/* ── Hero with glass card ── */}
       <div style={{ position:"relative", overflow:"hidden", padding:"80px 48px 60px" }}>

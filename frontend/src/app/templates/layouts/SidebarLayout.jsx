@@ -6,8 +6,9 @@ export default function SidebarLayout({ p, t, id, portfolioId }) {
   const u = p.user || {};
   const mono  = ["developer","terminal"].includes(id);
   const font  = mono ? "ui-monospace,monospace" : "Inter,sans-serif";
-  const acBg  = { developer:"#0d1117", obsidian:"#0a0a0a", architect:"#0c1623", terminal:"#0d0d0d" }[id] || "#0d1117";
-  const ac    = { developer:"#58a6ff", obsidian:"#a1a1aa", architect:"#60a5fa", terminal:"#22c55e" }[id] || t.ac;
+  // Sidebar panel bg stays template-specific; accent and main bg come from theme `t`
+  const acBg  = { developer:"#0d1117", obsidian:"#0a0a0a", architect:"#0c1623", terminal:"#0d0d0d" }[id] || t.bg;
+  const ac    = t.ac;
   const sideW = id === "architect" ? 280 : 250;
   const prefix = id === "terminal" ? "$ " : id === "developer" ? "// " : "";
   const radius = id === "architect" ? "2px" : id === "obsidian" ? "0" : "8px";

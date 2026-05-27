@@ -2,6 +2,52 @@ import { create } from "zustand";
 import { defaultPortfolio } from "../services/mockPortfolio.js";
 import api from "../services/api";
 
+// Default theme for each template — applied automatically when a template
+// is selected so the live preview immediately reflects the right colours.
+const TEMPLATE_DEFAULT_THEME = {
+  // Minimal family
+  minimal:       "minimal",
+  scandinavian:  "minimal",
+  paper:         "sand",
+  typewriter:    "sand",
+
+  // Sidebar / Developer family
+  developer:     "midnight",
+  obsidian:      "noir",
+  architect:     "slate",
+  terminal:      "forest",
+
+  // Bold family
+  bold:          "twilight",
+  cyberpunk:     "neon",
+  space:         "twilight",
+  retro:         "twilight",
+  neon:          "neon",
+  quantum:       "midnight",
+
+  // Glass family
+  gradient:      "gradientblue",
+  aurora:        "forest",
+  glassmorphism: "glass",
+  holographic:   "glass",
+
+  // Split family
+  creative:      "midnight",
+  dusk:          "sand",
+  coral:         "sand",
+  sakura:        "minimal",
+
+  // Biz family
+  classic:       "minimal",
+  startup:       "gradientblue",
+  forest:        "forest",
+  oceanic:       "neon",
+
+  // Brutalist family
+  brutalist:     "noir",
+  monochrome:    "minimal",
+};
+
 export const usePortfolioStore = create((set, get) => ({
   portfolio: defaultPortfolio,
   template: "developer",
@@ -115,7 +161,10 @@ export const usePortfolioStore = create((set, get) => ({
   },
   setTemplate: (template) => {
     const prev = { portfolio: get().portfolio, template: get().template, themeName: get().themeName };
-    set({ history: [...get().history, prev], future: [], template });
+    // Switch to this template's default theme so the preview instantly reflects
+    // the right colour scheme. Falls back to the current theme if not mapped.
+    const newTheme = TEMPLATE_DEFAULT_THEME[template] || get().themeName;
+    set({ history: [...get().history, prev], future: [], template, themeName: newTheme });
   },
   setThemeName: (themeName) => {
     const prev = { portfolio: get().portfolio, template: get().template, themeName: get().themeName };

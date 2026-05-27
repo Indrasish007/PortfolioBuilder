@@ -5,23 +5,20 @@ import { Soc, Tags, FAQList, SectionLabel, VideoEmbed, MusicEmbed, GalleryAlbum,
 export default function BizLayout({ p, t, id, portfolioId }) {
   const u = p.user || {};
 
-  const cfg = {
-    classic: { ac: "#10b981", bg: "#0a1a12", header: "#061009", radius: "4px", font: "Inter,sans-serif" },
-    startup: { ac: "#3b82f6", bg: "#05111f", header: "#030c18", radius: "8px", font: "Inter,sans-serif" },
-    forest: { ac: "#84cc16", bg: "#0a150a", header: "#060e06", radius: "4px", font: "Inter,sans-serif" },
-    oceanic: { ac: "#06b6d4", bg: "#021420", header: "#010c16", radius: "8px", font: "Inter,sans-serif" },
-  }[id] || { ac: t.ac, bg: "#0a1020", header: "#060c18", radius: "6px", font: "Inter,sans-serif" };
+  // radius/font stay template-specific; bg/fg/ac come from theme `t`
+  const radius = { classic:"4px", startup:"8px", forest:"4px", oceanic:"8px" }[id] || "6px";
+  const font   = "Inter,sans-serif";
+  const ac     = t.ac;
+  const fg     = t.fg;
 
-  const { ac, bg, header, radius, font } = cfg;
-  const fg = "#f0f8ff";
 
   const lbl = (txt) => <SectionLabel text={txt} style={{ color: ac, opacity: 1 }} />;
 
   return (
-    <div style={{ background: bg, color: fg, fontFamily: font, minHeight: "100%" }}>
+    <div style={{ background: t.bg, color: fg, fontFamily: font, minHeight: "100%" }}>
 
       {/* ── Header bar ── */}
-      <div style={{ background: header, borderBottom: `1px solid ${ac}20`, padding: "16px 48px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div style={{ background: t.bg, borderBottom: `1px solid ${ac}20`, padding: "16px 48px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ fontWeight: 800, fontSize: 18, color: ac }}>{u.name?.split(" ")[0] || "Portfolio"}</div>
         <div style={{ display: "flex", gap: 24 }}>
           {["About", "Projects", "Experience", "Contact"].map(s => (

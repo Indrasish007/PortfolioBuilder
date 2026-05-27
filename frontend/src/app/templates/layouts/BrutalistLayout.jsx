@@ -6,22 +6,23 @@ export default function BrutalistLayout({ p, t, id, portfolioId }) {
   const u = p.user || {};
   const isMono = id === "monochrome";
 
-  const ac     = isMono ? "#111111" : "#facc15";
-  const bg     = isMono ? "#f5f5f5" : "#0a0a0a";
-  const fg     = isMono ? "#111111" : "#f5f5f5";
-  const border = isMono ? "3px solid #111" : "3px solid #facc15";
+  // Border and font stay template-specific; bg/fg/ac come from theme `t`
+  const ac     = t.ac;
+  const fg     = t.fg;
+  const border = `3px solid ${t.ac}`;
   const font   = isMono ? "Inter,sans-serif" : "Impact,ui-sans-serif,sans-serif";
+
 
   const lbl = (txt) => (
     <div style={{ fontSize:isMono?10:12, letterSpacing:"0.25em", textTransform:"uppercase",
-      color: isMono ? "#888" : ac, marginBottom:16, fontFamily:"Inter,sans-serif",
-      borderBottom: isMono ? "2px solid #111" : "none", paddingBottom: isMono ? 6 : 0 }}>
+      color: t.ac, marginBottom:16, fontFamily:"Inter,sans-serif",
+      borderBottom: isMono ? `2px solid ${t.ac}` : "none", paddingBottom: isMono ? 6 : 0 }}>
       {txt}
     </div>
   );
 
   return (
-    <div style={{ background:bg, color:fg, fontFamily:font, minHeight:"100%" }}>
+    <div style={{ background:t.bg, color:t.fg, fontFamily:font, minHeight:"100%" }}>
 
       {/* ── Hero ── */}
       <div style={{ padding:isMono?"60px 48px":"48px", borderBottom:border, position:"relative" }}>
@@ -34,7 +35,7 @@ export default function BrutalistLayout({ p, t, id, portfolioId }) {
               objectFit: "cover",
               border: border,
               borderRadius: isMono ? "4px" : "12px",
-              boxShadow: isMono ? "8px 8px 0px #111111" : "12px 12px 0px #facc15",
+              boxShadow: `8px 8px 0px ${t.ac}`,
               filter: isMono ? "grayscale(100%)" : "none",
               flexShrink: 0,
               marginBottom: 16
@@ -54,7 +55,7 @@ export default function BrutalistLayout({ p, t, id, portfolioId }) {
             </div>
           </div>
           <p style={{ marginTop:24, opacity:0.7, lineHeight:1.8, fontSize:15, maxWidth:600, fontFamily:"Inter,sans-serif", whiteSpace: "pre-wrap" }}>{u.bio}</p>
-          <div style={{ marginTop:20 }}><Soc user={u} fg={fg} portfolioId={portfolioId} /></div>
+          <div style={{ marginTop:20 }}><Soc user={u} fg={t.fg} portfolioId={portfolioId} /></div>
         </div>
       </div>
 
@@ -75,7 +76,7 @@ export default function BrutalistLayout({ p, t, id, portfolioId }) {
                 </div>
               : <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
                   {p.skills.map((s,i) => (
-                    <span key={i} style={{ padding:"4px 14px", background:"#facc15", color:"#0a0a0a", fontSize:13, fontWeight:700, fontFamily:"Inter,sans-serif" }}>
+                    <span key={i} style={{ padding:"4px 14px", background:ac, color:t.bg, fontSize:13, fontWeight:700, fontFamily:"Inter,sans-serif" }}>
                       {typeof s==="object"?s.name:s}
                     </span>
                   ))}
@@ -98,7 +99,7 @@ export default function BrutalistLayout({ p, t, id, portfolioId }) {
                 </div>
               : <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
                   {p.languages.map((l,i) => (
-                    <span key={i} style={{ padding:"4px 14px", background:"rgba(250,204,21,0.15)", border:"2px solid #facc15", color:fg, fontSize:13, fontWeight:700, fontFamily:"Inter,sans-serif" }}>
+                    <span key={i} style={{ padding:"4px 14px", background:`${ac}18`, border:`2px solid ${ac}`, color:t.fg, fontSize:13, fontWeight:700, fontFamily:"Inter,sans-serif" }}>
                       {l.name} <span style={{ opacity: 0.7, fontSize: 11 }}>({l.proficiency})</span>
                     </span>
                   ))}
@@ -112,12 +113,12 @@ export default function BrutalistLayout({ p, t, id, portfolioId }) {
           <div style={{ marginBottom:48, borderBottom: isMono?"1px solid #ddd":"none", paddingBottom:isMono?48:0 }}>
             {lbl("Experience")}
             {p.experience.map((e,i) => (
-              <div key={i} style={{ marginBottom:24, borderLeft: isMono?"4px solid #111":`4px solid #facc15`, paddingLeft:20 }}>
+              <div key={i} style={{ marginBottom:24, borderLeft: `4px solid ${t.ac}`, paddingLeft:20 }}>
                 <div style={{ display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:4 }}>
                   <h3 style={{ fontWeight:isMono?700:400, fontSize:isMono?16:20, fontFamily:isMono?font:"Impact,sans-serif", textTransform:isMono?"none":"uppercase", margin:0 }}>{e.role}</h3>
                   <div style={{ fontSize:12, opacity:0.45, fontFamily:"Inter,sans-serif" }}>{e.period}</div>
                 </div>
-                <div style={{ fontSize:13, color:isMono?"#666":ac, fontFamily:"Inter,sans-serif", marginBottom:6 }}>{e.company}</div>
+                <div style={{ fontSize:13, color:t.ac, fontFamily:"Inter,sans-serif", marginBottom:6 }}>{e.company}</div>
                 <p style={{ fontSize:13, opacity:0.65, lineHeight:1.75, fontFamily:"Inter,sans-serif" }}>{e.description}</p>
               </div>
             ))}
@@ -146,15 +147,15 @@ export default function BrutalistLayout({ p, t, id, portfolioId }) {
                 </div>
               : <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
                   {p.projects.map((proj,i) => (
-                    <div key={i} style={{ border:`3px solid ${i===0?"#facc15":"rgba(250,204,21,0.3)"}`, padding:20, display:"flex", justifyContent:"space-between", gap:20, flexWrap:"wrap" }}>
+                    <div key={i} style={{ border:`3px solid ${i===0?ac:`${ac}40`}`, padding:20, display:"flex", justifyContent:"space-between", gap:20, flexWrap:"wrap" }}>
                       <div style={{ flex:1 }}>
                         <h3 style={{ fontWeight:400, fontSize:22, textTransform:"uppercase", marginBottom:6, margin:0 }}>{proj.title}</h3>
                         <p style={{ fontSize:13, opacity:0.65, lineHeight:1.65, fontFamily:"Inter,sans-serif", marginBottom:10 }}>{proj.description}</p>
-                        <Tags items={proj.tech||[]} bg="rgba(250,204,21,0.2)" fg="#facc15" radius="0" />
+                        <Tags items={proj.tech||[]} bg={`${ac}20`} fg={ac} radius="0" />
                       </div>
                       <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-                        {proj.github && <a href={proj.github} target="_blank" rel="noreferrer" style={{ color:"#facc15", fontSize:12, fontFamily:"Inter,sans-serif" }}>CODE ↗</a>}
-                        {proj.live   && <a href={proj.live}   target="_blank" rel="noreferrer" style={{ color:"#facc15", fontSize:12, fontFamily:"Inter,sans-serif" }}>LIVE ↗</a>}
+                        {proj.github && <a href={proj.github} target="_blank" rel="noreferrer" style={{ color:ac, fontSize:12, fontFamily:"Inter,sans-serif" }}>CODE ↗</a>}
+                        {proj.live   && <a href={proj.live}   target="_blank" rel="noreferrer" style={{ color:ac, fontSize:12, fontFamily:"Inter,sans-serif" }}>LIVE ↗</a>}
                       </div>
                     </div>
                   ))}
@@ -182,14 +183,14 @@ export default function BrutalistLayout({ p, t, id, portfolioId }) {
                 </div>
               : <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
                   {p.blogs.map((b,i) => (
-                    <div key={i} style={{ border:`3px solid ${i===0?"#facc15":"rgba(250,204,21,0.3)"}`, padding:20, display:"flex", justifyContent:"space-between", gap:20, flexWrap:"wrap" }}>
+                    <div key={i} style={{ border:`3px solid ${i===0?ac:`${ac}40`}`, padding:20, display:"flex", justifyContent:"space-between", gap:20, flexWrap:"wrap" }}>
                       <div style={{ flex:1 }}>
                         <h3 style={{ fontWeight:400, fontSize:22, textTransform:"uppercase", marginBottom:6, margin:0 }}>{b.title}</h3>
                         {b.date && <div style={{ fontSize:13, color:ac, marginBottom:6 }}>{b.date}</div>}
                         <p style={{ fontSize:13, opacity:0.65, lineHeight:1.65, fontFamily:"Inter,sans-serif", marginBottom:10 }}>{b.excerpt}</p>
                       </div>
                       <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-                        {b.url && <a href={b.url} target="_blank" rel="noreferrer" style={{ color:"#facc15", fontSize:12, fontFamily:"Inter,sans-serif" }}>READ ↗</a>}
+                        {b.url && <a href={b.url} target="_blank" rel="noreferrer" style={{ color:ac, fontSize:12, fontFamily:"Inter,sans-serif" }}>READ ↗</a>}
                       </div>
                     </div>
                   ))}
@@ -222,7 +223,7 @@ export default function BrutalistLayout({ p, t, id, portfolioId }) {
               {p.testimonials.map((tt,i) => (
                 <blockquote key={i} style={{ border:border, padding:20, margin:0, fontStyle:"italic", fontSize:13, lineHeight:1.8, fontFamily:"Inter,sans-serif" }}>
                   "{tt.quote}"
-                  <div style={{ marginTop:10, fontStyle:"normal", fontWeight:700, fontSize:12, color: isMono?"#555":ac }}>— {tt.name}, {tt.role}</div>
+                  <div style={{ marginTop:10, fontStyle:"normal", fontWeight:700, fontSize:12, color: t.ac }}>— {tt.name}, {tt.role}</div>
                 </blockquote>
               ))}
             </div>
@@ -283,7 +284,7 @@ export default function BrutalistLayout({ p, t, id, portfolioId }) {
               {u.email && (
                 <a href={`mailto:${u.email}`}
                   style={{ display:"inline-flex", alignItems:"center", gap:10, padding:isMono?"12px 28px":"16px 40px",
-                    background: isMono?"#111":"#facc15", color: isMono?"#fff":"#000",
+                    background: ac, color: t.bg,
                     fontWeight:900, fontSize: isMono?13:16, textDecoration:"none",
                     fontFamily:"Inter,sans-serif", textTransform:isMono?"none":"uppercase", letterSpacing:isMono?"0":"0.1em" }}>
                   <Mail size={14}/> {u.email}
@@ -292,7 +293,7 @@ export default function BrutalistLayout({ p, t, id, portfolioId }) {
               {u.phone && (
                 <a href={`tel:${u.phone}`}
                   style={{ display:"inline-flex", alignItems:"center", gap:10, padding:isMono?"12px 28px":"16px 40px",
-                    background: "transparent", color: isMono?"#111":"#facc15", border: isMono?"2px solid #111":`2px solid #facc15`,
+                    background: "transparent", color: ac, border: `2px solid ${ac}`,
                     fontWeight:900, fontSize: isMono?13:16, textDecoration:"none",
                     fontFamily:"Inter,sans-serif", textTransform:isMono?"none":"uppercase", letterSpacing:isMono?"0":"0.1em" }}>
                   <Phone size={14}/> {u.phone}
