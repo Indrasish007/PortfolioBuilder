@@ -5,7 +5,7 @@ import {
 import {
   Eye, Users, Download, Globe,
   TrendingUp, RefreshCw, LayoutGrid, ChevronDown, ChevronUp,
-  ExternalLink, BookOpen,
+  ExternalLink, BookOpen, Clock,
 } from "lucide-react";
 import GlassCard from "../components/GlassCard.jsx";
 import Badge from "../components/Badge.jsx";
@@ -38,6 +38,21 @@ const COUNTRY_FLAGS = {
 
 function getFlag(country) {
   return COUNTRY_FLAGS[country] || "🌐";
+}
+
+/* ────────────────────────────────────────────────────────── */
+/* Format seconds → Xh Xm Xs                                  */
+/* ────────────────────────────────────────────────────────── */
+function formatViewTime(totalSeconds) {
+  if (!totalSeconds || totalSeconds < 1) return "0s";
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  const parts = [];
+  if (h > 0) parts.push(`${h}h`);
+  if (m > 0) parts.push(`${m}m`);
+  if (s > 0 || parts.length === 0) parts.push(`${s}s`);
+  return parts.join(" ");
 }
 
 /* ────────────────────────────────────────────────────────── */
@@ -80,7 +95,12 @@ function PortfolioAnalyticsCard({ portfolio, index }) {
     { l: "Visitors (14d)", v: (portfolio.visitors || 0).toLocaleString(), icon: Users },
     { l: "Downloads (14d)", v: (portfolio.downloads || 0).toLocaleString(), icon: Download },
     { l: "Countries", v: (portfolio.countries || []).filter(c => c.visits > 0).length.toString(), icon: Globe },
+    { l: "Total view time", v: formatViewTime(portfolio.total_view_time_seconds || 0), icon: Clock },
   ];
+
+  const avgViewTime = portfolio.visit_count > 0
+    ? Math.round((portfolio.total_view_time_seconds || 0) / portfolio.visit_count)
+    : 0;
 
   return (
     <GlassCard
@@ -117,6 +137,9 @@ function PortfolioAnalyticsCard({ portfolio, index }) {
           </div>
           <div className="text-xs text-muted-foreground mt-0.5">
             {(portfolio.views || 0).toLocaleString()} total views · {(portfolio.visitors || 0).toLocaleString()} visitors (14d)
+            {portfolio.total_view_time_seconds > 0 && (
+              <> · <Clock className="w-3 h-3 inline mx-0.5 opacity-70" />{formatViewTime(portfolio.total_view_time_seconds)} viewed</>
+            )}
           </div>
         </div>
 
@@ -140,7 +163,7 @@ function PortfolioAnalyticsCard({ portfolio, index }) {
       {expanded && (
         <div className="px-5 pb-5 space-y-5 border-t border-border/40">
           {/* Mini stat row */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 pt-4">
             {stats.map(s => (
               <div
                 key={s.l}
@@ -155,6 +178,33 @@ function PortfolioAnalyticsCard({ portfolio, index }) {
               </div>
             ))}
           </div>
+
+          {/* Average view time (if data exists) */}
+          {portfolio.visit_count > 0 && (
+            <div
+              className="flex items-center gap-3 rounded-xl px-4 py-3"
+              style={{ background: `color-mix(in oklch, ${accent} 6%, var(--card))` }}
+            >
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                style={{ background: `color-mix(in oklch, ${accent} 18%, transparent)` }}
+              >
+                <Clock className="w-4 h-4" style={{ color: accent }} />
+              </div>
+              <div className="flex-1">
+                <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Avg. view time per visit</div>
+                <div className="text-sm font-bold mt-0.5">{formatViewTime(avgViewTime)}</div>
+              </div>
+              <div className="text-right">
+                <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Total time</div>
+                <div className="text-sm font-bold mt-0.5" style={{ color: accent }}>{formatViewTime(portfolio.total_view_time_seconds || 0)}</div>
+              </div>
+              <div className="text-right">
+                <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Sessions</div>
+                <div className="text-sm font-bold mt-0.5">{(portfolio.visit_count || 0).toLocaleString()}</div>
+              </div>
+            </div>
+          )}
 
           {/* Views chart */}
           <div>
@@ -325,12 +375,13 @@ export default function Analytics() {
 
         <div className="space-y-5">
           {/* Stat cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             {[
               { l: "Total views", v: (data.total_views || 0).toLocaleString(), i: Eye, color: "#a78bfa" },
               { l: "Unique visitors", v: (data.total_visitors || 0).toLocaleString(), i: Users, color: "#22d3ee" },
               { l: "Resume downloads", v: (data.downloads || 0).toLocaleString(), i: Download, color: "#f472b6" },
               { l: "Countries reached", v: data.countries.filter(c => c.visits > 0).length.toString(), i: Globe, color: "#34d399" },
+              { l: "Total view time", v: formatViewTime(data.total_view_time_seconds || 0), i: Clock, color: "#fb923c" },
             ].map((s) => (
               <GlassCard key={s.l} className="p-5">
                 <div className="flex items-center justify-between">

@@ -142,16 +142,13 @@ export default function PublicPortfolio() {
     api.post(`/portfolios/${p.id}/analytics/`, { event_type: 'view', visitor_id: visitorId }).catch(() => {});
   }, [p, isPreview]);
 
-  // ── Session duration tracking ───────────────────────────────────────────────
-  // Records start time on mount and sends a single final duration on page exit.
-  // Uses fetch + keepalive:true which is reliable during beforeunload and works
-  // with an explicit absolute URL (navigator.sendBeacon only works with relative
-  // URLs pointing to the page's own origin, which is the Vite dev server, not Django).
+  // ── View time tracking ─────────────────────────────────────────────────────
+  // Accumulates only the time the tab is actually visible. Flushes exactly
+  // ONCE per visit (on beforeunload or SPA navigation / component unmount).
+  // Tab-hide events only pause the timer — they no longer trigger a send,
+  // which was causing a second session_time record per single page visit.
   useEffect(() => {
     if (!p || isPreview) return;
-
-    const startTime = Date.now();
-    let hasSent = false;
 
     let visitorId = localStorage.getItem("visitorId");
     if (!visitorId) {
@@ -159,36 +156,64 @@ export default function PublicPortfolio() {
       localStorage.setItem("visitorId", visitorId);
     }
 
-    // Full backend URL — same base that axios api.js uses
-    const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
-    const endpoint = `${API_BASE}/portfolios/${p.id}/analytics/`;
-    const token = localStorage.getItem('access_token');
+    let accumulated = 0;
+    let hidden = document.hidden;
+    let visibleSince = hidden ? null : Date.now();
+    let flushed = false; // guard: send at most once per effect lifecycle
 
-    const sendSession = () => {
-      if (hasSent) return;
-      hasSent = true;
-      const duration = Math.max(1, Math.floor((Date.now() - startTime) / 1000));
-      const body = JSON.stringify({ event_type: 'session_end', visitor_id: visitorId, duration });
-      const headers = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-      // keepalive:true ensures the request completes even if the page is being unloaded
-      fetch(endpoint, { method: 'POST', headers, body, keepalive: true }).catch(() => {});
+    const flush = () => {
+      if (flushed) return;
+      // Add any remaining visible time before flushing
+      const now = Date.now();
+      if (!hidden && visibleSince !== null) {
+        accumulated += Math.floor((now - visibleSince) / 1000);
+        visibleSince = null; // prevent double-counting if flush called twice
+      }
+      if (accumulated < 1) return;
+      flushed = true;
+
+      const payload = JSON.stringify({
+        event_type: 'session_time',
+        visitor_id: visitorId,
+        duration: accumulated,
+      });
+
+      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+      const beaconUrl = `${apiBase}/portfolios/${p.id}/analytics/`;
+      const sent = navigator.sendBeacon(beaconUrl, new Blob([payload], { type: 'application/json' }));
+      if (!sent) {
+        fetch(beaconUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, keepalive: true }).catch(() => {});
+      }
     };
 
-    const handleVisibility = () => {
-      if (document.visibilityState === 'hidden') sendSession();
+    const handleVisibilityChange = () => {
+      const now = Date.now();
+      if (document.hidden) {
+        // Tab hidden — pause the timer (do NOT flush; wait for final unload)
+        if (!hidden && visibleSince !== null) {
+          accumulated += Math.floor((now - visibleSince) / 1000);
+          visibleSince = null;
+        }
+        hidden = true;
+      } else {
+        // Tab visible again — resume the timer
+        hidden = false;
+        visibleSince = now;
+      }
     };
 
-    window.addEventListener('beforeunload', sendSession);
-    document.addEventListener('visibilitychange', handleVisibility);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('beforeunload', flush);
 
     return () => {
-      // React unmount (SPA navigation) — send final duration
-      sendSession();
-      window.removeEventListener('beforeunload', sendSession);
-      document.removeEventListener('visibilitychange', handleVisibility);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('beforeunload', flush);
+      // Flush on SPA navigation (component unmount)
+      flush();
     };
   }, [p, isPreview]);
+
+
 
 
   if (loading) {

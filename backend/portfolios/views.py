@@ -177,11 +177,22 @@ class AnalyticsView(APIView):
                 portfolio.views += 1
                 portfolio.save()
 
-        elif event_type in ('session_ping', 'session_end'):
-            # Store one final duration record per session exit
-            PortfolioEvent.objects.create(portfolio=portfolio, event_type=event_type, visitor_id=visitor_id, duration=duration, device=device, country=country)
         elif event_type == 'resume_download':
             PortfolioEvent.objects.create(portfolio=portfolio, event_type=event_type, visitor_id=visitor_id, device=device, country=country)
+
+        elif event_type == 'session_time':
+            # Record how long this visitor spent on the portfolio (in seconds).
+            # Duration is capped at 1 hour to avoid runaway values from idle tabs.
+            capped_duration = min(int(duration or 0), 3600)
+            if capped_duration > 0:
+                PortfolioEvent.objects.create(
+                    portfolio=portfolio,
+                    event_type='session_time',
+                    visitor_id=visitor_id,
+                    duration=capped_duration,
+                    device=device,
+                    country=country,
+                )
 
         return Response({'status': 'ok'})
 
@@ -196,23 +207,10 @@ class DashboardStatsView(APIView):
         unique_visitors = PortfolioEvent.objects.filter(portfolio__in=portfolios).values('visitor_id').distinct().count()
         resume_downloads = PortfolioEvent.objects.filter(portfolio__in=portfolios, event_type='resume_download').count()
         
-        # Average session duration: filter valid session records (duration > 0),
-        # divide total time by count of sessions (not distinct visitors).
-        pings = PortfolioEvent.objects.filter(
-            portfolio__in=portfolios,
-            event_type__in=['session_ping', 'session_end'],
-            duration__gt=0
-        )
-        avg_session = 0
-        if pings.exists():
-            total_duration = pings.aggregate(Sum('duration'))['duration__sum'] or 0
-            avg_session = total_duration / pings.count()
-            
         return Response({
             'total_views': total_views,
             'unique_visitors': unique_visitors,
             'resume_downloads': resume_downloads,
-            'avg_session': int(avg_session)
         })
 
 class PublicPortfolioListView(APIView):

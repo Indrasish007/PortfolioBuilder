@@ -11,12 +11,6 @@ import { useToast } from "../context/ToasterContext.jsx";
 
 // stats will be fetched from backend
 
-function formatDuration(seconds) {
-  if (!seconds || seconds <= 0) return "--";
-  if (seconds < 60) return `${seconds}s`;
-  return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
-}
-
 export default function Dashboard() {
   const user = useAuthStore((s) => s.user);
   const [portfolios, setPortfolios] = useState([]);
@@ -29,7 +23,7 @@ export default function Dashboard() {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const [statsData, setStatsData] = useState({ total_views: 0, unique_visitors: 0, resume_downloads: 0, avg_session: 0 });
+  const [statsData, setStatsData] = useState({ total_views: 0, unique_visitors: 0, resume_downloads: 0 });
 
   useEffect(() => {
     async function load() {
@@ -163,12 +157,11 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[
           { label: "Total views", value: statsData.total_views, delta: "--", up: true, icon: Eye },
           { label: "Unique visitors", value: statsData.unique_visitors, delta: "--", up: true, icon: MousePointerClick },
           { label: "Resume downloads", value: statsData.resume_downloads, delta: "--", up: true, icon: Download },
-          { label: "Avg. session", value: formatDuration(statsData.avg_session), delta: "--", up: true, icon: Sparkles },
         ].map((s, i) => (
           <motion.div key={s.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
             <GlassCard className="p-5">

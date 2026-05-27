@@ -3,7 +3,8 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 import datetime
 from django.utils import timezone
-from django.db.models import Count, Sum
+from django.db.models import Count, Sum, IntegerField
+from django.db.models.functions import Coalesce
 from portfolios.models import Portfolio, PortfolioEvent, Project
 
 class AnalyticsView(APIView):
@@ -94,21 +95,7 @@ class AnalyticsView(APIView):
             created_at__date__gte=today - datetime.timedelta(days=13)
         ).count()
 
-        # 5. Average session duration
-        # Include both legacy session_ping events and new session_end events.
-        # Filter duration > 0 to exclude bounces. Divide by session count (not unique visitors).
-        pings = PortfolioEvent.objects.filter(
-            portfolio__in=portfolios,
-            event_type__in=['session_ping', 'session_end'],
-            duration__gt=0,
-            created_at__date__gte=today - datetime.timedelta(days=13)
-        )
-        avg_session = 0
-        if pings.exists():
-            total_duration = pings.aggregate(Sum('duration'))['duration__sum'] or 0
-            avg_session = total_duration / pings.count()
-
-        # 6. Suggestions
+        # 5. Suggestions
         suggestions = []
         if total_views > 0:
             download_ratio = downloads / total_views
@@ -119,13 +106,7 @@ class AnalyticsView(APIView):
         else:
             suggestions.append("Once visitors view your portfolio, we will check your resume download conversion rate.")
 
-        if avg_session > 0:
-            if avg_session < 30:
-                suggestions.append(f"Average session duration is low ({int(avg_session)}s). Consider placing your best featured projects higher up.")
-            else:
-                suggestions.append(f"Strong engagement! Average session is {int(avg_session)}s. Add a clean call-to-action at the end of the page.")
-        else:
-            suggestions.append("No active sessions detected yet. Share your portfolio links to start gathering session duration insights.")
+
 
         mobile_val = next((d['value'] for d in devices_data if d['name'] == 'Mobile'), 0)
         if mobile_val > 40:
@@ -168,6 +149,18 @@ class AnalyticsView(APIView):
                 for item in p_country_counts if item['country']
             ]
 
+            # Total view time: sum all session_time event durations for this portfolio
+            p_view_time = PortfolioEvent.objects.filter(
+                portfolio=p,
+                event_type='session_time',
+            ).aggregate(total=Coalesce(Sum('duration'), 0, output_field=IntegerField()))['total']
+
+            # Number of sessions (one session_time event per visit)
+            p_visit_count = PortfolioEvent.objects.filter(
+                portfolio=p,
+                event_type='session_time',
+            ).count()
+
             per_portfolio.append({
                 "id": p.id,
                 "name": p.name,
@@ -178,7 +171,15 @@ class AnalyticsView(APIView):
                 "downloads": p_downloads,
                 "countries": p_countries,
                 "views_chart": p_views_chart,
+                "total_view_time_seconds": p_view_time,
+                "visit_count": p_visit_count,
             })
+
+        # Overall total view time across all portfolios
+        total_view_time_seconds = PortfolioEvent.objects.filter(
+            portfolio__in=portfolios,
+            event_type='session_time',
+        ).aggregate(total=Coalesce(Sum('duration'), 0, output_field=IntegerField()))['total']
 
         data = {
             "views": views_chart,
@@ -188,7 +189,7 @@ class AnalyticsView(APIView):
             "downloads": downloads,
             "total_views": total_views,
             "total_visitors": total_visitors,
-            "avg_session": int(avg_session),
+            "total_view_time_seconds": total_view_time_seconds,
             "suggestions": suggestions,
             "per_portfolio": per_portfolio,
         }
