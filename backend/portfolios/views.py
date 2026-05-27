@@ -121,9 +121,17 @@ class UnpublishPortfolioView(APIView):
         portfolio.status = 'Draft'
         portfolio.save(update_fields=['status'])
         return Response({'id': portfolio.pk, 'status': portfolio.status})
+from rest_framework.parsers import BaseParser, JSONParser, FormParser, MultiPartParser
+
+class PlainTextParser(BaseParser):
+    media_type = 'text/plain'
+
+    def parse(self, stream, media_type=None, parser_context=None):
+        return stream.read()
 
 class AnalyticsView(APIView):
     permission_classes = [permissions.AllowAny]
+    parser_classes = [JSONParser, FormParser, MultiPartParser, PlainTextParser]
 
     def post(self, request, pk):
         import hashlib, json as _json
@@ -135,15 +143,22 @@ class AnalyticsView(APIView):
         # ends up as an empty dict. We fall back to parsing the raw body so that
         # session_time events are always recorded in production (Vercel/Railway).
         data = request.data
-        if not data and request.body:
+        if isinstance(data, (bytes, str)):
+            try:
+                if isinstance(data, bytes):
+                    data = data.decode('utf-8')
+                data = _json.loads(data)
+            except (_json.JSONDecodeError, ValueError):
+                data = {}
+        elif not data and request.body:
             try:
                 data = _json.loads(request.body)
             except (_json.JSONDecodeError, ValueError):
                 data = {}
 
-        event_type = data.get('event_type')
-        visitor_id = data.get('visitor_id', 'anonymous')
-        duration = data.get('duration', 0)
+        event_type = data.get('event_type') if isinstance(data, dict) else None
+        visitor_id = data.get('visitor_id', 'anonymous') if isinstance(data, dict) else 'anonymous'
+        duration = data.get('duration', 0) if isinstance(data, dict) else 0
 
         # Log every analytics POST for Vercel function log visibility
         import sys

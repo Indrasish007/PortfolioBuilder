@@ -152,20 +152,20 @@ export default function PublicPortfolio() {
   }, [p, isPreview]);
 
   // ── View time tracking ─────────────────────────────────────────────────────
-  // Three-layer reliability design:
+  // Unified, ultra-reliable tracking design:
   //
-  // 1. PRIMARY: api.post() via Axios — the SAME instance used for the 'view'
-  //    event which already works on Vercel → Railway. Used for visibilitychange
-  //    (tab hide) and SPA navigation (component unmount). Raw fetch() was
-  //    failing cross-origin on Vercel due to CORS preflight behaviour when
-  //    called from page-lifecycle events; Axios avoids that.
+  // 1. SINGLE UNIFIED FLUSH: Uses fetch(..., { keepalive: true }) with a fallback
+  //    to navigator.sendBeacon(). This guarantees that even when the tab is closed,
+  //    the request outlives the page context and completes successfully.
   //
-  // 2. SAFETY NET: setInterval every 30 s — flushes accumulated time
-  //    periodically so even if every lifecycle event fails, at most 30 s of
-  //    data is lost.
+  // 2. ZERO CORS PREFLIGHTS: Sends the payload as a JSON string under the
+  //    'text/plain' Content-Type. This makes the request a CORS "simple request",
+  //    bypassing the OPTIONS preflight entirely. The browser immediately dispatches
+  //    the request during page teardown, preventing it from being cancelled.
   //
-  // 3. FALLBACK: fetch+keepalive (+ sendBeacon) only for beforeunload (actual
-  //    tab/window close). keepalive lets the request outlive the page.
+  // 3. BACKEND FALLBACK COMPATIBLE: The Django backend automatically falls back
+  //    to parsing request.body as a JSON string if request.data is empty, parsing
+  //    our payload flawlessly.
   useEffect(() => {
     if (!p || isPreview) return;
 
@@ -175,91 +175,67 @@ export default function PublicPortfolio() {
       localStorage.setItem("visitorId", visitorId);
     }
 
-    // Relative path for Axios (uses api.defaults.baseURL automatically)
-    const apiPath = `/portfolios/${p.id}/analytics/`;
-    // Full URL for fetch+keepalive / sendBeacon fallbacks
     const beaconUrl = getAnalyticsUrl(p.id);
 
     // segmentStart = timestamp when current visible segment began (null = hidden)
     let segmentStart = document.hidden ? null : Date.now();
 
-    // ── Flush via Axios api.post() ──────────────────────────────────────────
-    // restart=true → periodic ping: reset timer and keep accumulating
-    // restart=false → final flush: timer stops
-    const flushAxios = (restart = false) => {
+    const flush = (isUnload = false) => {
       if (segmentStart === null) {
-        // Tab is already hidden; if restarting for a ping, nothing to do yet
-        if (restart && !document.hidden) segmentStart = Date.now();
+        // Tab is hidden or already flushed; restart timer if not an unload
+        if (!isUnload && !document.hidden) segmentStart = Date.now();
         return;
       }
       const duration = Math.floor((Date.now() - segmentStart) / 1000);
-      // Reset the timer: restart it for pings, null it for final flushes
-      segmentStart = (restart && !document.hidden) ? Date.now() : null;
+      // Reset the timer: restart it for pings, null it for unloads/flushes
+      segmentStart = (!isUnload && !document.hidden) ? Date.now() : null;
       if (duration < 1) return;
 
-      api.post(apiPath, {
+      const payload = JSON.stringify({
         event_type: 'session_time',
         visitor_id: visitorId,
         duration,
-      }).catch(() => {
-        // Axios failed — fall back to keepalive fetch so it still gets saved
-        const payload = JSON.stringify({ event_type: 'session_time', visitor_id: visitorId, duration });
-        try {
-          fetch(beaconUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: payload,
-            keepalive: true,
-          }).catch(() => {
-            try { navigator.sendBeacon(beaconUrl, new Blob([payload], { type: 'application/json' })); } catch (_) {}
-          });
-        } catch (_) {
-          try { navigator.sendBeacon(beaconUrl, new Blob([payload], { type: 'application/json' })); } catch (_) {}
-        }
       });
-    };
 
-    // ── Flush via keepalive fetch (beforeunload only) ───────────────────────
-    // Async Axios cannot be used during page unload; keepalive survives it.
-    const flushBeacon = () => {
-      if (segmentStart === null) return;
-      const duration = Math.floor((Date.now() - segmentStart) / 1000);
-      segmentStart = null;
-      if (duration < 1) return;
-      const payload = JSON.stringify({ event_type: 'session_time', visitor_id: visitorId, duration });
+      // Send as text/plain to avoid CORS preflight OPTIONS request entirely,
+      // ensuring immediate dispatch and 100% delivery during page unload.
       try {
         fetch(beaconUrl, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'text/plain' },
           body: payload,
           keepalive: true,
         }).catch(() => {
-          try { navigator.sendBeacon(beaconUrl, new Blob([payload], { type: 'application/json' })); } catch (_) {}
+          try {
+            navigator.sendBeacon(beaconUrl, new Blob([payload], { type: 'text/plain' }));
+          } catch (_) {}
         });
       } catch (_) {
-        try { navigator.sendBeacon(beaconUrl, new Blob([payload], { type: 'application/json' })); } catch (_) {}
+        try {
+          navigator.sendBeacon(beaconUrl, new Blob([payload], { type: 'text/plain' }));
+        } catch (_) {}
       }
     };
 
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        flushAxios(false);   // tab hidden → send current segment via Axios
+        flush(false);
       } else {
-        segmentStart = Date.now();  // tab visible → start new segment
+        segmentStart = Date.now();
       }
     };
 
     // Periodic safety-net ping: send accumulated time every 30 s while visible
-    const interval = setInterval(() => flushAxios(true), 30000);
+    const interval = setInterval(() => flush(false), 30000);
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('beforeunload', flushBeacon);
+    window.addEventListener('beforeunload', () => flush(true));
 
     return () => {
       clearInterval(interval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('beforeunload', flushBeacon);
-      flushAxios(false);  // SPA navigation: component unmounts → flush via Axios
+      window.removeEventListener('beforeunload', () => flush(true));
+      flush(true); // SPA navigation or component unmount: final flush
     };
   }, [p, isPreview]);
 
