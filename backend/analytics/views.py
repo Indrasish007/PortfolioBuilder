@@ -189,11 +189,14 @@ class AnalyticsView(APIView):
                 created_at__date=d
             ).count()
             
-            # Visitors count on day d (distinct visitor_ids)
-            day_visitors = PortfolioEvent.objects.filter(
-                portfolio__in=portfolios,
-                created_at__date=d
-            ).values('visitor_id').distinct().count()
+            # Visitors count on day d (distinct visitor_ids, summed per portfolio)
+            day_visitors = sum(
+                PortfolioEvent.objects.filter(
+                    portfolio=p,
+                    created_at__date=d
+                ).values('visitor_id').distinct().count()
+                for p in portfolios
+            )
             
             views_chart.append({"day": day_str, "views": day_views})
             visitors_chart.append({"day": day_str, "visitors": day_visitors})
@@ -241,10 +244,13 @@ class AnalyticsView(APIView):
         total_views = sum(p.views for p in portfolios)
 
 
-        total_visitors = PortfolioEvent.objects.filter(
-            portfolio__in=portfolios,
-            created_at__date__gte=today - datetime.timedelta(days=13)
-        ).values('visitor_id').distinct().count()
+        total_visitors = sum(
+            PortfolioEvent.objects.filter(
+                portfolio=p,
+                created_at__date__gte=today - datetime.timedelta(days=13)
+            ).values('visitor_id').distinct().count()
+            for p in portfolios
+        )
 
         downloads = PortfolioEvent.objects.filter(
             portfolio__in=portfolios,

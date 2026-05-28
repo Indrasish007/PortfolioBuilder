@@ -242,7 +242,10 @@ class DashboardStatsView(APIView):
         portfolios = Portfolio.objects.filter(user=user)
         
         total_views = sum(p.views for p in portfolios)
-        unique_visitors = PortfolioEvent.objects.filter(portfolio__in=portfolios).values('visitor_id').distinct().count()
+        unique_visitors = sum(
+            PortfolioEvent.objects.filter(portfolio=p).values('visitor_id').distinct().count()
+            for p in portfolios
+        )
         resume_downloads = PortfolioEvent.objects.filter(portfolio__in=portfolios, event_type='resume_download').count()
         
         return Response({
