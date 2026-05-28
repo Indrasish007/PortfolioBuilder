@@ -1,5 +1,5 @@
 import { Outlet, NavLink, Link, useNavigate } from "react-router-dom";
-import { LayoutDashboard, PenSquare, LayoutTemplate, BarChart3, Plus, ChevronDown, LogOut, Sparkles, Upload, FileText, X, Menu } from "lucide-react";
+import { LayoutDashboard, PenSquare, LayoutTemplate, BarChart3, Plus, ChevronDown, LogOut, Sparkles, Upload, FileText, X, Menu, Settings2 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import Logo from "../components/Logo.jsx";
 import ThemeToggle from "../components/ThemeToggle.jsx";
@@ -16,6 +16,7 @@ const nav = [
   { to: "/templates", label: "Templates", icon: LayoutTemplate },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/resume-builder", label: "Resume Builder", icon: Sparkles },
+  { to: "/settings", label: "Settings", icon: Settings2 },
 ];
 
 export default function DashboardLayout() {

@@ -11,8 +11,45 @@ const getStoredUser = () => {
   }
 };
 
-export const useAuthStore = create((set) => ({
+export const useAuthStore = create((set, get) => ({
   user: getStoredUser(),
+
+  /** Merge a patch into the local user state and persist it. */
+  updateUser: (patch) => {
+    const next = { ...get().user, ...patch };
+    localStorage.setItem('user_data', JSON.stringify(next));
+    set({ user: next });
+  },
+
+  /** Fetch fresh user data from the backend and sync to local state. */
+  fetchUser: async () => {
+    try {
+      const res = await api.get('/users/me/');
+      const d = res.data;
+      const patch = {
+        id:        d.id,
+        email:     d.email,
+        username:  d.username,
+        name:      d.name || `${d.first_name || ''} ${d.last_name || ''}`.trim() || d.email?.split('@')[0],
+        first_name: d.first_name,
+        last_name:  d.last_name,
+        phone:     d.phone,
+        location:  d.location,
+        website:   d.website,
+        linkedin:  d.linkedin,
+        github:    d.github,
+        avatar:    d.avatar,
+      };
+      const next = { ...get().user, ...patch };
+      localStorage.setItem('user_data', JSON.stringify(next));
+      set({ user: next });
+      return d;
+    } catch (err) {
+      console.error('fetchUser failed', err);
+      throw err;
+    }
+  },
+
   login: async (email, password) => {
     try {
       const response = await api.post('/auth/login/', { email, password });
@@ -27,6 +64,7 @@ export const useAuthStore = create((set) => ({
       throw error;
     }
   },
+
   signup: async (email, password, name) => {
     try {
       await api.post('/auth/signup/', { email, password, first_name: name });
@@ -42,6 +80,7 @@ export const useAuthStore = create((set) => ({
       throw error;
     }
   },
+
   logout: () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
@@ -50,4 +89,3 @@ export const useAuthStore = create((set) => ({
     window.location.href = '/login';
   },
 }));
-
