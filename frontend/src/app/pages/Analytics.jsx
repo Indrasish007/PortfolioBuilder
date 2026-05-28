@@ -5,7 +5,7 @@ import {
 import {
   Eye, Users, Download, Globe,
   TrendingUp, RefreshCw, LayoutGrid, ChevronDown, ChevronUp,
-  ExternalLink, BookOpen, Clock, CheckCircle2, Trophy,
+  ExternalLink, BookOpen, Clock, CheckCircle2, Trophy, Github,
 } from "lucide-react";
 import GlassCard from "../components/GlassCard.jsx";
 import Badge from "../components/Badge.jsx";
@@ -511,10 +511,146 @@ function PortfolioAnalyticsCard({ portfolio, index }) {
 }
 
 /* ────────────────────────────────────────────────────────── */
+/* Project Clicks Analytics Card                              */
+/* ────────────────────────────────────────────────────────── */
+function ProjectClicksAnalyticsCard({ projects }) {
+  const [showAll, setShowAll] = useState(false);
+  if (!projects || projects.length === 0) {
+    return null;
+  }
+
+  // Find max click count to calculate progress bar percentages
+  const maxClicks = Math.max(...projects.map(p => p.click_count), 0);
+  const totalClicks = projects.reduce((sum, p) => sum + p.click_count, 0);
+
+  const displayedProjects = showAll ? projects : projects.slice(0, 5);
+
+  return (
+    <GlassCard className="p-5 mb-2" style={{ borderColor: "rgba(250, 204, 21, 0.22)" }}>
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-3">
+          <div
+            className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: "rgba(250, 204, 21, 0.15)" }}
+          >
+            <span className="text-lg">⭐</span>
+          </div>
+          <div>
+            <h3 className="font-bold text-sm">Project Link Clicks</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Clicks on your projects' GitHub or live demo links by visitors
+            </p>
+          </div>
+        </div>
+        <Badge variant="glass" className="border-yellow-500/30 text-yellow-400">
+          {totalClicks} {totalClicks === 1 ? "click" : "clicks"} total
+        </Badge>
+      </div>
+
+      <div className="space-y-4">
+        {displayedProjects.map((proj, idx) => {
+          const pct = maxClicks > 0 ? Math.round((proj.click_count / maxClicks) * 100) : 0;
+          const isTop = idx === 0 && proj.click_count > 0;
+
+          return (
+            <div key={proj.project_id} className="group">
+              <div className="flex items-center justify-between gap-3 mb-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-sm font-semibold truncate flex items-center gap-1.5">
+                    {isTop && <span className="text-base leading-none flex-shrink-0">⭐</span>}
+                    {proj.project_title}
+                  </span>
+
+                  {/* Project Links (GitHub / Live) */}
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    {proj.github && (
+                      <a
+                        href={proj.github}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-white/[0.06] transition flex items-center justify-center"
+                        title="View GitHub Repository"
+                      >
+                        <Github className="w-3.5 h-3.5" />
+                      </a>
+                    )}
+                    {proj.live && (
+                      <a
+                        href={proj.live}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-white/[0.06] transition flex items-center justify-center"
+                        title="View Live Demo"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    )}
+                  </div>
+
+                  {/* Clickable Portfolio Link Badge */}
+                  <a
+                    href={proj.portfolio_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[10px] text-muted-foreground truncate px-1.5 py-0.5 rounded bg-white/[0.04] border border-white/[0.04] hover:bg-white/[0.1] hover:text-foreground hover:border-white/[0.2] transition flex items-center gap-1"
+                    title={`View portfolio: ${proj.portfolio_name}`}
+                  >
+                    {proj.portfolio_name}
+                    <ExternalLink className="w-2.5 h-2.5 opacity-55" />
+                  </a>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className="text-xs font-bold tabular-nums text-muted-foreground">
+                    <span className="text-foreground font-extrabold mr-1">{proj.click_count.toLocaleString()}</span> 
+                    {proj.click_count === 1 ? "click" : "clicks"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Progress bar */}
+              <div className="h-2 rounded-full bg-white/[0.04] overflow-hidden border border-white/[0.02]">
+                <div
+                  className="h-full rounded-full transition-all duration-1000 ease-out"
+                  style={{
+                    width: `${pct}%`,
+                    background: isTop 
+                      ? "linear-gradient(90deg, #facc15, #fb923c)" 
+                      : "linear-gradient(90deg, #a78bfa, #22d3ee)",
+                    boxShadow: isTop ? "0 0 10px rgba(250, 204, 21, 0.35)" : "none"
+                  }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {projects.length > 5 && (
+        <button
+          onClick={() => setShowAll(!showAll)}
+          className="w-full text-center text-xs font-medium text-muted-foreground hover:text-foreground mt-4 pt-2 border-t border-white/[0.04] transition flex items-center justify-center gap-1"
+        >
+          {showAll ? (
+            <>
+              Show less <ChevronUp className="w-3 h-3" />
+            </>
+          ) : (
+            <>
+              Show {projects.length - 5} more projects <ChevronDown className="w-3 h-3" />
+            </>
+          )}
+        </button>
+      )}
+    </GlassCard>
+  );
+}
+
+/* ────────────────────────────────────────────────────────── */
 /* Main Analytics page                                        */
 /* ────────────────────────────────────────────────────────── */
 export default function Analytics() {
   const [data, setData] = useState(null);
+  const [projectClicks, setProjectClicks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
@@ -524,8 +660,12 @@ export default function Analytics() {
     else setLoading(true);
 
     try {
-      const response = await api.get(`/analytics/?t=${Date.now()}`);
-      setData(response.data);
+      const [analyticsRes, projectClicksRes] = await Promise.all([
+        api.get(`/analytics/?t=${Date.now()}`),
+        api.get(`/analytics/project-clicks-summary/`)
+      ]);
+      setData(analyticsRes.data);
+      setProjectClicks(projectClicksRes.data.projects || []);
       setLastUpdated(new Date());
     } catch (error) {
       console.error("Failed to load analytics", error);
@@ -584,6 +724,8 @@ export default function Analytics() {
         />
 
         <div className="space-y-5">
+          <ProjectClicksAnalyticsCard projects={projectClicks} />
+
           {/* Stat cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             {[
