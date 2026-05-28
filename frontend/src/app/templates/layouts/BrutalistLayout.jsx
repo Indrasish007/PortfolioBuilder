@@ -1,5 +1,5 @@
 import { Mail, Github, ExternalLink, Phone } from "lucide-react";
-import { Soc, Tags, FAQList, SectionLabel, VideoEmbed, MusicEmbed, GalleryAlbum, getDefaultAvatar, trackProjectClick } from "./shared.jsx";
+import { Soc, Tags, FAQList, SectionLabel, VideoEmbed, MusicEmbed, GalleryAlbum, trackProjectClick } from "./shared.jsx";
 
 // brutalist, monochrome
 export default function BrutalistLayout({ p, t, id, portfolioId }) {
@@ -29,17 +29,19 @@ export default function BrutalistLayout({ p, t, id, portfolioId }) {
         {!isMono && <div style={{ position:"absolute", top:0, right:0, width:200, height:"100%", background:"#facc15", zIndex:0 }} />}
         <div style={{ position:"relative", zIndex:1 }}>
           <div style={{ display:"flex", alignItems:"flex-start", gap:32, flexWrap:"wrap" }}>
-            <img src={u.avatar || getDefaultAvatar(ac)} alt={`${u.name || "User"} profile picture`} loading="lazy" style={{
-              width: isMono ? 280 : 320,
-              height: isMono ? 340 : 380,
-              objectFit: "cover",
-              border: border,
-              borderRadius: isMono ? "4px" : "12px",
-              boxShadow: `8px 8px 0px ${t.ac}`,
-              filter: isMono ? "grayscale(100%)" : "none",
-              flexShrink: 0,
-              marginBottom: 16
-            }} />
+            {u.avatar && (
+              <img src={u.avatar} alt={`${u.name || "User"} profile picture`} loading="lazy" style={{
+                width: isMono ? 280 : 320,
+                height: isMono ? 340 : 380,
+                objectFit: "cover",
+                border: border,
+                borderRadius: isMono ? "4px" : "12px",
+                boxShadow: `8px 8px 0px ${t.ac}`,
+                filter: isMono ? "grayscale(100%)" : "none",
+                flexShrink: 0,
+                marginBottom: 16
+              }} />
+            )}
             <div>
               <div style={{ fontSize:isMono?11:13, opacity:0.5, marginBottom:8, letterSpacing:"0.15em", textTransform:"uppercase", fontFamily:"Inter,sans-serif" }}>{u.title}</div>
               <h1 style={{ fontSize:isMono?52:72, fontWeight:900, lineHeight:0.95, margin:"0 0 16px",

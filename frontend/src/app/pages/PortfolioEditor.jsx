@@ -183,18 +183,11 @@ export default function PortfolioEditor() {
     }
 
     // ── Plain /editor visit (no id, no template param) ────────────────────
-    // Only reset if the store has no real content yet (i.e. truly blank
-    // slate). This prevents wiping CV data when the user just navigated
-    // here after a CV parse without a ?template= param.
-    const alreadyHasData = (
-      portfolio?.user?.name ||
-      (portfolio?.skills?.length > 0) ||
-      (portfolio?.experience?.length > 0) ||
-      (portfolio?.education?.length > 0) ||
-      (portfolio?.projects?.length > 0)
-    );
-
-    if (!alreadyHasData && !hasInitialised.current) {
+    // Skip reset when arriving from CVPreview — it already populated the
+    // store before navigating here (fromCVImport flag). For every other
+    // plain /editor visit (i.e. "+ Create new") reset unconditionally so
+    // stale data from a previously-edited portfolio never bleeds through.
+    if (!location.state?.fromCVImport) {
       resetPortfolio();
     }
     hasInitialised.current = true;
@@ -518,7 +511,17 @@ export default function PortfolioEditor() {
                     }
                   }} />
                 </label>
+                {user.avatar && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); updateField("user.avatar", null); }}
+                    className="mt-2 w-full flex items-center justify-center gap-1.5 h-8 rounded-lg text-xs font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20 hover:border-red-500/40 transition"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Remove photo
+                  </button>
+                )}
               </GlassCard>
+
 
               <GlassCard>
                 <div className="flex items-center justify-between mb-4">

@@ -1,5 +1,5 @@
 import { Mail, Github, ExternalLink, Phone } from "lucide-react";
-import { Soc, Tags, FAQList, SectionLabel, VideoEmbed, MusicEmbed, GalleryAlbum, getDefaultAvatar, trackProjectClick } from "./shared.jsx";
+import { Soc, Tags, FAQList, SectionLabel, VideoEmbed, MusicEmbed, GalleryAlbum, trackProjectClick } from "./shared.jsx";
 
 // gradient, aurora, glassmorphism, holographic
 export default function GlassLayout({ p, t, id, portfolioId }) {
@@ -51,8 +51,10 @@ export default function GlassLayout({ p, t, id, portfolioId }) {
         <div style={{ position:"relative", maxWidth:720, margin:"0 auto" }}>
           <div style={{ ...card, padding:"40px 40px", display:"flex", gap:32, flexWrap:"wrap", alignItems:"center" }}>
             <div style={{ flexShrink:0 }}>
-              <img src={u.avatar || getDefaultAvatar(ac)} alt={`${u.name || "User"} profile picture`} loading="lazy" style={{ width:280, height:340, borderRadius:"20px", objectFit:"cover",
-                  border:`3px solid rgba(255,255,255,0.2)`, boxShadow:`0 0 40px ${ac}50` }} />
+              {u.avatar && (
+                <img src={u.avatar} alt={`${u.name || "User"} profile picture`} loading="lazy" style={{ width:280, height:340, borderRadius:"20px", objectFit:"cover",
+                    border:`3px solid rgba(255,255,255,0.2)`, boxShadow:`0 0 40px ${ac}50` }} />
+              )}
             </div>
             <div style={{ flex:1 }}>
               <div style={{ fontSize:12, color:ac, marginBottom:8, letterSpacing:"0.1em", textTransform:"uppercase" }}>{u.title}</div>

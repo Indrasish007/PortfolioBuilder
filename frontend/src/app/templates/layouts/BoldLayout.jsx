@@ -1,5 +1,5 @@
 import { Mail, Github, ExternalLink, Phone } from "lucide-react";
-import { Soc, Tags, FAQList, SectionLabel, VideoEmbed, MusicEmbed, GalleryAlbum, getDefaultAvatar, trackProjectClick } from "./shared.jsx";
+import { Soc, Tags, FAQList, SectionLabel, VideoEmbed, MusicEmbed, GalleryAlbum, trackProjectClick } from "./shared.jsx";
 
 // bold, cyberpunk, space, retro, neon, quantum
 export default function BoldLayout({ p, t, id, portfolioId }) {
@@ -49,7 +49,9 @@ export default function BoldLayout({ p, t, id, portfolioId }) {
         )}
 
         <div style={{ position:"relative", zIndex:1 }}>
-          <img src={u.avatar || getDefaultAvatar(ac)} alt={`${u.name || "User"} profile picture`} loading="lazy" style={{ width:320, height:380, borderRadius:"24px", objectFit:"cover", marginBottom:24, border:`4px solid ${ac}`, boxShadow:`0 0 32px ${ac}60` }} />
+          {u.avatar && (
+            <img src={u.avatar} alt={`${u.name || "User"} profile picture`} loading="lazy" style={{ width:320, height:380, borderRadius:"24px", objectFit:"cover", marginBottom:24, border:`4px solid ${ac}`, boxShadow:`0 0 32px ${ac}60` }} />
+          )}
 
           <div style={{ fontSize:13, color:ac, marginBottom:10, letterSpacing:"0.12em", textTransform:"uppercase" }}>{u.title}</div>
           <h1 style={{ fontSize:heroSz, fontWeight:fw, lineHeight:0.95, letterSpacing:"-0.03em", margin:"0 0 24px", maxWidth:720, textShadow: id==="neon"?`0 0 40px ${ac}80`:"none" }}>{u.name}</h1>

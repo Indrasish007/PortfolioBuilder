@@ -225,7 +225,7 @@ export default function CVPreview() {
       toast({ title: "Imported!", description: "Your CV data has been loaded into the editor.", type: "success" });
       sessionStorage.removeItem("pendingParsedCV");
       window.dispatchEvent(new Event("storage"));
-      navigate("/editor", { replace: true });
+      navigate("/editor", { replace: true, state: { fromCVImport: true } });
     } catch {
       toast({ title: "Import failed", description: "Something went wrong. Please try again.", type: "error" });
       setImporting(false);

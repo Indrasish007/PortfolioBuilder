@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import {
-  Sparkles, Plus, Trash2, Pencil, Download, Globe, Search,
-  Loader2, CheckCircle2, AlertCircle, Copy, FileText, ArrowRight
+  Sparkles, Pencil, Download, Globe, Loader2, CheckCircle2,
+  Copy, FileText, ArrowRight, Trash2, ExternalLink, Zap
 } from "lucide-react";
 import { useToast } from "../context/ToasterContext.jsx";
 import api from "../services/api.js";
@@ -17,25 +17,43 @@ export default function ResumeBuilder() {
   const [loadingStage, setLoadingStage] = useState(0);
   const [savedResumes, setSavedResumes] = useState([]);
   const [loadingSaved, setLoadingSaved] = useState(false);
-  
+  const [myPortfolios, setMyPortfolios] = useState([]);
+  const [loadingPortfolios, setLoadingPortfolios] = useState(false);
+
   // Editor states
   const [editorData, setEditorData] = useState(null);
   const [selectedResumeId, setSelectedResumeId] = useState(null);
   const [selectedTemplate, setSelectedTemplate] = useState("ats");
 
   const stages = [
-    "Connecting to portfolio URL...",
-    "Scanning HTML elements and rendering scripts...",
-    "Extracting experience, skills, and projects...",
-    "Structuring text profile data with AI...",
+    "Checking portfolio link...",
+    "Fetching portfolio data...",
+    "Extracting experience, skills and projects...",
+    "Structuring data with AI...",
     "Preparing the workspace..."
   ];
 
   useEffect(() => {
     if (activeTab === "saved") {
       fetchSavedResumes();
+    } else {
+      fetchMyPortfolios();
     }
   }, [activeTab]);
+
+  // Fetch user's own published portfolios to show as quick-select options
+  const fetchMyPortfolios = async () => {
+    setLoadingPortfolios(true);
+    try {
+      const res = await api.get("/portfolios/");
+      const published = (res.data || []).filter(p => p.status === "Published" && p.slug);
+      setMyPortfolios(published);
+    } catch (err) {
+      // silently fail — user can still use the URL input
+    } finally {
+      setLoadingPortfolios(false);
+    }
+  };
 
   const fetchSavedResumes = async () => {
     setLoadingSaved(true);
@@ -43,11 +61,7 @@ export default function ResumeBuilder() {
       const res = await api.get("/resume/history/");
       setSavedResumes(res.data || []);
     } catch (err) {
-      toast({
-        title: "Error",
-        description: "Failed to load saved resumes.",
-        type: "error"
-      });
+      toast({ title: "Error", description: "Failed to load saved resumes.", type: "error" });
     } finally {
       setLoadingSaved(false);
     }
@@ -62,6 +76,13 @@ export default function ResumeBuilder() {
     }
   };
 
+  // Use own portfolio directly — build its public URL and trigger extraction
+  const handleUseOwnPortfolio = (portfolio) => {
+    const publicUrl = `${window.location.origin}/p/${portfolio.slug}`;
+    setUrl(publicUrl);
+    triggerExtract(publicUrl);
+  };
+
   const handleGenerate = async (e) => {
     e.preventDefault();
     if (!url.trim()) {
@@ -72,44 +93,73 @@ export default function ResumeBuilder() {
       toast({ title: "Invalid URL", description: "Please enter a valid website link.", type: "error" });
       return;
     }
+    triggerExtract(url.trim());
+  };
 
+  const triggerExtract = async (targetUrl) => {
     setLoading(true);
     setLoadingStage(0);
 
-    // Simulate progress ticks for stages
+    // Simulate progress ticks
     const stageInterval = setInterval(() => {
       setLoadingStage((prev) => {
         if (prev < stages.length - 2) return prev + 1;
         return prev;
       });
-    }, 3000);
+    }, 2500);
 
     try {
-      const res = await api.post("/resume/extract/", { url: url.trim() });
+      const res = await api.post("/resume/extract/", { url: targetUrl });
       clearInterval(stageInterval);
       setLoadingStage(stages.length - 1);
-      
+
+      const data = res.data;
+      const isPartial = data._partial === true;
+      const source = data._source;
+
       setTimeout(() => {
-        setEditorData(res.data);
+        setEditorData(data);
         setSelectedResumeId(null);
         setSelectedTemplate("ats");
         setLoading(false);
-      }, 1000);
-      
-      toast({
-        title: "Success!",
-        description: "Portfolio parsed and loaded successfully.",
-        type: "success"
-      });
+      }, 600);
+
+      if (isPartial) {
+        toast({
+          title: "Partial Data Fetched",
+          description: data._partial_message ||
+            "Could not fetch all data from this link. Please fill in missing fields manually.",
+          type: "info"
+        });
+      } else if (source === "database") {
+        toast({
+          title: "Portfolio Loaded!",
+          description: "All your portfolio data is ready. Edit and download your resume.",
+          type: "success"
+        });
+      } else {
+        toast({
+          title: "Portfolio Parsed!",
+          description: "AI extracted the data. Review and edit before downloading.",
+          type: "success"
+        });
+      }
     } catch (err) {
       clearInterval(stageInterval);
       setLoading(false);
-      const errMsg = err.response?.data?.error || "Failed to extract portfolio details. Please check the URL and try again.";
-      toast({
-        title: "Extraction Failed",
-        description: errMsg,
-        type: "error"
-      });
+      const status = err.response?.status;
+      const errMsg = err.response?.data?.error ||
+        "Failed to extract portfolio details. Please check the URL and try again.";
+
+      if (status === 404) {
+        toast({
+          title: "Portfolio Not Found",
+          description: "Portfolio not found. Please check the link and make sure the portfolio is published.",
+          type: "error"
+        });
+      } else {
+        toast({ title: "Extraction Failed", description: errMsg, type: "error" });
+      }
     }
   };
 
@@ -141,23 +191,9 @@ export default function ResumeBuilder() {
   };
 
   const handleDownloadPDF = async (resume) => {
-    try {
-      toast({ title: "Exporting PDF", description: "Generating your PDF resume...", type: "info" });
-      const res = await api.post("/resume/pdf/", {
-        resume_id: resume.id
-      }, {
-        responseType: 'blob'
-      });
-      
-      const blob = new Blob([res.data], { type: 'application/pdf' });
-      const link = document.createElement('a');
-      link.href = window.URL.createObjectURL(blob);
-      link.download = `${resume.title.replace(/\s+/g, '_')}_Resume.pdf`;
-      link.click();
-      toast({ title: "Success", description: "PDF downloaded successfully.", type: "success" });
-    } catch (err) {
-      toast({ title: "Failed", description: "Failed to export PDF resume.", type: "error" });
-    }
+    // Trigger edit mode which has the PDF generator
+    handleEdit(resume);
+    toast({ title: "Opened", description: "Use the Download PDF button in the editor.", type: "info" });
   };
 
   // Render Editor view if editorData is set
@@ -189,7 +225,7 @@ export default function ResumeBuilder() {
           </div>
           <div>
             <h1 className="text-2xl md:text-3xl font-bold">Resume Builder</h1>
-            <p className="text-xs text-muted-foreground">Scrape any portfolio page and construct a professional PDF resume instantly</p>
+            <p className="text-xs text-muted-foreground">Build your professional resume from your portfolio instantly</p>
           </div>
         </div>
       </div>
@@ -228,7 +264,7 @@ export default function ResumeBuilder() {
             </div>
           </div>
           <div className="space-y-2">
-            <h3 className="text-lg font-bold">Scraping & Analysing Portfolio</h3>
+            <h3 className="text-lg font-bold">Fetching Portfolio Data</h3>
             <p className="text-sm text-muted-foreground max-w-sm">
               {stages[loadingStage]}
             </p>
@@ -243,71 +279,90 @@ export default function ResumeBuilder() {
             />
           </div>
           <div className="text-[11px] text-muted-foreground/60 italic">
-            This might take up to a minute if running the JavaScript rendering engine.
+            Own portfolio links load instantly from the database.
           </div>
         </GlassCard>
       )}
 
       {/* Create New View */}
       {!loading && activeTab === "create" && (
-        <div className="grid md:grid-cols-3 gap-6">
-          <div className="md:col-span-2 space-y-4">
-            <GlassCard className="p-6 md:p-8 space-y-6">
-              <div className="space-y-2">
-                <h3 className="text-lg font-semibold">Generate Resume from Portfolio</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Enter your portfolio link or any public page. Our scraper parses the visible content, sections, dynamic layouts, and feeds it into Gemini AI to construct an editable structured resume.
-                </p>
-              </div>
+        <div className="space-y-5">
 
-              <form onSubmit={handleGenerate} className="space-y-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                    Portfolio URL
-                  </label>
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <input
-                        type="text"
-                        placeholder="e.g. portfoliobuilder.com/p/my-slug"
-                        value={url}
-                        onChange={(e) => setUrl(e.target.value)}
-                        className="w-full h-11 pl-10 pr-4 rounded-xl bg-input/40 border border-border text-sm focus:outline-none focus:ring-2 focus:ring-brand/40 placeholder:text-muted-foreground/60 transition"
-                      />
+          {/* ── Own Portfolios Quick-Select ── */}
+          <GlassCard className="p-6 space-y-4">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: "linear-gradient(135deg,var(--brand),var(--brand-2))" }}>
+                <Zap className="w-3.5 h-3.5 text-white" />
+              </div>
+              <h3 className="text-sm font-semibold">Your Published Portfolios</h3>
+              <span className="text-[10px] text-brand font-semibold px-1.5 py-0.5 rounded-full bg-brand/10 ml-auto">Instant Load</span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Click any portfolio below to instantly load all your data — no scraping, 100% complete.
+            </p>
+
+            {loadingPortfolios ? (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground py-4">
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-brand" />
+                Loading your portfolios...
+              </div>
+            ) : myPortfolios.length === 0 ? (
+              <div className="text-xs text-muted-foreground py-4 text-center border border-dashed border-border/50 rounded-xl">
+                No published portfolios found.{" "}
+                <a href="/editor" className="text-brand underline">Publish one first</a>{" "}
+                to use instant loading.
+              </div>
+            ) : (
+              <div className="grid sm:grid-cols-2 gap-3">
+                {myPortfolios.map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => handleUseOwnPortfolio(p)}
+                    className="flex items-center gap-3 p-3.5 rounded-xl border border-border/60 hover:border-brand/50 bg-input/20 hover:bg-brand/5 transition text-left group"
+                  >
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg,var(--brand)/20,var(--brand-2)/20)" }}>
+                      <FileText className="w-4 h-4 text-brand" />
                     </div>
-                    <Button type="submit" className="h-11 px-5 shadow-glow shrink-0">
-                      <Sparkles className="w-4 h-4 mr-1.5" />
-                      Generate
-                    </Button>
-                  </div>
-                </div>
-              </form>
-            </GlassCard>
-          </div>
-
-          <div className="space-y-4">
-            <GlassCard className="p-5 space-y-4 bg-gradient-to-br from-brand/5 to-transparent">
-              <div className="flex items-center gap-2 text-sm font-semibold">
-                <CheckCircle2 className="w-4 h-4 text-brand" />
-                <span>Features</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-semibold truncate">{p.name || "Portfolio"}</div>
+                      <div className="text-[10px] text-muted-foreground truncate">/p/{p.slug}</div>
+                    </div>
+                    <ArrowRight className="w-3.5 h-3.5 text-brand opacity-0 group-hover:opacity-100 transition shrink-0" />
+                  </button>
+                ))}
               </div>
-              <ul className="space-y-3 text-xs text-muted-foreground">
-                <li className="flex gap-2">
-                  <span className="text-brand font-bold">•</span>
-                  <span><strong>AI Structured</strong>: Sanitizes, cleans text, and auto-classifies sections.</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="text-brand font-bold">•</span>
-                  <span><strong>JS Hydration</strong>: Supports React/Vue single page portfolios.</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="text-brand font-bold">•</span>
-                  <span><strong>5 Print Templates</strong>: Professional layouts built for ATS score.</span>
-                </li>
-              </ul>
-            </GlassCard>
-          </div>
+            )}
+          </GlassCard>
+
+          {/* ── External URL / Manual Entry ── */}
+          <GlassCard className="p-6 space-y-4">
+            <div className="flex items-center gap-2">
+              <Globe className="w-4 h-4 text-muted-foreground" />
+              <h3 className="text-sm font-semibold">Or use any Portfolio URL</h3>
+            </div>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Paste any public portfolio link. External sites are scraped and processed with Gemini AI (partial data may apply).
+            </p>
+
+            <form onSubmit={handleGenerate} className="space-y-3">
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder={`e.g. ${window.location.origin}/p/your-slug  or  indrasishadhya.vercel.app`}
+                    value={url}
+                    onChange={(e) => setUrl(e.target.value)}
+                    className="w-full h-11 pl-10 pr-4 rounded-xl bg-input/40 border border-border text-sm focus:outline-none focus:ring-2 focus:ring-brand/40 placeholder:text-muted-foreground/50 transition"
+                  />
+                </div>
+                <Button type="submit" className="h-11 px-5 shadow-glow shrink-0">
+                  <Sparkles className="w-4 h-4 mr-1.5" />
+                  Extract
+                </Button>
+              </div>
+            </form>
+          </GlassCard>
         </div>
       )}
 
@@ -326,7 +381,7 @@ export default function ResumeBuilder() {
               <div className="space-y-1">
                 <h3 className="font-semibold text-sm">No resumes saved yet</h3>
                 <p className="text-xs text-muted-foreground max-w-xs mx-auto">
-                  Create a new resume by scraping a portfolio, then save it to your account to view it here.
+                  Create a new resume from your portfolio, then save it to your account to view it here.
                 </p>
               </div>
               <Button onClick={() => setActiveTab("create")} size="sm">
@@ -340,7 +395,7 @@ export default function ResumeBuilder() {
                   <div className="space-y-2">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-2">
-                        <FileText className="w-4.5 h-4.5 text-brand shrink-0" />
+                        <FileText className="w-4 h-4 text-brand shrink-0" />
                         <h4 className="font-semibold text-sm truncate max-w-[150px]">{resume.title}</h4>
                       </div>
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider bg-brand/10 text-brand">
@@ -353,7 +408,7 @@ export default function ResumeBuilder() {
                     <p className="text-[10px] text-muted-foreground/60">
                       Updated: {new Date(resume.updated_at).toLocaleDateString()}
                     </p>
-                    
+
                     {resume.metadata && (
                       <div className="flex items-center gap-2 pt-1">
                         <div className="text-[10px] text-muted-foreground">ATS Score:</div>
@@ -375,15 +430,8 @@ export default function ResumeBuilder() {
 
                   <div className="flex gap-2 pt-2 border-t border-border/40">
                     <Button onClick={() => handleEdit(resume)} variant="outline" size="sm" className="flex-1 py-2 text-xs">
-                      <Pencil className="w-3 h-3 mr-1" /> Edit
+                      <Pencil className="w-3 h-3 mr-1" /> Edit &amp; Download
                     </Button>
-                    <button
-                      onClick={() => handleDownloadPDF(resume)}
-                      className="p-2 rounded-lg bg-brand/10 hover:bg-brand/20 text-brand transition"
-                      title="Download PDF"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                    </button>
                     <button
                       onClick={() => handleDuplicate(resume.id)}
                       className="p-2 rounded-lg bg-accent/40 hover:bg-accent/70 text-muted-foreground hover:text-foreground transition"

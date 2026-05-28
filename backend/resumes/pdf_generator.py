@@ -187,10 +187,10 @@ def generate_resume_pdf(data: dict, template_slug: str) -> io.BytesIO:
             role = exp.get("role", "")
             company = exp.get("company", "")
             start = exp.get("start_date") or ""
-            end = exp.get("end_date") or "Present"
+            end = exp.get("end_date") or ""
             desc = exp.get("description", "")
-            
-            period_str = f"{start} – {end}" if start else end
+            # `period` comes from DB-fetched portfolios; start/end from AI
+            period_str = exp.get("period") or (f"{start} – {end}" if start else end) or ""
             
             # Role & Company Left, Dates Right
             subheader_data = [
@@ -273,10 +273,10 @@ def generate_resume_pdf(data: dict, template_slug: str) -> io.BytesIO:
             school = edu.get("school", "")
             degree = edu.get("degree", "")
             start = edu.get("start_date") or ""
-            end = edu.get("end_date") or "Present"
+            end = edu.get("end_date") or ""
             grade = edu.get("grade", "")
-            
-            period_str = f"{start} – {end}" if start else end
+            # `period` comes from DB-fetched portfolios; start/end from AI
+            period_str = edu.get("period") or (f"{start} – {end}" if start else end) or ""
             degree_str = degree
             if grade:
                 degree_str += f" (Grade: {grade})"

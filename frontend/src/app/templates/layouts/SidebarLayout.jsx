@@ -1,5 +1,5 @@
 import { Mail, Github, ExternalLink, Phone } from "lucide-react";
-import { Soc, Tags, FAQList, SectionLabel, sn, VideoEmbed, MusicEmbed, GalleryAlbum, getDefaultAvatar, trackProjectClick } from "./shared.jsx";
+import { Soc, Tags, FAQList, SectionLabel, sn, VideoEmbed, MusicEmbed, GalleryAlbum, trackProjectClick } from "./shared.jsx";
 
 // developer, obsidian, architect, terminal
 export default function SidebarLayout({ p, t, id, portfolioId }) {
@@ -9,7 +9,7 @@ export default function SidebarLayout({ p, t, id, portfolioId }) {
   // Sidebar panel bg stays template-specific; accent and main bg come from theme `t`
   const acBg  = { developer:"#0d1117", obsidian:"#0a0a0a", architect:"#0c1623", terminal:"#0d0d0d" }[id] || t.bg;
   const ac    = t.ac;
-  const sideW = id === "architect" ? 280 : 250;
+  const sideW = id === "architect" ? 280 : id === "developer" ? 300 : 250;
   const prefix = id === "terminal" ? "$ " : id === "developer" ? "// " : "";
   const radius = id === "architect" ? "2px" : id === "obsidian" ? "0" : "8px";
 
@@ -30,15 +30,19 @@ export default function SidebarLayout({ p, t, id, portfolioId }) {
         position: "sticky", top:0, alignSelf:"flex-start",
         boxSizing:"border-box",
       }}>
-        <img src={u.avatar || getDefaultAvatar(ac)} alt={`${u.name || "User"} profile picture`} loading="lazy" style={{
-          width: sideW - 48,
-          height: Math.round((sideW - 48) * 1.25),
-          borderRadius: id === "obsidian" ? "4px" : id === "architect" ? "8px" : "16px",
-          objectFit: "cover",
-          marginBottom: 20,
-          border: `1px solid ${ac}40`,
-          boxShadow: "0 8px 24px rgba(0,0,0,0.2)"
-        }} />
+        {u.avatar && (
+          <img src={u.avatar} alt={`${u.name || "User"} profile picture`} loading="lazy" style={{
+            width: id === "developer" ? sideW : sideW - 48,
+            height: id === "developer" ? Math.round(sideW * 1.2) : Math.round((sideW - 48) * 1.25),
+            marginLeft: id === "developer" ? -24 : 0,
+            borderRadius: id === "developer" ? 0 : id === "obsidian" ? "4px" : id === "architect" ? "8px" : "16px",
+            objectFit: "cover",
+            marginBottom: 20,
+            border: id === "developer" ? "none" : `1px solid ${ac}40`,
+            borderBottom: id === "developer" ? `2px solid ${ac}` : undefined,
+            boxShadow: "0 8px 24px rgba(0,0,0,0.3)"
+          }} />
+        )}
         <h1 style={{ fontSize:15, fontWeight:700, lineHeight:1.2, marginBottom:4, color:"#fff", margin: "0 0 4px" }}>{u.name}</h1>
         <div style={{ fontSize:11, color:ac, marginBottom:20 }}>{u.title}</div>
 

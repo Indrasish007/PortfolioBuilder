@@ -207,8 +207,4 @@ export function GalleryAlbum({ images, fg }) {
   );
 }
 
-export function getDefaultAvatar(accentColor) {
-  const cleanColor = (accentColor || "#6366f1").replace("#", "%23");
-  return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none"><defs><linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="${cleanColor}"/><stop offset="100%" stop-color="%231e1b4b"/></linearGradient></defs><rect width="100%" height="100%" fill="url(%23grad)"/><circle cx="50" cy="43" r="18" fill="white" fill-opacity="0.85"/><path d="M20,85 C20,67 32,60 50,60 C68,60 80,67 80,85" fill="white" fill-opacity="0.85"/></svg>`;
-}
 

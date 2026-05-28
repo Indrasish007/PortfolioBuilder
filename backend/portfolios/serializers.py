@@ -72,19 +72,18 @@ class PortfolioSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         """Inject portfolio.avatar into user.avatar so the frontend always
-        reads the portfolio-specific DP, not the shared profile avatar."""
+        reads the portfolio-specific DP, not the shared profile avatar.
+        If no avatar has been uploaded for this portfolio, user.avatar is
+        explicitly set to None — no fallback to the shared profile avatar."""
         ret = super().to_representation(instance)
-        # portfolio.avatar takes priority; fall back to profile.avatar for
-        # portfolios that were created before this fix.
-        portfolio_avatar = instance.avatar
-        if not portfolio_avatar:
-            try:
-                portfolio_avatar = instance.user.profile.avatar or ""
-            except Exception:
-                portfolio_avatar = ""
+        # Only use the avatar that was explicitly uploaded for this portfolio.
+        # Never fall back to the shared profile avatar; doing so would cause
+        # a DP from one portfolio (or from onboarding) to bleed into every
+        # other portfolio where the user never uploaded an image.
+        portfolio_avatar = instance.avatar or None
         if ret.get('user') is None:
             ret['user'] = {}
-        ret['user']['avatar'] = portfolio_avatar or ""
+        ret['user']['avatar'] = portfolio_avatar  # None when no DP uploaded
         return ret
 
     def create(self, validated_data):

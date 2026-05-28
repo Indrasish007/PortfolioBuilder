@@ -1,5 +1,5 @@
 import { Mail, Github, ExternalLink, Phone } from "lucide-react";
-import { Soc, Tags, FAQList, SectionLabel, VideoEmbed, MusicEmbed, GalleryAlbum, getDefaultAvatar, handleResumeDownload, trackProjectClick } from "./shared.jsx";
+import { Soc, Tags, FAQList, SectionLabel, VideoEmbed, MusicEmbed, GalleryAlbum, handleResumeDownload, trackProjectClick } from "./shared.jsx";
 
 // classic, startup, forest, oceanic
 export default function BizLayout({ p, t, id, portfolioId }) {
@@ -57,10 +57,12 @@ export default function BizLayout({ p, t, id, portfolioId }) {
               </div>
               <Soc user={u} fg={fg} portfolioId={portfolioId} />
             </div>
-            <img src={u.avatar || getDefaultAvatar(ac)} alt={`${u.name || "User"} profile picture`} loading="lazy" style={{
-              width: 300, height: 360, borderRadius: "20px",
-              objectFit: "cover", border: `1px solid ${ac}30`, boxShadow: "0 10px 30px rgba(0,0,0,0.25)", flexShrink: 0
-            }} />
+            {u.avatar && (
+              <img src={u.avatar} alt={`${u.name || "User"} profile picture`} loading="lazy" style={{
+                width: 300, height: 360, borderRadius: "20px",
+                objectFit: "cover", border: `1px solid ${ac}30`, boxShadow: "0 10px 30px rgba(0,0,0,0.25)", flexShrink: 0
+              }} />
+            )}
           </div>
         </div>
       </div>

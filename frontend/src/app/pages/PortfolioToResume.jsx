@@ -1,7 +1,10 @@
 import { useState, useEffect, useRef } from "react";
+import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
 import {
   ArrowLeft, Save, Download, Sparkles, Plus, Trash2, Globe, Link2,
-  Calendar, Award, User, Code2, Briefcase, GraduationCap, Clock, Check
+  Calendar, Award, User, Code2, Briefcase, GraduationCap, Clock, Check,
+  Loader2
 } from "lucide-react";
 import { useToast } from "../context/ToasterContext.jsx";
 import api from "../services/api.js";
@@ -24,9 +27,30 @@ export default function PortfolioToResume({ initialData, resumeId, initialTempla
     skills: initialData.skills ? [...initialData.skills] : [],
     languages: initialData.languages ? initialData.languages.map(l => ({ ...l })) : [],
     social_links: initialData.social_links ? initialData.social_links.map(l => ({ ...l })) : [],
-    experience: initialData.experience ? initialData.experience.map(e => ({ ...e })) : [],
-    education: initialData.education ? initialData.education.map(e => ({ ...e })) : [],
-    projects: initialData.projects ? initialData.projects.map(p => ({ ...p, tech: p.tech ? [...p.tech] : (typeof p.tech_stack === 'string' ? p.tech_stack.split(",").map(t => t.strip()) : []) })) : [],
+    // Normalise experience: DB data sends period; AI data sends start_date/end_date.
+    // The editor uses `period` for display, so derive it if not present.
+    experience: initialData.experience
+      ? initialData.experience.map(e => ({
+          ...e,
+          period: e.period || (e.start_date
+            ? `${e.start_date} – ${e.end_date || 'Present'}`
+            : ''),
+        }))
+      : [],
+    education: initialData.education
+      ? initialData.education.map(e => ({
+          ...e,
+          period: e.period || (e.start_date
+            ? `${e.start_date} – ${e.end_date || 'Present'}`
+            : ''),
+        }))
+      : [],
+    projects: initialData.projects
+      ? initialData.projects.map(p => ({
+          ...p,
+          tech_stack: p.tech_stack || (Array.isArray(p.tech) ? p.tech.join(', ') : ''),
+        }))
+      : [],
     certifications: initialData.certifications ? initialData.certifications.map(c => ({ ...c })) : [],
   }));
 
@@ -96,22 +120,60 @@ export default function PortfolioToResume({ initialData, resumeId, initialTempla
 
   const handleDownload = async () => {
     setDownloading(true);
+    toast({ title: "Generating PDF…", description: "Capturing resume preview…", type: "info" });
     try {
-      const res = await api.post("/resume/pdf/", {
-        data: editData,
-        template_slug: template
-      }, {
-        responseType: 'blob'
+      const resumeEl = document.getElementById("resume-a4-preview");
+      if (!resumeEl) throw new Error("Preview element not found.");
+
+      // Temporarily make the preview full-size so html2canvas captures it at native resolution
+      const prevStyle = resumeEl.getAttribute("style") || "";
+      resumeEl.style.transform = "none";
+      resumeEl.style.width = "794px"; // A4 at 96dpi
+
+      const canvas = await html2canvas(resumeEl, {
+        scale: 2,           // 2× = crisp 192dpi output
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: "#ffffff",
+        logging: false,
       });
 
-      const blob = new Blob([res.data], { type: 'application/pdf' });
-      const link = document.createElement('a');
-      link.href = window.URL.createObjectURL(blob);
-      link.download = `${editData.full_name.replace(/\s+/g, '_') || 'Resume'}_${template}.pdf`;
-      link.click();
-      toast({ title: "Success", description: "PDF downloaded successfully.", type: "success" });
+      // Restore original style
+      resumeEl.setAttribute("style", prevStyle);
+
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();   // 210mm
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+      // If the resume is taller than one A4 page, add extra pages
+      const pageHeight = pdf.internal.pageSize.getHeight(); // 297mm
+      if (pdfHeight <= pageHeight) {
+        pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      } else {
+        // Multi-page: slice the canvas
+        let yOffset = 0;
+        const pageHeightPx = (pageHeight * canvas.width) / pdfWidth;
+        while (yOffset < canvas.height) {
+          const sliceH = Math.min(pageHeightPx, canvas.height - yOffset);
+          const pageCanvas = document.createElement("canvas");
+          pageCanvas.width = canvas.width;
+          pageCanvas.height = sliceH;
+          const ctx = pageCanvas.getContext("2d");
+          ctx.drawImage(canvas, 0, -yOffset);
+          const pageImg = pageCanvas.toDataURL("image/png");
+          if (yOffset > 0) pdf.addPage();
+          pdf.addImage(pageImg, "PNG", 0, 0, pdfWidth, (sliceH * pdfWidth) / canvas.width);
+          yOffset += pageHeightPx;
+        }
+      }
+
+      const safeName = (editData.full_name || "Resume").replace(/\s+/g, "_");
+      pdf.save(`${safeName}_resume.pdf`);
+      toast({ title: "Downloaded!", description: `${safeName}_resume.pdf saved.`, type: "success" });
     } catch (err) {
-      toast({ title: "Download Failed", description: "Could not generate PDF binary.", type: "error" });
+      console.error("[PDF] Error:", err);
+      toast({ title: "Download Failed", description: err.message || "Could not generate PDF.", type: "error" });
     } finally {
       setDownloading(false);
     }
@@ -537,7 +599,7 @@ export default function PortfolioToResume({ initialData, resumeId, initialTempla
           </div>
 
           <div className="border border-border/60 rounded-2xl shadow-card overflow-hidden bg-white max-w-lg mx-auto select-none scale-[0.98] origin-top">
-            <div className="w-full text-slate-800 p-8 space-y-4 text-left leading-normal font-sans" style={{ minHeight: "650px", fontSize: "11px", backgroundColor: "#ffffff" }}>
+            <div id="resume-a4-preview" className="w-full text-slate-800 p-8 space-y-4 text-left leading-normal font-sans" style={{ minHeight: "650px", fontSize: "11px", backgroundColor: "#ffffff" }}>
               
               {/* Header Rendering */}
               {template === "creative" ? (

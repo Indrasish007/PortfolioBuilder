@@ -1,5 +1,5 @@
 import { Mail, Phone } from "lucide-react";
-import { Soc, Tags, FAQList, SectionLabel, sn, VideoEmbed, MusicEmbed, GalleryAlbum, getDefaultAvatar, trackProjectClick } from "./shared.jsx";
+import { Soc, Tags, FAQList, SectionLabel, sn, VideoEmbed, MusicEmbed, GalleryAlbum, trackProjectClick } from "./shared.jsx";
 
 // minimal, scandinavian, paper, typewriter
 export default function MinimalLayout({ p, t, id, portfolioId }) {
@@ -18,7 +18,9 @@ export default function MinimalLayout({ p, t, id, portfolioId }) {
 
         {/* ── Hero ── */}
         <div style={{ marginBottom:gap }}>
-          <img src={u.avatar || getDefaultAvatar(t.ac)} alt={`${u.name || "User"} profile picture`} loading="lazy" style={{ width:300, height:360, borderRadius:"20px", objectFit:"cover", marginBottom:28, border:`1px solid ${t.fg}15`, boxShadow:"0 10px 30px rgba(0,0,0,0.08)" }} />
+          {u.avatar && (
+            <img src={u.avatar} alt={`${u.name || "User"} profile picture`} loading="lazy" style={{ width:300, height:360, borderRadius:"20px", objectFit:"cover", marginBottom:28, border:`1px solid ${t.fg}15`, boxShadow:"0 10px 30px rgba(0,0,0,0.08)" }} />
+          )}
 
 
           <div style={{ fontSize:12, opacity:0.45, marginBottom:6, letterSpacing:"0.1em" }}>{u.title}</div>

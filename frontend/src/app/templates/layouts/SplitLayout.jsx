@@ -1,5 +1,5 @@
 import { Mail, Github, ExternalLink, Phone } from "lucide-react";
-import { Soc, Tags, FAQList, SectionLabel, VideoEmbed, MusicEmbed, GalleryAlbum, getDefaultAvatar, trackProjectClick } from "./shared.jsx";
+import { Soc, Tags, FAQList, SectionLabel, VideoEmbed, MusicEmbed, GalleryAlbum, trackProjectClick } from "./shared.jsx";
 
 // creative, dusk, coral, sakura
 export default function SplitLayout({ p, t, id, portfolioId }) {
@@ -28,7 +28,9 @@ export default function SplitLayout({ p, t, id, portfolioId }) {
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", minHeight:"90vh" }}>
         {/* Left panel — bio */}
         <div style={{ background:left, padding:"60px 48px", display:"flex", flexDirection:"column", justifyContent:"center", borderRight:`1px solid rgba(255,255,255,0.06)` }}>
-          <img src={u.avatar || getDefaultAvatar(ac)} alt={`${u.name || "User"} profile picture`} loading="lazy" style={{ width:300, height:360, borderRadius:"20px", objectFit:"cover", marginBottom:28, border:`1px solid rgba(255,255,255,0.12)`, boxShadow:`0 10px 30px rgba(0,0,0,0.5)` }} />
+          {u.avatar && (
+            <img src={u.avatar} alt={`${u.name || "User"} profile picture`} loading="lazy" style={{ width:300, height:360, borderRadius:"20px", objectFit:"cover", marginBottom:28, border:`1px solid rgba(255,255,255,0.12)`, boxShadow:`0 10px 30px rgba(0,0,0,0.5)` }} />
+          )}
           <div style={{ fontSize:12, color:ac, marginBottom:12, letterSpacing:"0.15em", textTransform:"uppercase" }}>{u.title}</div>
           <h1 style={{ fontSize:52, fontWeight:900, lineHeight:1.0, letterSpacing:"-0.03em", margin:"0 0 24px",
             backgroundImage:grad, WebkitBackgroundClip:"text", backgroundClip:"text", WebkitTextFillColor:"transparent" }}>
