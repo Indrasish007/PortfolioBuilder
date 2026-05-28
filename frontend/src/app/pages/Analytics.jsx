@@ -23,22 +23,18 @@ const PORTFOLIO_ACCENT_COLORS = [
   "#fb923c", "#60a5fa", "#e879f9", "#facc15",
 ];
 
-const COUNTRY_FLAGS = {
-  "India": "🇮🇳", "United States": "🇺🇸", "United Kingdom": "🇬🇧",
-  "Germany": "🇩🇪", "France": "🇫🇷", "Canada": "🇨🇦", "Australia": "🇦🇺",
-  "Japan": "🇯🇵", "China": "🇨🇳", "Brazil": "🇧🇷", "Russia": "🇷🇺",
-  "South Korea": "🇰🇷", "Italy": "🇮🇹", "Spain": "🇪🇸", "Netherlands": "🇳🇱",
-  "Singapore": "🇸🇬", "UAE": "🇦🇪", "Pakistan": "🇵🇰", "Bangladesh": "🇧🇩",
-  "Sri Lanka": "🇱🇰", "Nepal": "🇳🇵", "Indonesia": "🇮🇩", "Malaysia": "🇲🇾",
-  "Thailand": "🇹🇭", "Vietnam": "🇻🇳", "Philippines": "🇵🇭", "Mexico": "🇲🇽",
-  "Argentina": "🇦🇷", "Sweden": "🇸🇪", "Norway": "🇳🇴", "Denmark": "🇩🇰",
-  "Finland": "🇫🇮", "Poland": "🇵🇱", "Turkey": "🇹🇷", "Saudi Arabia": "🇸🇦",
-  "South Africa": "🇿🇦", "Nigeria": "🇳🇬", "Egypt": "🇪🇬", "Kenya": "🇰🇪",
+const getFlagEmoji = (countryCode) => {
+  if (!countryCode) return "🌐";
+  try {
+    return countryCode
+      .toUpperCase()
+      .split('')
+      .map(char => String.fromCodePoint(127397 + char.charCodeAt()))
+      .join('');
+  } catch (_) {
+    return "🌐";
+  }
 };
-
-function getFlag(country) {
-  return COUNTRY_FLAGS[country] || "🌐";
-}
 
 /* ────────────────────────────────────────────────────────── */
 /* Format seconds → Xh Xm Xs                                  */
@@ -457,37 +453,26 @@ function PortfolioAnalyticsCard({ portfolio, index }) {
           </div>
 
           {/* Countries mini list */}
-          {portfolio.countries && portfolio.countries.length > 0 && totalCountryViews > 0 && (
-            <div>
-              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Top Countries</div>
-              <div className="space-y-2">
-                {portfolio.countries.filter(c => c.visits > 0).slice(0, 5).map((c, ci) => {
-                  const pct = Math.round((c.visits / totalCountryViews) * 100);
-                  const cc = COUNTRY_COLORS[ci % COUNTRY_COLORS.length];
-                  return (
-                    <div key={c.country} className="flex items-center gap-2">
-                      <span className="text-base w-6 text-center flex-shrink-0">{getFlag(c.country)}</span>
-                      <span className="text-xs flex-1 truncate">{c.country}</span>
-                      <div
-                        className="h-1.5 rounded-full flex-1 max-w-[90px] overflow-hidden"
-                        style={{ background: `color-mix(in oklch, ${cc} 15%, transparent)` }}
-                      >
-                        <div
-                          className="h-full rounded-full"
-                          style={{
-                            width: `${pct}%`,
-                            background: cc,
-                            transition: "width 0.8s cubic-bezier(.4,0,.2,1)",
-                          }}
-                        />
-                      </div>
-                      <span className="text-[10px] text-muted-foreground tabular-nums w-8 text-right">{pct}%</span>
+          <div>
+            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Top Countries</div>
+            {(!portfolio.countries || portfolio.countries.length === 0) ? (
+              <p className="text-xs text-muted-foreground italic">No visits tracked yet. Share your portfolio!</p>
+            ) : (
+              <div className="space-y-1">
+                {portfolio.countries.filter(c => c.visits > 0).slice(0, 5).map((c) => (
+                  <div key={c.country} className="flex items-center justify-between text-xs py-1.5 border-b border-white/[0.02]">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-base leading-none flex-shrink-0">{getFlagEmoji(c.country_code)}</span>
+                      <span className="font-semibold truncate">{c.country}</span>
                     </div>
-                  );
-                })}
+                    <span className="text-muted-foreground text-xs font-medium flex-shrink-0 tabular-nums">
+                      — {c.visits} {c.visits === 1 ? "visit" : "visits"}
+                    </span>
+                  </div>
+                ))}
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Portfolio link */}
           {portfolio.status === "Published" && (
@@ -817,7 +802,7 @@ export default function Analytics() {
                       } : {}}
                     >
                       <div className="flex items-center gap-3 mb-2">
-                        <span className="text-xl leading-none w-7 text-center flex-shrink-0">{getFlag(c.country)}</span>
+                        <span className="text-xl leading-none w-7 text-center flex-shrink-0">{getFlagEmoji(c.country_code)}</span>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-2">
                             <span className="text-sm font-semibold truncate">{c.country}</span>

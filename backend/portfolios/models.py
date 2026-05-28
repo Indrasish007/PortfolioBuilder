@@ -132,3 +132,20 @@ class ProjectClick(models.Model):
 
     def __str__(self):
         return f"Click on project {self.project_id} by {self.visitor_id}"
+
+
+class PortfolioVisit(models.Model):
+    """Stores country visits per portfolio to track dynamic geolocation analytics.
+    Each country visit is linked to the portfolio, with unique country name/code per portfolio.
+    If the same country visits again, visit_count is incremented.
+    """
+    portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE, related_name='country_visits')
+    country_name = models.CharField(max_length=150)
+    country_code = models.CharField(max_length=10)
+    visit_count = models.IntegerField(default=1)
+
+    class Meta:
+        unique_together = ('portfolio', 'country_name', 'country_code')
+
+    def __str__(self):
+        return f"{self.country_name} ({self.country_code}) - {self.visit_count} visits for Portfolio {self.portfolio.id}"

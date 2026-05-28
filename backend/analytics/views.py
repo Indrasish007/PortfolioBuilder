@@ -5,7 +5,7 @@ import datetime
 from django.utils import timezone
 from django.db.models import Count, Sum, IntegerField
 from django.db.models.functions import Coalesce
-from portfolios.models import Portfolio, PortfolioEvent, Project, ProjectClick
+from portfolios.models import Portfolio, PortfolioEvent, Project, ProjectClick, PortfolioVisit
 
 
 # ── Portfolio Score ───────────────────────────────────────────────────────────
@@ -220,23 +220,22 @@ class AnalyticsView(APIView):
                 {"name": "Tablet", "value": 10},
             ]
 
-        # 3. Countries — total view count per country
-        country_counts = PortfolioEvent.objects.filter(
-            portfolio__in=portfolios,
-            event_type='view',
-            created_at__date__gte=today - datetime.timedelta(days=13)
-        ).values('country').annotate(visits=Count('id')).order_by('-visits')[:10]
-
-        
-        countries_data = []
-        for item in country_counts:
-            if item['country']:  # skip blank/null country values
-                countries_data.append({"country": item['country'], "visits": item['visits']})
-        
-        if not countries_data:
-            countries_data = [
-                {"country": "India", "visits": 0}
-            ]
+        # 3. Countries — total view count per country using real dynamic geolocation tracking
+        combined_country_counts = (
+            PortfolioVisit.objects
+            .filter(portfolio__in=portfolios)
+            .values('country_name', 'country_code')
+            .annotate(visits=Sum('visit_count'))
+            .order_by('-visits')
+        )
+        countries_data = [
+            {
+                "country": item['country_name'],
+                "country_code": item['country_code'],
+                "visits": item['visits']
+            }
+            for item in combined_country_counts
+        ]
 
         # Use portfolio.views (same source as Dashboard) so both pages
         # always report an identical total — avoids counting stale duplicate
@@ -301,15 +300,19 @@ class AnalyticsView(APIView):
                 created_at__date__gte=today - datetime.timedelta(days=13)
             ).count()
 
-            p_country_counts = PortfolioEvent.objects.filter(
-                portfolio=p,
-                event_type='view',
-                created_at__date__gte=today - datetime.timedelta(days=13)
-            ).values('country').annotate(visits=Count('id')).order_by('-visits')[:5]
+            p_country_visits = (
+                PortfolioVisit.objects
+                .filter(portfolio=p)
+                .order_by('-visit_count')
+            )
 
             p_countries = [
-                {"country": item['country'], "visits": item['visits']}
-                for item in p_country_counts if item['country']
+                {
+                    "country": cv.country_name,
+                    "country_code": cv.country_code,
+                    "visits": cv.visit_count
+                }
+                for cv in p_country_visits
             ]
 
             # Total view time: sum all session_time event durations for this portfolio

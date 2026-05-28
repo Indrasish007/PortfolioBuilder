@@ -4,7 +4,7 @@ from .views import (
     PortfolioViewSet, PublicPortfolioView, PublicPortfolioBySlugView,
     PublicPortfolioByDomainView, PublishPortfolioView, UnpublishPortfolioView,
     AnalyticsView, DashboardStatsView, PublicPortfolioListView, ProjectSetFeaturedView,
-    TrackProjectClickView
+    TrackProjectClickView, TrackVisitView
 )
 
 router = DefaultRouter()
@@ -26,5 +26,7 @@ urlpatterns = [
     path('projects/<int:project_id>/set-featured/', ProjectSetFeaturedView.as_view(), name='set_project_featured'),
     # Project click tracking (visitor-side, AllowAny)
     path('track-project-click/', TrackProjectClickView.as_view(), name='track_project_click'),
+    # Geolocation visitor tracking (visitor-side, AllowAny)
+    path('track-visit/', TrackVisitView.as_view(), name='track_visit'),
     path('', include(router.urls)),
 ]

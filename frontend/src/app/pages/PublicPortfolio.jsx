@@ -1,6 +1,6 @@
 import { useParams, Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import api from "../services/api.js";
 import LivePortfolio from "../templates/LivePortfolio.jsx";
 
@@ -19,6 +19,7 @@ export default function PublicPortfolio() {
   const [p, setP] = useState(null);
   const [loading, setLoading] = useState(true);
   const isPreview = searchParams.get("back") === "1";
+  const hasTrackedGeo = useRef(false);
 
   useEffect(() => {
     async function fetchPortfolio() {
@@ -149,6 +150,68 @@ export default function PublicPortfolio() {
     }
 
     api.post(`/portfolios/${p.id}/analytics/`, { event_type: 'view', visitor_id: visitorId }).catch(() => {});
+  }, [p, isPreview]);
+
+  // ── Real Geolocation Country Tracking ──────────────────────────────────────
+  // Guard order:
+  //  1. hasTrackedGeo ref — blocks React Strict Mode's second synchronous invocation
+  //     of the same effect (both mounts happen before any await completes).
+  //  2. sessionStorage — persistent cross-render / cross-refresh dedup.
+  // The ref is set to true ONLY after the backend call is dispatched so we
+  // never block the async work from running on the legitimate first mount.
+  useEffect(() => {
+    if (!p || isPreview) return;
+    if (hasTrackedGeo.current) return;
+
+    // Mark immediately to block a concurrent second mount (Strict Mode),
+    // but only after we have confirmed p is available and we're not in preview.
+    hasTrackedGeo.current = true;
+
+    const portfolioId = p.id;
+    const geoTrackKey = `tracked_geo_${portfolioId}`;
+
+    // If already tracked this session, skip the API call.
+    if (sessionStorage.getItem(geoTrackKey)) return;
+
+    const trackGeolocation = async () => {
+      try {
+        const response = await fetch("https://ipapi.co/json/");
+        if (!response.ok) return;
+        const geo = await response.json();
+
+        const { country_name, country_code } = geo;
+        if (!country_name || !country_code) return;
+
+        const payload = JSON.stringify({ portfolioId, country_name, country_code });
+
+        const base = (api.defaults.baseURL || 'http://localhost:8000/api').replace(/\/$/, '');
+        const trackUrl = `${base}/track-visit/`;
+
+        // Use fetch with keepalive so the request survives any navigation.
+        // Fall back to sendBeacon only if fetch is unavailable.
+        try {
+          await fetch(trackUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: payload,
+            keepalive: true,
+          });
+        } catch (_) {
+          try {
+            navigator.sendBeacon(trackUrl, new Blob([payload], { type: 'text/plain' }));
+          } catch (_2) {}
+        }
+
+        // Only mark session-tracked after successful dispatch.
+        sessionStorage.setItem(geoTrackKey, '1');
+      } catch (_) {
+        // Silently skip — portfolio page must never error due to tracking failure.
+        // Reset ref so a subsequent navigation to the same portfolio can retry.
+        hasTrackedGeo.current = false;
+      }
+    };
+
+    trackGeolocation();
   }, [p, isPreview]);
 
   // ── View time tracking ─────────────────────────────────────────────────────

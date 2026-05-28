@@ -6,7 +6,7 @@ from rest_framework import status as http_status
 from django.db.models import Count, Sum
 from django.utils.text import slugify
 import re
-from .models import Portfolio, PortfolioEvent, ProjectClick
+from .models import Portfolio, PortfolioEvent, ProjectClick, PortfolioVisit
 from .serializers import PortfolioSerializer
 
 class PortfolioViewSet(viewsets.ModelViewSet):
@@ -348,3 +348,77 @@ class TrackProjectClickView(APIView):
             )
 
         return Response({'status': 'ok'})
+
+
+class TrackVisitView(APIView):
+    """POST /api/track-visit/ — tracks visitor country views dynamically with geolocation."""
+    permission_classes = [permissions.AllowAny]
+    parser_classes = [JSONParser, PlainTextParser]
+
+    def post(self, request):
+        import json as _json, hashlib as _hashlib
+        from django.core.cache import cache as _cache
+
+        data = request.data
+        if isinstance(data, (bytes, str)):
+            try:
+                data = _json.loads(data if isinstance(data, str) else data.decode())
+            except Exception:
+                data = {}
+        elif not data and request.body:
+            try:
+                data = _json.loads(request.body)
+            except Exception:
+                data = {}
+
+        portfolio_id = data.get('portfolioId')
+        country_name = data.get('country_name')
+        country_code = data.get('country_code')
+
+        if not portfolio_id or not country_name or not country_code:
+            return Response({'error': 'portfolioId, country_name, and country_code are required'}, status=http_status.HTTP_400_BAD_REQUEST)
+
+        # 1. IP Hash for debouncing
+        x_forwarded_for = request.headers.get('x-forwarded-for')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0].strip()
+        else:
+            ip = request.META.get('REMOTE_ADDR', '')
+        
+        ip_hash = _hashlib.sha256(ip.encode('utf-8')).hexdigest()
+
+        # 2. Cooldown check (5 seconds debounce)
+        cache_key = f"geo_track_{portfolio_id}_{country_code}_{ip_hash}"
+        if _cache.get(cache_key):
+            try:
+                visit = PortfolioVisit.objects.get(
+                    portfolio_id=portfolio_id,
+                    country_name=country_name,
+                    country_code=country_code
+                )
+                visit_count = visit.visit_count
+            except PortfolioVisit.DoesNotExist:
+                visit_count = 1
+            return Response({'status': 'ok', 'visit_count': visit_count, 'debounced': True})
+
+        # Set 5-second cooldown
+        _cache.set(cache_key, True, timeout=5)
+
+        try:
+            portfolio = Portfolio.objects.get(pk=portfolio_id)
+        except Portfolio.DoesNotExist:
+            return Response({'error': 'Portfolio not found'}, status=http_status.HTTP_404_NOT_FOUND)
+
+        # Get or create record
+        visit, created = PortfolioVisit.objects.get_or_create(
+            portfolio=portfolio,
+            country_name=country_name,
+            country_code=country_code,
+            defaults={'visit_count': 1}
+        )
+
+        if not created:
+            visit.visit_count += 1
+            visit.save(update_fields=['visit_count'])
+
+        return Response({'status': 'ok', 'visit_count': visit.visit_count})
