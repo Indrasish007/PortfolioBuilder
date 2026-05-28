@@ -998,7 +998,7 @@ function ProjectsEditor({ projects, updateField }) {
   return (
     <div>
       <div className="flex justify-end mb-3">
-        <button onClick={() => updateField("projects", [...projects, { title: "New Project", description: "", github: "", live: "", tech: [] }])} className="text-xs text-brand hover:underline">+ Add</button>
+        <button onClick={() => updateField("projects", [...projects, { title: "New Project", description: "", github: "", live: "", tech: [], image: "" }])} className="text-xs text-brand hover:underline">+ Add</button>
       </div>
       {projects.map((proj, i) => (
         <div key={i} className="group mb-4 last:mb-0 border-l-2 border-brand/30 pl-3 space-y-1">
@@ -1048,6 +1048,47 @@ function ProjectsEditor({ projects, updateField }) {
                 Undo — restore original
               </button>
             )}
+          </div>
+
+          {/* Project Image */}
+          <div className="flex gap-2 items-center py-1">
+            {proj.image ? (
+              <div className="relative w-16 h-12 rounded border border-border overflow-hidden group/img bg-accent/20 flex-shrink-0">
+                <img src={proj.image} alt="Preview" className="w-full h-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => updateItem(i, "image", "")}
+                  className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity text-destructive"
+                  title="Remove image"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <label className="w-16 h-12 rounded border border-dashed border-border flex flex-col items-center justify-center text-[10px] text-muted-foreground hover:bg-accent/40 transition cursor-pointer flex-shrink-0">
+                <ImageIcon className="w-4 h-4 mb-0.5" />
+                <span>Upload</span>
+                <input
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onloadend = () => updateItem(i, "image", reader.result);
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                />
+              </label>
+            )}
+            <input
+              value={proj.image || ""}
+              onChange={(e) => updateItem(i, "image", e.target.value)}
+              className="flex-1 bg-input/40 border border-border rounded p-2 text-xs focus:outline-none h-12"
+              placeholder="Or paste image URL here..."
+            />
           </div>
 
           <input value={proj.tech ? proj.tech.join(", ") : ""} onChange={(e) => updateItem(i, "tech", e.target.value.split(",").map(t => t.trim()))} className="w-full bg-input/40 border border-border rounded p-2 text-xs focus:outline-none" placeholder="Tech stack (comma separated)" />

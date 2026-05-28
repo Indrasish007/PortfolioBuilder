@@ -87,15 +87,22 @@ export default function MinimalLayout({ p, t, id, portfolioId }) {
             {lbl("Projects")}
             {p.projects.map((proj,i) => (
               <div key={i} style={{ borderTop:`1px solid ${t.fg}12`, paddingTop:24, marginBottom:24 }}>
-                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:12 }}>
-                  <h3 style={{ fontWeight:600, fontSize:16, margin:0 }}>{proj.title}</h3>
-                  <div style={{ display:"flex", gap:10, opacity:0.45, flexShrink:0 }}>
-                    {proj.github && <a href={proj.github} target="_blank" rel="noreferrer" style={{ color:t.fg, fontSize:12 }}>↗ code</a>}
-                    {proj.live   && <a href={proj.live}   target="_blank" rel="noreferrer" style={{ color:t.fg, fontSize:12 }}>↗ live</a>}
+                <div style={{ display: "flex", gap: 20, alignItems: "flex-start", flexWrap: "wrap-reverse" }}>
+                  <div style={{ flex: 1, minWidth: 240 }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:12 }}>
+                      <h3 style={{ fontWeight:600, fontSize:16, margin:0 }}>{proj.title}</h3>
+                      <div style={{ display:"flex", gap:10, opacity:0.45, flexShrink:0 }}>
+                        {proj.github && <a href={proj.github} target="_blank" rel="noreferrer" style={{ color:t.fg, fontSize:12 }}>↗ code</a>}
+                        {proj.live   && <a href={proj.live}   target="_blank" rel="noreferrer" style={{ color:t.fg, fontSize:12 }}>↗ live</a>}
+                      </div>
+                    </div>
+                    <p style={{ fontSize:13, opacity:0.6, marginTop:8, lineHeight:1.75 }}>{proj.description}</p>
+                    <div style={{ marginTop:12 }}><Tags items={proj.tech||[]} bg={`${t.fg}07`} fg={t.fg} radius={serif?"2px":"999px"} /></div>
                   </div>
+                  {proj.image && (
+                    <img src={proj.image} alt={proj.title} loading="lazy" style={{ width: 150, height: 100, objectFit: "cover", borderRadius: serif ? 2 : 8, border: `1px solid ${t.fg}15`, flexShrink: 0 }} />
+                  )}
                 </div>
-                <p style={{ fontSize:13, opacity:0.6, marginTop:8, lineHeight:1.75 }}>{proj.description}</p>
-                <div style={{ marginTop:12 }}><Tags items={proj.tech||[]} bg={`${t.fg}07`} fg={t.fg} radius={serif?"2px":"999px"} /></div>
               </div>
             ))}
           </div>

@@ -89,23 +89,28 @@ export default function SplitLayout({ p, t, id, portfolioId }) {
           {p.projects?.[0] && (
             <div>
               {lbl("Featured Project")}
-              <div style={{ background:"rgba(255,255,255,0.05)", border:`1px solid ${ac}30`, borderRadius:12, padding:24 }}>
-                <div style={{ fontWeight:800, fontSize:18, marginBottom:8 }}>{p.projects[0].title}</div>
-                <p style={{ fontSize:13, opacity:0.7, lineHeight:1.75, marginBottom:12 }}>{p.projects[0].description}</p>
-                <Tags items={p.projects[0].tech||[]} bg={`${ac}15`} fg={ac} />
-                <div style={{ display:"flex", gap:12, marginTop:14, opacity:0.6 }}>
-                  {p.projects[0].github && <a href={p.projects[0].github} style={{ color:fg, fontSize:12 }}>↗ Code</a>}
-                  {p.projects[0].live   && <a href={p.projects[0].live}   style={{ color:fg, fontSize:12 }}>↗ Live</a>}
+              <div style={{ background:"rgba(255,255,255,0.05)", border:`1px solid ${ac}30`, borderRadius:12, padding: p.projects[0].image ? 0 : 24, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+                {p.projects[0].image && (
+                  <img src={p.projects[0].image} alt={p.projects[0].title} loading="lazy" style={{ width: "100%", height: 180, objectFit: "cover", borderBottom: `1px solid ${ac}30` }} />
+                )}
+                <div style={{ padding: p.projects[0].image ? 24 : 0 }}>
+                  <div style={{ fontWeight:800, fontSize:18, marginBottom:8 }}>{p.projects[0].title}</div>
+                  <p style={{ fontSize:13, opacity:0.7, lineHeight:1.75, marginBottom:12 }}>{p.projects[0].description}</p>
+                  <Tags items={p.projects[0].tech||[]} bg={`${ac}15`} fg={ac} />
+                  <div style={{ display:"flex", gap:12, marginTop:14, opacity:0.6 }}>
+                    {p.projects[0].github && <a href={p.projects[0].github} style={{ color:fg, fontSize:12 }}>↗ Code</a>}
+                    {p.projects[0].live   && <a href={p.projects[0].live}   style={{ color:fg, fontSize:12 }}>↗ Live</a>}
+                  </div>
                 </div>
               </div>
             </div>
           )}
         </div>
       </div>
-
+ 
       {/* ── Rest of content below ── */}
       <div style={{ padding:"64px 48px" }}>
-
+ 
         {/* All projects */}
         {p.projects?.length > 1 && (
           <div style={{ marginBottom:56 }}>
@@ -113,20 +118,28 @@ export default function SplitLayout({ p, t, id, portfolioId }) {
             <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))", gap:16 }}>
               {p.projects.map((proj,i) => (
                 <div key={i} style={{ background:"rgba(255,255,255,0.04)", border:`1px solid rgba(255,255,255,0.08)`,
-                  borderRadius:10, padding:20,
+                  borderRadius:10, padding: proj.image ? 0 : 20,
                   transition:"border-color 0.2s,transform 0.2s",
+                  overflow: "hidden", display: "flex", flexDirection: "column"
                 }}
                   onMouseEnter={e=>{e.currentTarget.style.borderColor=`${ac}50`;e.currentTarget.style.transform="translateY(-3px)"}}
                   onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.08)";e.currentTarget.style.transform="translateY(0)"}}>
-                  <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
-                    <h3 style={{ fontWeight:700, fontSize:15, margin:0 }}>{proj.title}</h3>
-                    <div style={{ display:"flex", gap:8, opacity:0.45 }}>
-                      {proj.github && <a href={proj.github} target="_blank" rel="noreferrer" style={{ color:fg }}><Github size={13}/></a>}
-                      {proj.live   && <a href={proj.live}   target="_blank" rel="noreferrer" style={{ color:fg }}><ExternalLink size={13}/></a>}
+                  {proj.image && (
+                    <img src={proj.image} alt={proj.title} loading="lazy" style={{ width: "100%", height: 160, objectFit: "cover", borderBottom: `1px solid rgba(255,255,255,0.08)` }} />
+                  )}
+                  <div style={{ padding: proj.image ? 20 : 0, flex: 1, display: "flex", flexDirection: "column" }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
+                      <h3 style={{ fontWeight:700, fontSize:15, margin:0 }}>{proj.title}</h3>
+                      <div style={{ display:"flex", gap:8, opacity:0.45 }}>
+                        {proj.github && <a href={proj.github} target="_blank" rel="noreferrer" style={{ color:fg }}><Github size={13}/></a>}
+                        {proj.live   && <a href={proj.live}   target="_blank" rel="noreferrer" style={{ color:fg }}><ExternalLink size={13}/></a>}
+                      </div>
+                    </div>
+                    <p style={{ fontSize:13, opacity:0.6, lineHeight:1.65, marginBottom:12 }}>{proj.description}</p>
+                    <div style={{ marginTop: "auto" }}>
+                      <Tags items={proj.tech||[]} bg={`${ac}14`} fg={ac} radius="4px" />
                     </div>
                   </div>
-                  <p style={{ fontSize:13, opacity:0.6, lineHeight:1.65, marginBottom:12 }}>{proj.description}</p>
-                  <Tags items={proj.tech||[]} bg={`${ac}14`} fg={ac} radius="4px" />
                 </div>
               ))}
             </div>

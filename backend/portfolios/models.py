@@ -69,7 +69,7 @@ class Project(models.Model):
     github = models.CharField(max_length=500, blank=True, null=True)
     live = models.CharField(max_length=500, blank=True, null=True)
     featured = models.BooleanField(default=False)
-    image = models.URLField(blank=True, null=True)
+    image = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return self.title

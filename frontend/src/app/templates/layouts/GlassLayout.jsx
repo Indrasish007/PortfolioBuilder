@@ -140,21 +140,29 @@ export default function GlassLayout({ p, t, id, portfolioId }) {
               {p.projects.map((proj,i) => (
                 <div key={i} style={{
                   ...card,
-                  padding:22,
+                  padding: proj.image ? 0 : 22,
                   transition:"transform 0.25s,box-shadow 0.25s",
                   backgroundImage: id==="holographic" ? "linear-gradient(135deg,rgba(34,211,238,0.08),rgba(244,114,182,0.08),rgba(250,204,21,0.08))" : "none",
+                  overflow: "hidden", display: "flex", flexDirection: "column"
                 }}
                   onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-4px)";e.currentTarget.style.boxShadow=`0 16px 48px ${ac}30`}}
                   onMouseLeave={e=>{e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.boxShadow="none"}}>
-                  <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
-                    <h3 style={{ fontWeight:700, fontSize:15, margin:0 }}>{proj.title}</h3>
-                    <div style={{ display:"flex", gap:8, opacity:0.5 }}>
-                      {proj.github && <a href={proj.github} target="_blank" rel="noreferrer" style={{ color:fg }}><Github size={13}/></a>}
-                      {proj.live   && <a href={proj.live}   target="_blank" rel="noreferrer" style={{ color:fg }}><ExternalLink size={13}/></a>}
+                  {proj.image && (
+                    <img src={proj.image} alt={proj.title} loading="lazy" style={{ width: "100%", height: 160, objectFit: "cover", borderBottom: "1px solid rgba(255,255,255,0.12)" }} />
+                  )}
+                  <div style={{ padding: proj.image ? 22 : 0, flex: 1, display: "flex", flexDirection: "column" }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
+                      <h3 style={{ fontWeight:700, fontSize:15, margin:0 }}>{proj.title}</h3>
+                      <div style={{ display:"flex", gap:8, opacity:0.5 }}>
+                        {proj.github && <a href={proj.github} target="_blank" rel="noreferrer" style={{ color:fg }}><Github size={13}/></a>}
+                        {proj.live   && <a href={proj.live}   target="_blank" rel="noreferrer" style={{ color:fg }}><ExternalLink size={13}/></a>}
+                      </div>
+                    </div>
+                    <p style={{ fontSize:13, opacity:0.65, lineHeight:1.65, marginBottom:12 }}>{proj.description}</p>
+                    <div style={{ marginTop: "auto" }}>
+                      <Tags items={proj.tech||[]} bg={`${ac}18`} fg={ac} radius="999px" />
                     </div>
                   </div>
-                  <p style={{ fontSize:13, opacity:0.65, lineHeight:1.65, marginBottom:12 }}>{proj.description}</p>
-                  <Tags items={proj.tech||[]} bg={`${ac}18`} fg={ac} radius="999px" />
                 </div>
               ))}
             </div>

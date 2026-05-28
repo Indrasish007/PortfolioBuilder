@@ -132,23 +132,33 @@ export default function BrutalistLayout({ p, t, id, portfolioId }) {
             {isMono
               ? <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))", gap:2 }}>
                   {p.projects.map((proj,i) => (
-                    <div key={i} style={{ border:"2px solid #111", padding:20, background:i%2===0?"#f5f5f5":"#efefef" }}>
-                      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
-                        <h3 style={{ fontWeight:900, fontSize:14, margin:0 }}>{proj.title}</h3>
-                        <div style={{ display:"flex", gap:8, opacity:0.5 }}>
-                          {proj.github && <a href={proj.github} target="_blank" rel="noreferrer" style={{ color:fg }}><Github size={12}/></a>}
-                          {proj.live   && <a href={proj.live}   target="_blank" rel="noreferrer" style={{ color:fg }}><ExternalLink size={12}/></a>}
+                    <div key={i} style={{ border:"2px solid #111", padding: proj.image ? 0 : 20, background:i%2===0?"#f5f5f5":"#efefef", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+                      {proj.image && (
+                        <img src={proj.image} alt={proj.title} loading="lazy" style={{ width: "100%", height: 160, objectFit: "cover", borderBottom: "2px solid #111", filter: "grayscale(100%)" }} />
+                      )}
+                      <div style={{ padding: proj.image ? 20 : 0, flex: 1, display: "flex", flexDirection: "column" }}>
+                        <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
+                          <h3 style={{ fontWeight:900, fontSize:14, margin:0 }}>{proj.title}</h3>
+                          <div style={{ display:"flex", gap:8, opacity:0.5 }}>
+                            {proj.github && <a href={proj.github} target="_blank" rel="noreferrer" style={{ color:fg }}><Github size={12}/></a>}
+                            {proj.live   && <a href={proj.live}   target="_blank" rel="noreferrer" style={{ color:fg }}><ExternalLink size={12}/></a>}
+                          </div>
+                        </div>
+                        <p style={{ fontSize:12, opacity:0.65, lineHeight:1.6, marginBottom:10 }}>{proj.description}</p>
+                        <div style={{ marginTop: "auto" }}>
+                          <Tags items={proj.tech||[]} bg="#111" fg="#f5f5f5" radius="0" />
                         </div>
                       </div>
-                      <p style={{ fontSize:12, opacity:0.65, lineHeight:1.6, marginBottom:10 }}>{proj.description}</p>
-                      <Tags items={proj.tech||[]} bg="#111" fg="#f5f5f5" radius="0" />
                     </div>
                   ))}
                 </div>
               : <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
                   {p.projects.map((proj,i) => (
-                    <div key={i} style={{ border:`3px solid ${i===0?ac:`${ac}40`}`, padding:20, display:"flex", justifyContent:"space-between", gap:20, flexWrap:"wrap" }}>
-                      <div style={{ flex:1 }}>
+                    <div key={i} style={{ border:`3px solid ${i===0?ac:`${ac}40`}`, padding:20, display:"flex", justifyContent:"space-between", gap:20, flexWrap:"wrap", alignItems: "center" }}>
+                      {proj.image && (
+                        <img src={proj.image} alt={proj.title} loading="lazy" style={{ width: 140, height: 100, objectFit: "cover", border: `2px solid ${ac}`, boxShadow: `4px 4px 0px ${ac}`, flexShrink: 0 }} />
+                      )}
+                      <div style={{ flex:1, minWidth: 200 }}>
                         <h3 style={{ fontWeight:400, fontSize:22, textTransform:"uppercase", marginBottom:6, margin:0 }}>{proj.title}</h3>
                         <p style={{ fontSize:13, opacity:0.65, lineHeight:1.65, fontFamily:"Inter,sans-serif", marginBottom:10 }}>{proj.description}</p>
                         <Tags items={proj.tech||[]} bg={`${ac}20`} fg={ac} radius="0" />
