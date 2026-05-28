@@ -6,7 +6,7 @@ from rest_framework import status as http_status
 from django.db.models import Count, Sum
 from django.utils.text import slugify
 import re
-from .models import Portfolio, PortfolioEvent
+from .models import Portfolio, PortfolioEvent, ProjectClick
 from .serializers import PortfolioSerializer
 
 class PortfolioViewSet(viewsets.ModelViewSet):
@@ -285,3 +285,63 @@ class ProjectSetFeaturedView(APIView):
         project.featured = True
         project.save(update_fields=['featured'])
         return Response({'success': True, 'project_id': project.id})
+
+
+class TrackProjectClickView(APIView):
+    """POST /portfolios/track-project-click/
+    Records a single project link click by a visitor.
+    AllowAny — called from the public portfolio page.
+    Deduplicates within 60 s per (visitor_id, project_id) to avoid double-fires
+    from React strict mode or accidental rapid clicks.
+    """
+    permission_classes = [permissions.AllowAny]
+    parser_classes = [JSONParser, PlainTextParser]
+
+
+    def post(self, request):
+        import json as _json, datetime as dt
+        from django.utils import timezone as tz
+        from .models import Project
+
+        # Support both JSON and text/plain payloads (text/plain avoids CORS preflight)
+        data = request.data
+        if isinstance(data, (bytes, str)):
+            try:
+                data = _json.loads(data if isinstance(data, str) else data.decode())
+            except Exception:
+                data = {}
+        elif not data and request.body:
+            try:
+                data = _json.loads(request.body)
+            except Exception:
+                data = {}
+
+        project_id = data.get('project_id') if isinstance(data, dict) else None
+        link_type  = (data.get('link_type', 'live') if isinstance(data, dict) else 'live') or 'live'
+        visitor_id = (data.get('visitor_id', 'anonymous') if isinstance(data, dict) else 'anonymous') or 'anonymous'
+
+        if not project_id:
+            return Response({'error': 'project_id required'}, status=http_status.HTTP_400_BAD_REQUEST)
+
+        try:
+            project = Project.objects.get(pk=project_id)
+        except Project.DoesNotExist:
+            return Response({'error': 'project not found'}, status=http_status.HTTP_404_NOT_FOUND)
+
+        # Dedup: skip if same visitor clicked same project within the last 60 seconds
+        cutoff = tz.now() - dt.timedelta(seconds=60)
+        already = ProjectClick.objects.filter(
+            project=project,
+            visitor_id=visitor_id,
+            link_type=link_type,
+            created_at__gte=cutoff,
+        ).exists()
+
+        if not already:
+            ProjectClick.objects.create(
+                project=project,
+                visitor_id=visitor_id,
+                link_type=link_type,
+            )
+
+        return Response({'status': 'ok'})

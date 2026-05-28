@@ -5,7 +5,7 @@ import datetime
 from django.utils import timezone
 from django.db.models import Count, Sum, IntegerField
 from django.db.models.functions import Coalesce
-from portfolios.models import Portfolio, PortfolioEvent, Project
+from portfolios.models import Portfolio, PortfolioEvent, Project, ProjectClick
 
 
 # ── Portfolio Score ───────────────────────────────────────────────────────────
@@ -355,22 +355,27 @@ class AnalyticsView(APIView):
 
 
 class ProjectClicksSummaryView(APIView):
-    """Returns all projects across the user's portfolios sorted by portfolio view count."""
+    """Returns all projects across the user's portfolios sorted by real ProjectClick count."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         user = request.user
         portfolios = Portfolio.objects.filter(user=user).prefetch_related('projects')
 
+        # Aggregate real click counts from the ProjectClick model
+        click_counts = (
+            ProjectClick.objects
+            .filter(project__portfolio__user=user)
+            .values('project_id')
+            .annotate(total=Count('id'))
+        )
+        # Build a fast lookup: project_id -> click count
+        click_map = {row['project_id']: row['total'] for row in click_counts}
+
         results = []
         for portfolio in portfolios:
-            # Count actual tracked views from PortfolioEvent as click metric
-            view_count = PortfolioEvent.objects.filter(
-                portfolio=portfolio,
-                event_type='view'
-            ).count()
-
             for project in portfolio.projects.all():
+                click_count = click_map.get(project.id, 0)
                 results.append({
                     'project_id': project.id,
                     'project_title': project.title,
@@ -379,7 +384,7 @@ class ProjectClicksSummaryView(APIView):
                     'portfolio_name': portfolio.name,
                     'portfolio_slug': portfolio.slug or str(portfolio.id),
                     'portfolio_url': f'/p/{portfolio.slug}' if portfolio.slug else f'/p/{portfolio.id}',
-                    'click_count': view_count,
+                    'click_count': click_count,
                     'github': project.github or '',
                     'live': project.live or '',
                     'tech': project.tech or [],
@@ -390,6 +395,7 @@ class ProjectClicksSummaryView(APIView):
         # Sort by click_count descending, then featured projects first on ties
         results.sort(key=lambda x: (x['click_count'], x['featured']), reverse=True)
 
+        # Badge = number of projects with at least 1 click
         badge_count = sum(1 for r in results if r['click_count'] > 0)
 
         return Response({

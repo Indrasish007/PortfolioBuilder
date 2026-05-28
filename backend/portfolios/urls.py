@@ -3,7 +3,8 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     PortfolioViewSet, PublicPortfolioView, PublicPortfolioBySlugView,
     PublicPortfolioByDomainView, PublishPortfolioView, UnpublishPortfolioView,
-    AnalyticsView, DashboardStatsView, PublicPortfolioListView, ProjectSetFeaturedView
+    AnalyticsView, DashboardStatsView, PublicPortfolioListView, ProjectSetFeaturedView,
+    TrackProjectClickView
 )
 
 router = DefaultRouter()
@@ -23,5 +24,7 @@ urlpatterns = [
     path('stats/dashboard/', DashboardStatsView.as_view(), name='dashboard_stats'),
     # Project actions
     path('projects/<int:project_id>/set-featured/', ProjectSetFeaturedView.as_view(), name='set_project_featured'),
+    # Project click tracking (visitor-side, AllowAny)
+    path('track-project-click/', TrackProjectClickView.as_view(), name='track_project_click'),
     path('', include(router.urls)),
 ]

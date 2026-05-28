@@ -1,5 +1,5 @@
 import { Mail, Github, ExternalLink, Phone } from "lucide-react";
-import { Soc, Tags, FAQList, SectionLabel, sn, VideoEmbed, MusicEmbed, GalleryAlbum, getDefaultAvatar } from "./shared.jsx";
+import { Soc, Tags, FAQList, SectionLabel, sn, VideoEmbed, MusicEmbed, GalleryAlbum, getDefaultAvatar, trackProjectClick } from "./shared.jsx";
 
 // developer, obsidian, architect, terminal
 export default function SidebarLayout({ p, t, id, portfolioId }) {
@@ -162,8 +162,8 @@ export default function SidebarLayout({ p, t, id, portfolioId }) {
                     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
                       <h3 style={{ fontWeight:700, fontSize:14, margin:0 }}>{proj.title}</h3>
                       <div style={{ display:"flex", gap:8, opacity:0.5 }}>
-                        {proj.github && <a href={proj.github} target="_blank" rel="noreferrer" style={{ color:t.fg }}><Github size={12}/></a>}
-                        {proj.live   && <a href={proj.live}   target="_blank" rel="noreferrer" style={{ color:t.fg }}><ExternalLink size={12}/></a>}
+                        {proj.github && <a href={proj.github} target="_blank" rel="noreferrer" onClick={() => trackProjectClick(proj.id, 'github')} style={{ color:t.fg }}><Github size={12}/></a>}
+                        {proj.live   && <a href={proj.live}   target="_blank" rel="noreferrer" onClick={() => trackProjectClick(proj.id, 'live')} style={{ color:t.fg }}><ExternalLink size={12}/></a>}
                       </div>
                     </div>
                     <p style={{ fontSize:12, opacity:0.65, lineHeight:1.65, marginBottom:10 }}>{proj.description}</p>

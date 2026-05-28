@@ -114,3 +114,21 @@ class PortfolioEvent(models.Model):
 
     def __str__(self):
         return f"{self.event_type} - {self.portfolio.id}"
+
+
+class ProjectClick(models.Model):
+    """One row per project-link click by a unique visitor.
+    link_type: 'live' or 'github'
+    """
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='clicks')
+    visitor_id = models.CharField(max_length=255, default='anonymous')
+    link_type = models.CharField(max_length=20, default='live')  # 'live' | 'github'
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['project', 'visitor_id', 'created_at']),
+        ]
+
+    def __str__(self):
+        return f"Click on project {self.project_id} by {self.visitor_id}"

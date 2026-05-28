@@ -54,6 +54,25 @@ export const handleResumeDownload = (resumeLink, action, portfolioId = null) => 
   }
 };
 
+/**
+ * Track a project link click from the public portfolio view.
+ * Fires a fire-and-forget POST so it never blocks navigation.
+ * Only runs when the visitor is on a public /p/ page.
+ */
+export function trackProjectClick(projectId, linkType = 'live') {
+  if (!window.location.pathname.startsWith('/p/')) return;
+  if (!projectId) return;
+  try {
+    const visitorId = localStorage.getItem('visitorId') || 'anonymous';
+    const base = (api.defaults.baseURL || 'http://localhost:8000/api').replace(/\/$/, '');
+    fetch(`${base}/portfolios/track-project-click/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ project_id: projectId, link_type: linkType, visitor_id: visitorId }),
+    }).catch(() => {});
+  } catch (_) {}
+}
+
 export function Soc({ user, fg, size = 15, portfolioId }) {
   const links = [
     [user?.github || user?.social?.github, Github],

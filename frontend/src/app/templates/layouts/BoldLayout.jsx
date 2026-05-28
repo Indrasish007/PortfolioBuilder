@@ -1,5 +1,5 @@
 import { Mail, Github, ExternalLink, Phone } from "lucide-react";
-import { Soc, Tags, FAQList, SectionLabel, VideoEmbed, MusicEmbed, GalleryAlbum, getDefaultAvatar } from "./shared.jsx";
+import { Soc, Tags, FAQList, SectionLabel, VideoEmbed, MusicEmbed, GalleryAlbum, getDefaultAvatar, trackProjectClick } from "./shared.jsx";
 
 // bold, cyberpunk, space, retro, neon, quantum
 export default function BoldLayout({ p, t, id, portfolioId }) {
@@ -140,8 +140,8 @@ export default function BoldLayout({ p, t, id, portfolioId }) {
                     <div style={{ display:"flex", justifyContent:"space-between", marginBottom:12 }}>
                       <h3 style={{ fontWeight:fw, fontSize:16, margin:0 }}>{proj.title}</h3>
                       <div style={{ display:"flex", gap:10, opacity:0.55 }}>
-                        {proj.github && <a href={proj.github} target="_blank" rel="noreferrer" style={{ color:t.fg }}><Github size={14}/></a>}
-                        {proj.live   && <a href={proj.live}   target="_blank" rel="noreferrer" style={{ color:t.fg }}><ExternalLink size={14}/></a>}
+                        {proj.github && <a href={proj.github} target="_blank" rel="noreferrer" onClick={() => trackProjectClick(proj.id, 'github')} style={{ color:t.fg }}><Github size={14}/></a>}
+                        {proj.live   && <a href={proj.live}   target="_blank" rel="noreferrer" onClick={() => trackProjectClick(proj.id, 'live')} style={{ color:t.fg }}><ExternalLink size={14}/></a>}
                       </div>
                     </div>
                     <p style={{ fontSize:13, opacity:0.7, lineHeight:1.65, marginBottom:12 }}>{proj.description}</p>

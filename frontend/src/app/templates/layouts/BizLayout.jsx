@@ -1,5 +1,5 @@
 import { Mail, Github, ExternalLink, Phone } from "lucide-react";
-import { Soc, Tags, FAQList, SectionLabel, VideoEmbed, MusicEmbed, GalleryAlbum, getDefaultAvatar, handleResumeDownload } from "./shared.jsx";
+import { Soc, Tags, FAQList, SectionLabel, VideoEmbed, MusicEmbed, GalleryAlbum, getDefaultAvatar, handleResumeDownload, trackProjectClick } from "./shared.jsx";
 
 // classic, startup, forest, oceanic
 export default function BizLayout({ p, t, id, portfolioId }) {
@@ -121,8 +121,8 @@ export default function BizLayout({ p, t, id, portfolioId }) {
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
                       <h3 style={{ fontWeight: 700, fontSize: 15, margin: 0 }}>{proj.title}</h3>
                       <div style={{ display: "flex", gap: 8, opacity: 0.45 }}>
-                        {proj.github && <a href={proj.github} target="_blank" rel="noreferrer" style={{ color: fg }}><Github size={13} /></a>}
-                        {proj.live && <a href={proj.live} target="_blank" rel="noreferrer" style={{ color: fg }}><ExternalLink size={13} /></a>}
+                        {proj.github && <a href={proj.github} target="_blank" rel="noreferrer" onClick={() => trackProjectClick(proj.id, 'github')} style={{ color: fg }}><Github size={13} /></a>}
+                        {proj.live && <a href={proj.live} target="_blank" rel="noreferrer" onClick={() => trackProjectClick(proj.id, 'live')} style={{ color: fg }}><ExternalLink size={13} /></a>}
                       </div>
                     </div>
                     <p style={{ fontSize: 13, opacity: 0.65, lineHeight: 1.65, marginBottom: 12 }}>{proj.description}</p>

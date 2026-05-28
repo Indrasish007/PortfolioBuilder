@@ -1,5 +1,5 @@
 import { Mail, Phone } from "lucide-react";
-import { Soc, Tags, FAQList, SectionLabel, sn, VideoEmbed, MusicEmbed, GalleryAlbum, getDefaultAvatar } from "./shared.jsx";
+import { Soc, Tags, FAQList, SectionLabel, sn, VideoEmbed, MusicEmbed, GalleryAlbum, getDefaultAvatar, trackProjectClick } from "./shared.jsx";
 
 // minimal, scandinavian, paper, typewriter
 export default function MinimalLayout({ p, t, id, portfolioId }) {
@@ -92,8 +92,8 @@ export default function MinimalLayout({ p, t, id, portfolioId }) {
                     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:12 }}>
                       <h3 style={{ fontWeight:600, fontSize:16, margin:0 }}>{proj.title}</h3>
                       <div style={{ display:"flex", gap:10, opacity:0.45, flexShrink:0 }}>
-                        {proj.github && <a href={proj.github} target="_blank" rel="noreferrer" style={{ color:t.fg, fontSize:12 }}>↗ code</a>}
-                        {proj.live   && <a href={proj.live}   target="_blank" rel="noreferrer" style={{ color:t.fg, fontSize:12 }}>↗ live</a>}
+                        {proj.github && <a href={proj.github} target="_blank" rel="noreferrer" onClick={() => trackProjectClick(proj.id, 'github')} style={{ color:t.fg, fontSize:12 }}>↗ code</a>}
+                        {proj.live   && <a href={proj.live}   target="_blank" rel="noreferrer" onClick={() => trackProjectClick(proj.id, 'live')} style={{ color:t.fg, fontSize:12 }}>↗ live</a>}
                       </div>
                     </div>
                     <p style={{ fontSize:13, opacity:0.6, marginTop:8, lineHeight:1.75 }}>{proj.description}</p>
