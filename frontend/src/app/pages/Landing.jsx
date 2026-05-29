@@ -60,7 +60,7 @@ function Hero() {
         </motion.div>
         <motion.h1
           initial="hidden" animate="show" variants={fadeUp} custom={1}
-          className="mt-6 text-5xl md:text-7xl font-bold tracking-tight leading-[1.05] max-w-4xl mx-auto"
+          className="mt-6 text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold tracking-tight leading-[1.05] max-w-4xl mx-auto"
         >
           The portfolio you'd build,<br />
           <span className="gradient-text">if you had time.</span>
@@ -113,7 +113,7 @@ function Hero() {
                     ))}
                   </div>
                 </div>
-                <div className="border-l border-border/60 p-4 space-y-3 bg-secondary/30">
+                <div className="border-t md:border-t-0 md:border-l border-border/60 p-4 space-y-3 bg-secondary/30">
                   <div className="text-[10px] uppercase tracking-wider text-muted-foreground">AI co-pilot</div>
                   {[
                     "Rewriting hero in a confident voice…",
@@ -211,7 +211,7 @@ function BentoFeatures() {
           <h2 className="text-4xl md:text-5xl font-bold mt-3">Everything you need.<br />Nothing you don't.</h2>
           <p className="text-muted-foreground mt-3">Built for the 5 minutes you actually have to ship a site.</p>
         </div>
-        <div className="mt-12 grid md:grid-cols-3 md:grid-rows-3 gap-4 auto-rows-[180px]">
+        <div className="mt-12 grid md:grid-cols-3 md:grid-rows-3 gap-4 md:auto-rows-[180px]">
           {items.map((it, i) => (
             <motion.div
               key={it.title}

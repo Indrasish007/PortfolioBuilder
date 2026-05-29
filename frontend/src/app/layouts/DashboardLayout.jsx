@@ -217,8 +217,8 @@ export default function DashboardLayout() {
       {/* ── Sidebar ── */}
       <aside
         className={`fixed inset-y-0 left-0 z-50 flex flex-col border-r border-border/50 bg-background/95 md:bg-background/60 backdrop-blur-xl transition-all duration-300 ${
-          sidebarOpen 
-            ? "translate-x-0 w-64 md:sticky md:h-screen md:translate-x-0 md:w-20 lg:w-64" 
+          sidebarOpen
+            ? "translate-x-0 w-64 md:sticky md:h-screen md:translate-x-0 md:w-16 lg:w-64 md:border-r"
             : "-translate-x-full w-64 md:sticky md:h-screen md:translate-x-0 md:w-0 md:overflow-hidden md:border-r-0"
         }`}
       >
@@ -523,11 +523,11 @@ export default function DashboardLayout() {
           </div>
         </header>
 
-        <div className="p-4 lg:p-8 flex-1">
+        <div className="p-4 sm:p-6 lg:p-8 flex-1">
           {/* ── Pending CV review banner ── */}
           {hasPendingCV && (
             <div
-              className="mb-5 flex items-center gap-3 px-4 py-3 rounded-xl border text-sm"
+              className="mb-5 flex items-center flex-wrap gap-3 px-4 py-3 rounded-xl border text-sm"
               style={{
                 background: "color-mix(in oklch, var(--brand) 10%, var(--card))",
                 borderColor: "color-mix(in oklch, var(--brand) 35%, transparent)",

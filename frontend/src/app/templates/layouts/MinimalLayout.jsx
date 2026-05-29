@@ -13,19 +13,19 @@ export default function MinimalLayout({ p, t, id, portfolioId }) {
   const sec   = { marginTop: gap };
 
   return (
-    <div style={{ background:t.bg, color:t.fg, fontFamily:font, minHeight:"100%", padding:"80px 32px" }}>
+    <div style={{ background:t.bg, color:t.fg, fontFamily:font, minHeight:"100%", padding:"clamp(32px, 6vw, 80px) clamp(16px, 5vw, 32px)" }}>
       <div style={{ maxWidth:maxW, margin:"0 auto" }}>
 
         {/* ── Hero ── */}
         <div style={{ marginBottom:gap }}>
           {u.avatar && (
-            <img src={u.avatar} alt={`${u.name || "User"} profile picture`} loading="lazy" style={{ width:300, height:360, borderRadius:"20px", objectFit:"cover", marginBottom:28, border:`1px solid ${t.fg}15`, boxShadow:"0 10px 30px rgba(0,0,0,0.08)" }} />
+            <img src={u.avatar} alt={`${u.name || "User"} profile picture`} loading="lazy" style={{ width:"min(240px, 70vw)", height:"auto", aspectRatio:"5/6", borderRadius:"16px", objectFit:"cover", marginBottom:24, border:`1px solid ${t.fg}15`, boxShadow:"0 10px 30px rgba(0,0,0,0.08)" }} />
           )}
 
 
           <div style={{ fontSize:12, opacity:0.45, marginBottom:6, letterSpacing:"0.1em" }}>{u.title}</div>
           <h1 style={{
-            fontSize: id==="minimal" ? 52 : id==="paper" ? 40 : 36,
+            fontSize: `clamp(${id==="minimal" ? "28px" : id==="paper" ? "24px" : "22px"}, 6vw, ${id==="minimal" ? "52px" : id==="paper" ? "40px" : "36px"})`,
             fontWeight: id==="minimal" ? 300 : id==="paper" ? 700 : 600,
             lineHeight: 1.1, margin:"0 0 20px",
             letterSpacing: id==="minimal" ? "-0.04em" : id==="paper" ? "0" : "-0.02em",
@@ -72,7 +72,7 @@ export default function MinimalLayout({ p, t, id, portfolioId }) {
           <div style={sec}>
             {lbl("Experience")}
             {p.experience.map((e,i) => (
-              <div key={i} style={{ display:"grid", gridTemplateColumns:"130px 1fr", gap:16, marginBottom:28 }}>
+              <div key={i} style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(min(130px, 100%), 1fr))", gap:"8px 16px", marginBottom:28 }}>
                 <div style={{ fontSize:12, opacity:0.4, paddingTop:3 }}>{e.period}</div>
                 <div>
                   <h3 style={{ fontWeight:600, fontSize:"inherit", margin:0 }}>{e.role} <span style={{ opacity:0.45, fontWeight:400 }}>· {e.company}</span></h3>
@@ -132,7 +132,7 @@ export default function MinimalLayout({ p, t, id, portfolioId }) {
           <div style={sec}>
             {lbl("Education")}
             {p.education.map((e,i) => (
-              <div key={i} style={{ display:"grid", gridTemplateColumns:"130px 1fr", gap:16, marginBottom:18 }}>
+              <div key={i} style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(min(130px, 100%), 1fr))", gap:"8px 16px", marginBottom:18 }}>
                 <div style={{ fontSize:12, opacity:0.4 }}>{e.period}</div>
                 <div>
                   <h3 style={{ fontWeight:600, fontSize:"inherit", margin:0 }}>{e.school}</h3>

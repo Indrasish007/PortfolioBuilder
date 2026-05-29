@@ -10,6 +10,8 @@ import Button from "../components/Button.jsx";
 import Badge from "../components/Badge.jsx";
 import { useAuthStore } from "../store/authStore.js";
 import api from "../services/api.js";
+import BackButton from "../components/BackButton.jsx";
+
 
 // ─── FAQ Data ────────────────────────────────────────────────────────────────
 const FAQ_DATA = [
@@ -284,7 +286,7 @@ function ChatbotTab() {
   };
 
   return (
-    <div className="flex flex-col h-[580px]">
+    <div className="flex flex-col min-h-[360px] max-h-[580px] h-[60vh] sm:h-[580px]">
       {/* Messages */}
       <div className="flex-1 overflow-y-auto space-y-4 pr-1 pb-2">
         <AnimatePresence initial={false}>
@@ -666,6 +668,7 @@ export default function HelpCenter() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      <BackButton />
       {/* Header */}
       <div>
         <div className="flex items-center gap-2 mb-1">

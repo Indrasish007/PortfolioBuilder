@@ -148,7 +148,7 @@ export default function Dashboard() {
     <div className="space-y-6">
       <div className="flex items-end justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold">Welcome back, {user?.name || "User"} 👋</h1>
+          <h1 className="text-2xl md:text-3xl font-bold">Let's Build, {user?.name || "User"} 👋</h1>
           <p className="text-muted-foreground text-sm">Here's what's happening with your portfolios.</p>
         </div>
         <div className="flex gap-2 items-center">

@@ -25,14 +25,15 @@ export default function BrutalistLayout({ p, t, id, portfolioId }) {
     <div style={{ background:t.bg, color:t.fg, fontFamily:font, minHeight:"100%" }}>
 
       {/* ── Hero ── */}
-      <div style={{ padding:isMono?"60px 48px":"48px", borderBottom:border, position:"relative" }}>
+      <div style={{ padding:isMono?"clamp(32px,6vw,60px) clamp(16px,5vw,48px)":"clamp(24px,4vw,48px)", borderBottom:border, position:"relative" }}>
         {!isMono && <div style={{ position:"absolute", top:0, right:0, width:200, height:"100%", background:"#facc15", zIndex:0 }} />}
         <div style={{ position:"relative", zIndex:1 }}>
           <div style={{ display:"flex", alignItems:"flex-start", gap:32, flexWrap:"wrap" }}>
             {u.avatar && (
               <img src={u.avatar} alt={`${u.name || "User"} profile picture`} loading="lazy" style={{
-                width: isMono ? 280 : 320,
-                height: isMono ? 340 : 380,
+                width: "min(200px, 60vw)",
+                height: "auto",
+                aspectRatio: isMono ? "5/6" : "4/5",
                 objectFit: "cover",
                 border: border,
                 borderRadius: isMono ? "4px" : "12px",
@@ -44,7 +45,7 @@ export default function BrutalistLayout({ p, t, id, portfolioId }) {
             )}
             <div>
               <div style={{ fontSize:isMono?11:13, opacity:0.5, marginBottom:8, letterSpacing:"0.15em", textTransform:"uppercase", fontFamily:"Inter,sans-serif" }}>{u.title}</div>
-              <h1 style={{ fontSize:isMono?52:72, fontWeight:900, lineHeight:0.95, margin:"0 0 16px",
+              <h1 style={{ fontSize:`clamp(${isMono?"24px":"36px"}, 7vw, ${isMono?"52px":"72px"})`, fontWeight:900, lineHeight:0.95, margin:"0 0 16px",
                 letterSpacing:isMono?"-0.03em":"0", color:fg,
                 fontFamily: font,
                 textTransform: isMono?"none":"uppercase",
@@ -62,7 +63,7 @@ export default function BrutalistLayout({ p, t, id, portfolioId }) {
       </div>
 
       {/* ── Content ── */}
-      <div style={{ padding:"48px" }}>
+      <div style={{ padding:"clamp(28px, 5vw, 48px)" }}>
 
         {/* Skills */}
         {p.skills?.length > 0 && (

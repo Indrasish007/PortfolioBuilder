@@ -10,6 +10,8 @@ import Button from "../components/Button.jsx";
 import { useAuthStore } from "../store/authStore.js";
 import { useToast } from "../context/ToasterContext.jsx";
 import api from "../services/api.js";
+import BackButton from "../components/BackButton.jsx";
+
 
 // ─── tiny helpers ────────────────────────────────────────────────────────────
 
@@ -387,6 +389,7 @@ export default function Settings() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 pb-16">
+      <BackButton />
       {/* Page header */}
       <div>
         <h1 className="text-2xl md:text-3xl font-bold">Settings</h1>
@@ -400,7 +403,7 @@ export default function Settings() {
         <SectionHeader emoji="👤" title="Profile Information" subtitle="Your public name, username and profile picture." />
 
         {/* Avatar upload */}
-        <div className="flex items-center gap-5 mb-6">
+        <div className="flex items-center flex-wrap gap-5 mb-6">
           <div className="relative flex-shrink-0">
             <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-border shadow-card">
               {profile.avatar ? (

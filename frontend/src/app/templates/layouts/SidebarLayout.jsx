@@ -19,42 +19,45 @@ export default function SidebarLayout({ p, t, id, portfolioId }) {
   );
 
   return (
-    <div style={{ background: t.bg, color: t.fg, fontFamily: font, minHeight:"100%", display:"flex" }}>
+    <div style={{ background: t.bg, color: t.fg, fontFamily: font, minHeight:"100%" }}>
 
-      {/* ── Sidebar ── */}
+      {/* ── Responsive wrapper: column on mobile, row on md+ ── */}
+      <div style={{ display:"flex", flexDirection:"column" }}>
+
+      {/* ── Sidebar (top strip on mobile, left panel on md+) ── */}
       <div style={{
-        width: sideW, minHeight:"100%", flexShrink:0,
+        width: "100%",
+        maxWidth: "100%",
+        flexShrink:0,
         background: acBg,
-        borderRight: `1px solid ${ac}25`,
-        padding: "40px 24px",
-        position: "sticky", top:0, alignSelf:"flex-start",
+        borderBottom: `1px solid ${ac}25`,
+        padding: "32px 24px 24px",
         boxSizing:"border-box",
       }}>
-        {u.avatar && (
-          <img src={u.avatar} alt={`${u.name || "User"} profile picture`} loading="lazy" style={{
-            width: id === "developer" ? sideW : sideW - 48,
-            height: id === "developer" ? Math.round(sideW * 1.2) : Math.round((sideW - 48) * 1.25),
-            marginLeft: id === "developer" ? -24 : 0,
-            borderRadius: id === "developer" ? 0 : id === "obsidian" ? "4px" : id === "architect" ? "8px" : "16px",
-            objectFit: "cover",
-            marginBottom: 20,
-            border: id === "developer" ? "none" : `1px solid ${ac}40`,
-            borderBottom: id === "developer" ? `2px solid ${ac}` : undefined,
-            boxShadow: "0 8px 24px rgba(0,0,0,0.3)"
-          }} />
-        )}
-        <h1 style={{ fontSize:15, fontWeight:700, lineHeight:1.2, marginBottom:4, color:"#fff", margin: "0 0 4px" }}>{u.name}</h1>
-        <div style={{ fontSize:11, color:ac, marginBottom:20 }}>{u.title}</div>
-
-
-        {u.location && <div style={{ fontSize:11, color:"#fff", opacity:0.4, marginBottom:6 }}>📍 {u.location}</div>}
-        {u.email    && <div style={{ fontSize:11, color:"#fff", opacity:0.4, marginBottom:6, wordBreak:"break-all" }}>✉ {u.email}</div>}
-        {u.phone    && <div style={{ fontSize:11, color:"#fff", opacity:0.4, marginBottom:20, wordBreak:"break-all" }}>📞 {u.phone}</div>}
-
-        <Soc user={u} fg="#ffffff" size={14} portfolioId={portfolioId} />
+        {/* Mobile: horizontal layout */}
+        <div style={{ display:"flex", flexWrap:"wrap", gap:16, alignItems:"flex-start" }}>
+          {u.avatar && (
+            <img src={u.avatar} alt={`${u.name || "User"} profile picture`} loading="lazy" style={{
+              width: 72, height: 88,
+              borderRadius: id === "developer" ? 0 : id === "obsidian" ? "4px" : id === "architect" ? "8px" : "12px",
+              objectFit: "cover",
+              border: id === "developer" ? "none" : `1px solid ${ac}40`,
+              boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
+              flexShrink: 0,
+            }} />
+          )}
+          <div style={{ flex: 1, minWidth: 160 }}>
+            <h1 style={{ fontSize:15, fontWeight:700, lineHeight:1.2, marginBottom:4, color:"#fff", margin: "0 0 4px" }}>{u.name}</h1>
+            <div style={{ fontSize:11, color:ac, marginBottom:12 }}>{u.title}</div>
+            {u.location && <div style={{ fontSize:11, color:"#fff", opacity:0.4, marginBottom:4 }}>📍 {u.location}</div>}
+            {u.email    && <div style={{ fontSize:11, color:"#fff", opacity:0.4, marginBottom:4, wordBreak:"break-all" }}>✉ {u.email}</div>}
+            {u.phone    && <div style={{ fontSize:11, color:"#fff", opacity:0.4, marginBottom:12, wordBreak:"break-all" }}>📞 {u.phone}</div>}
+            <Soc user={u} fg="#ffffff" size={14} portfolioId={portfolioId} />
+          </div>
+        </div>
 
         {id === "terminal" && (
-          <div style={{ marginTop:28, fontSize:11, fontFamily:"ui-monospace,monospace", lineHeight:2 }}>
+          <div style={{ marginTop:20, fontSize:11, fontFamily:"ui-monospace,monospace", lineHeight:2 }}>
             <div style={{ color:"#fff", opacity:0.35 }}>$ whoami</div>
             <div style={{ color: ac }}>{u.name || "user"}</div>
             <div style={{ color:"#fff", opacity:0.35 }}>$ status</div>
@@ -63,10 +66,9 @@ export default function SidebarLayout({ p, t, id, portfolioId }) {
         )}
 
         {id === "architect" && (
-          <div style={{ marginTop:28, borderTop:`1px solid ${ac}20`, paddingTop:20 }}>
-            <div style={{ fontSize:10, color:ac, letterSpacing:"0.15em", opacity:0.6, marginBottom:12 }}>NAVIGATION</div>
+          <div style={{ marginTop:20, borderTop:`1px solid ${ac}20`, paddingTop:16, display:"flex", flexWrap:"wrap", gap:"10px 24px" }}>
             {["About","Skills","Projects","Experience","Contact"].map(s => (
-              <a key={s} href={`#${s.toLowerCase()}`} style={{ display:"block", fontSize:12, color:"#fff", opacity:0.5, marginBottom:10, textDecoration:"none" }}
+              <a key={s} href={`#${s.toLowerCase()}`} style={{ fontSize:12, color:"#fff", opacity:0.5, textDecoration:"none" }}
                 onMouseEnter={e=>e.currentTarget.style.opacity=1}
                 onMouseLeave={e=>e.currentTarget.style.opacity=0.5}>
                 {s}
@@ -77,7 +79,7 @@ export default function SidebarLayout({ p, t, id, portfolioId }) {
       </div>
 
       {/* ── Main ── */}
-      <div style={{ flex:1, padding:"48px 40px", overflowY:"auto", minWidth:0 }}>
+      <div style={{ flex:1, padding:"32px 20px", minWidth:0, maxWidth:"100%", boxSizing:"border-box" }}>
 
         {/* About / bio */}
         {id === "terminal" ? (
@@ -312,6 +314,7 @@ export default function SidebarLayout({ p, t, id, portfolioId }) {
             </div>
           </div>
         )}
+      </div>
       </div>
     </div>
   );

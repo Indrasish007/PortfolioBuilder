@@ -18,9 +18,9 @@ export default function BizLayout({ p, t, id, portfolioId }) {
     <div style={{ background: t.bg, color: fg, fontFamily: font, minHeight: "100%" }}>
 
       {/* ── Header bar ── */}
-      <div style={{ background: t.bg, borderBottom: `1px solid ${ac}20`, padding: "16px 48px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div style={{ background: t.bg, borderBottom: `1px solid ${ac}20`, padding: "12px clamp(16px, 4vw, 48px)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
         <div style={{ fontWeight: 800, fontSize: 18, color: ac }}>{u.name?.split(" ")[0] || "Portfolio"}</div>
-        <div style={{ display: "flex", gap: 24 }}>
+        <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
           {["About", "Projects", "Experience", "Contact"].map(s => (
             <a key={s} href={`#${s.toLowerCase()}`} style={{ fontSize: 13, color: fg, opacity: 0.5, textDecoration: "none" }}
               onMouseEnter={e => e.currentTarget.style.opacity = 1}
@@ -30,12 +30,12 @@ export default function BizLayout({ p, t, id, portfolioId }) {
       </div>
 
       {/* ── Hero ── */}
-      <div style={{ padding: "80px 48px 56px" }} id="about">
+      <div style={{ padding: "clamp(40px, 8vw, 80px) clamp(16px, 5vw, 48px) clamp(28px, 5vw, 56px)" }} id="about">
         <div style={{ maxWidth: 800, margin: "0 auto" }}>
           <div style={{ display: "flex", gap: 40, alignItems: "center", flexWrap: "wrap" }}>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 12, color: ac, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 12 }}>{u.title}</div>
-              <h1 style={{ fontSize: 52, fontWeight: 900, lineHeight: 1.05, letterSpacing: "-0.03em", margin: "0 0 20px" }}>{u.name}</h1>
+              <h1 style={{ fontSize: "clamp(28px, 6vw, 52px)", fontWeight: 900, lineHeight: 1.05, letterSpacing: "-0.03em", margin: "0 0 20px" }}>{u.name}</h1>
               <p style={{ opacity: 0.7, lineHeight: 1.85, fontSize: 15, maxWidth: 480, marginBottom: 28, whiteSpace: "pre-wrap" }}>{u.bio}</p>
               <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 24 }}>
                 {u.email && (
@@ -59,15 +59,15 @@ export default function BizLayout({ p, t, id, portfolioId }) {
             </div>
             {u.avatar && (
               <img src={u.avatar} alt={`${u.name || "User"} profile picture`} loading="lazy" style={{
-                width: 300, height: 360, borderRadius: "20px",
-                objectFit: "cover", border: `1px solid ${ac}30`, boxShadow: "0 10px 30px rgba(0,0,0,0.25)", flexShrink: 0
-              }} />
+              width: "min(240px, 70vw)", height: "auto", aspectRatio: "5/6", borderRadius: "16px",
+              objectFit: "cover", border: `1px solid ${ac}30`, boxShadow: "0 10px 30px rgba(0,0,0,0.25)", flexShrink: 0
+            }} />
             )}
           </div>
         </div>
       </div>
 
-      <div style={{ padding: "0 48px 80px", maxWidth: 896, margin: "0 auto", boxSizing: "border-box" }}>
+      <div style={{ padding: "0 clamp(16px, 5vw, 48px) clamp(40px, 8vw, 80px)", maxWidth: 896, margin: "0 auto", boxSizing: "border-box" }}>
 
         {/* Skills */}
         {p.skills?.length > 0 && (
@@ -144,7 +144,7 @@ export default function BizLayout({ p, t, id, portfolioId }) {
             {lbl("Experience")}
             <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
               {p.experience.map((e, i) => (
-                <div key={i} style={{ display: "grid", gridTemplateColumns: "160px 1fr", gap: 24, padding: "24px 0", borderTop: `1px solid ${ac}15` }}>
+                <div key={i} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(160px,100%), 1fr))", gap: "8px 24px", padding: "24px 0", borderTop: `1px solid ${ac}15` }}>
                   <div>
                     <div style={{ fontSize: 12, opacity: 0.4 }}>{e.period}</div>
                     <div style={{ fontSize: 13, color: ac, marginTop: 4, fontWeight: 600 }}>{e.company}</div>
@@ -188,7 +188,7 @@ export default function BizLayout({ p, t, id, portfolioId }) {
           <div style={{ marginBottom: 56 }}>
             {lbl("Education")}
             {p.education.map((e, i) => (
-              <div key={i} style={{ display: "grid", gridTemplateColumns: "160px 1fr", gap: 24, padding: "20px 0", borderTop: `1px solid ${ac}15` }}>
+              <div key={i} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(160px,100%), 1fr))", gap: "8px 24px", padding: "20px 0", borderTop: `1px solid ${ac}15` }}>
                 <div style={{ fontSize: 12, opacity: 0.4 }}>{e.period}</div>
                 <div>
                   <h3 style={{ fontWeight: 600, fontSize:"inherit", margin: 0 }}>{e.school}</h3>

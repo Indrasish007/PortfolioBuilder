@@ -12,6 +12,8 @@ import Badge from "../components/Badge.jsx";
 import { useState, useEffect, useCallback } from "react";
 import api from "../services/api.js";
 import FeaturedProjectSuggestion from "../components/FeaturedProjectSuggestion.jsx";
+import BackButton from "../components/BackButton.jsx";
+
 
 const COUNTRY_COLORS = [
   "#a78bfa", "#22d3ee", "#f472b6", "#34d399",
@@ -386,7 +388,7 @@ function PortfolioAnalyticsCard({ portfolio, index }) {
           {/* Average view time (if data exists) */}
           {portfolio.visit_count > 0 && (
             <div
-              className="flex items-center gap-3 rounded-xl px-4 py-3"
+              className="flex items-center flex-wrap gap-3 rounded-xl px-4 py-3"
               style={{ background: `color-mix(in oklch, ${accent} 6%, var(--card))` }}
             >
               <div
@@ -670,13 +672,19 @@ export default function Analytics() {
       </div>
     </div>
   );
-  if (!data) return <div className="p-8 text-center text-muted-foreground">Failed to load analytics.</div>;
+  if (!data) return (
+    <div className="p-8 text-center space-y-4 max-w-md mx-auto">
+      <BackButton />
+      <div className="text-muted-foreground">Failed to load analytics.</div>
+    </div>
+  );
 
   const totalCountryViews = data.countries.reduce((s, c) => s + c.visits, 0);
   const perPortfolio = data.per_portfolio || [];
 
   return (
     <div className="space-y-8">
+      <BackButton />
       {/* Featured project suggestions */}
       <FeaturedProjectSuggestion variant="analytics" />
 

@@ -25,14 +25,14 @@ export default function SplitLayout({ p, t, id, portfolioId }) {
     <div style={{ background:right, color:fg, fontFamily:"Inter,sans-serif", minHeight:"100%" }}>
 
       {/* ── Split Hero ── */}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", minHeight:"90vh" }}>
+      <div style={{ display:"grid", gridTemplateColumns:"1fr", minHeight:"auto" }} className="sm:grid-cols-2-override">
         {/* Left panel — bio */}
         <div style={{ background:left, padding:"60px 48px", display:"flex", flexDirection:"column", justifyContent:"center", borderRight:`1px solid rgba(255,255,255,0.06)` }}>
           {u.avatar && (
-            <img src={u.avatar} alt={`${u.name || "User"} profile picture`} loading="lazy" style={{ width:300, height:360, borderRadius:"20px", objectFit:"cover", marginBottom:28, border:`1px solid rgba(255,255,255,0.12)`, boxShadow:`0 10px 30px rgba(0,0,0,0.5)` }} />
+            <img src={u.avatar} alt={`${u.name || "User"} profile picture`} loading="lazy" style={{ width:"min(240px, 70vw)", height:"auto", aspectRatio:"5/6", borderRadius:"16px", objectFit:"cover", marginBottom:24, border:`1px solid rgba(255,255,255,0.12)`, boxShadow:`0 10px 30px rgba(0,0,0,0.5)` }} />
           )}
           <div style={{ fontSize:12, color:ac, marginBottom:12, letterSpacing:"0.15em", textTransform:"uppercase" }}>{u.title}</div>
-          <h1 style={{ fontSize:52, fontWeight:900, lineHeight:1.0, letterSpacing:"-0.03em", margin:"0 0 24px",
+          <h1 style={{ fontSize:"clamp(28px, 6vw, 52px)", fontWeight:900, lineHeight:1.0, letterSpacing:"-0.03em", margin:"0 0 24px",
             backgroundImage:grad, WebkitBackgroundClip:"text", backgroundClip:"text", WebkitTextFillColor:"transparent" }}>
             {u.name}
           </h1>
@@ -62,7 +62,7 @@ export default function SplitLayout({ p, t, id, portfolioId }) {
         </div>
 
         {/* Right panel — skills + featured project */}
-        <div style={{ padding:"60px 40px", display:"flex", flexDirection:"column", justifyContent:"center", gap:32 }}>
+        <div style={{ padding:"40px 28px", display:"flex", flexDirection:"column", justifyContent:"center", gap:32, borderTop:`1px solid rgba(255,255,255,0.06)` }}>
           {p.skills?.length > 0 && (
             <div>
               {lbl("Core Skills")}
@@ -111,7 +111,7 @@ export default function SplitLayout({ p, t, id, portfolioId }) {
       </div>
  
       {/* ── Rest of content below ── */}
-      <div style={{ padding:"64px 48px" }}>
+      <div style={{ padding:"48px 20px" }}>
  
         {/* All projects */}
         {p.projects?.length > 1 && (
@@ -154,7 +154,7 @@ export default function SplitLayout({ p, t, id, portfolioId }) {
             {lbl("Experience")}
             <div style={{ display:"flex", flexDirection:"column", gap:0 }}>
               {p.experience.map((e,i) => (
-                <div key={i} style={{ display:"grid", gridTemplateColumns:"1fr 2fr", gap:24, padding:"24px 0", borderTop:`1px solid rgba(255,255,255,0.07)` }}>
+                <div key={i} style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(min(180px,100%), 1fr))", gap:"12px 24px", padding:"24px 0", borderTop:`1px solid rgba(255,255,255,0.07)` }}>
                   <div>
                     <div style={{ fontSize:12, opacity:0.4 }}>{e.period}</div>
                     <div style={{ fontSize:13, color:ac, marginTop:4 }}>{e.company}</div>

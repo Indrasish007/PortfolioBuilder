@@ -31,7 +31,7 @@ export default function BoldLayout({ p, t, id, portfolioId }) {
     <div style={{ background:t.bg, color:t.fg, fontFamily:font, minHeight:"100%" }}>
 
       {/* ── Full-bleed Hero ── */}
-      <div style={{ background:hero, minHeight:"92vh", display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"60px 56px", position:"relative", overflow:"hidden" }}>
+      <div style={{ background:hero, minHeight:"60vh", display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"clamp(32px, 6vw, 60px) clamp(16px, 5vw, 56px)", position:"relative", overflow:"hidden" }}>
 
         {/* decorative overlays */}
         {id==="space" && (
@@ -50,11 +50,11 @@ export default function BoldLayout({ p, t, id, portfolioId }) {
 
         <div style={{ position:"relative", zIndex:1 }}>
           {u.avatar && (
-            <img src={u.avatar} alt={`${u.name || "User"} profile picture`} loading="lazy" style={{ width:320, height:380, borderRadius:"24px", objectFit:"cover", marginBottom:24, border:`4px solid ${ac}`, boxShadow:`0 0 32px ${ac}60` }} />
+            <img src={u.avatar} alt={`${u.name || "User"} profile picture`} loading="lazy" style={{ width:"min(240px, 60vw)", height:"auto", aspectRatio:"4/5", borderRadius:"20px", objectFit:"cover", marginBottom:20, border:`4px solid ${ac}`, boxShadow:`0 0 32px ${ac}60` }} />
           )}
 
           <div style={{ fontSize:13, color:ac, marginBottom:10, letterSpacing:"0.12em", textTransform:"uppercase" }}>{u.title}</div>
-          <h1 style={{ fontSize:heroSz, fontWeight:fw, lineHeight:0.95, letterSpacing:"-0.03em", margin:"0 0 24px", maxWidth:720, textShadow: id==="neon"?`0 0 40px ${ac}80`:"none" }}>{u.name}</h1>
+          <h1 style={{ fontSize:`clamp(28px, ${heroSz * 0.6}px + 2vw, ${heroSz}px)`, fontWeight:fw, lineHeight:0.95, letterSpacing:"-0.03em", margin:"0 0 24px", maxWidth:720, textShadow: id==="neon"?`0 0 40px ${ac}80`:"none" }}>{u.name}</h1>
           <p style={{ opacity:0.75, maxWidth:520, lineHeight:1.75, fontSize:15, marginBottom:32, whiteSpace: "pre-wrap" }}>{u.bio}</p>
           <div style={{ display:"flex", gap:16, flexWrap:"wrap" }}>
             {u.location && <span style={{ fontSize:12, opacity:0.5 }}>📍 {u.location}</span>}
@@ -66,7 +66,7 @@ export default function BoldLayout({ p, t, id, portfolioId }) {
       </div>
 
       {/* ── Content ── */}
-      <div style={{ padding:"80px 56px" }}>
+      <div style={{ padding:"clamp(40px, 6vw, 80px) clamp(16px, 5vw, 56px)" }}>
 
         {/* // Skills */}
         {p.skills?.length > 0 && (

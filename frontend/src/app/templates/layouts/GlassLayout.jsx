@@ -39,7 +39,7 @@ export default function GlassLayout({ p, t, id, portfolioId }) {
     <div style={{ background:t.bg, color:fg, fontFamily:"Inter,sans-serif", minHeight:"100%" }}>
 
       {/* ── Hero with glass card ── */}
-      <div style={{ position:"relative", overflow:"hidden", padding:"80px 48px 60px" }}>
+      <div style={{ position:"relative", overflow:"hidden", padding:"clamp(32px, 6vw, 80px) clamp(16px, 5vw, 48px) clamp(24px, 5vw, 60px)" }}>
         {/* ambient orb */}
         <div style={{ position:"absolute", top:"-30%", left:"50%", transform:"translateX(-50%)", width:"80%", height:"80%",
           background:orb, filter:"blur(100px)", opacity:0.3, borderRadius:"50%", pointerEvents:"none" }} />
@@ -49,16 +49,16 @@ export default function GlassLayout({ p, t, id, portfolioId }) {
         )}
 
         <div style={{ position:"relative", maxWidth:720, margin:"0 auto" }}>
-          <div style={{ ...card, padding:"40px 40px", display:"flex", gap:32, flexWrap:"wrap", alignItems:"center" }}>
+          <div style={{ ...card, padding:"40px 24px", display:"flex", gap:32, flexWrap:"wrap", alignItems:"center" }}>
             <div style={{ flexShrink:0 }}>
               {u.avatar && (
-                <img src={u.avatar} alt={`${u.name || "User"} profile picture`} loading="lazy" style={{ width:280, height:340, borderRadius:"20px", objectFit:"cover",
-                    border:`3px solid rgba(255,255,255,0.2)`, boxShadow:`0 0 40px ${ac}50` }} />
+                <img src={u.avatar} alt={`${u.name || "User"} profile picture`} loading="lazy" style={{ width:"min(240px, 70vw)", height:"auto", aspectRatio:"5/6", borderRadius:"16px", objectFit:"cover",
+                border:`3px solid rgba(255,255,255,0.2)`, boxShadow:`0 0 40px ${ac}50` }} />
               )}
             </div>
             <div style={{ flex:1 }}>
               <div style={{ fontSize:12, color:ac, marginBottom:8, letterSpacing:"0.1em", textTransform:"uppercase" }}>{u.title}</div>
-              <h1 style={{ fontSize:44, fontWeight:800, lineHeight:1.05, letterSpacing:"-0.03em", margin:"0 0 16px",
+              <h1 style={{ fontSize:"clamp(28px, 6vw, 44px)", fontWeight:800, lineHeight:1.05, letterSpacing:"-0.03em", margin:"0 0 16px",
                 backgroundImage:orb, WebkitBackgroundClip:"text", backgroundClip:"text", WebkitTextFillColor:"transparent" }}>
                 {u.name}
               </h1>
@@ -75,7 +75,7 @@ export default function GlassLayout({ p, t, id, portfolioId }) {
       </div>
 
       {/* ── Sections ── */}
-      <div style={{ padding:"40px 48px 80px", maxWidth:960, margin:"0 auto" }}>
+      <div style={{ padding:"clamp(24px, 4vw, 40px) clamp(16px, 5vw, 48px) clamp(40px, 8vw, 80px)", maxWidth:960, margin:"0 auto" }}>
 
         {/* Skills */}
         {p.skills?.length > 0 && (

@@ -564,8 +564,8 @@ export default function PortfolioEditor() {
         </motion.div>
       )}
     </AnimatePresence>
-    <div className="grid lg:grid-cols-[400px_1fr] gap-4 h-[calc(100vh-120px)]">
-      <div className="flex flex-col gap-3 min-h-0">
+    <div className="grid md:grid-cols-2 lg:grid-cols-[400px_1fr] gap-4 lg:h-[calc(100vh-120px)]">
+      <div className="flex flex-col gap-3 min-h-0 overflow-y-auto">
         <BackButton fallback="/dashboard" className="mb-0 w-max" />
 
         {/* ── Draft restore banner ── */}
@@ -854,7 +854,7 @@ export default function PortfolioEditor() {
         </div>
       </div>
 
-      <div className="hidden lg:flex flex-col gap-3 min-h-0">
+      <div className="hidden md:flex flex-col gap-3 min-h-0 overflow-y-auto">
         <GlassCard className="p-2 flex items-center gap-2">
           <Button size="sm" variant="ghost" onClick={undo} title="Undo"><Undo2 className="w-4 h-4" /></Button>
           <Button size="sm" variant="ghost" onClick={redo} title="Redo"><Redo2 className="w-4 h-4" /></Button>
