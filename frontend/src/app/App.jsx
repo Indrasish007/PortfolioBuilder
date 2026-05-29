@@ -18,6 +18,7 @@ function SEOManager() {
       else if (location.pathname.startsWith("/editor")) title = "Editor | PortfolioBuilder";
       else if (location.pathname === "/templates") title = "Templates | PortfolioBuilder";
       else if (location.pathname === "/analytics") title = "Analytics | PortfolioBuilder";
+      else if (location.pathname === "/help") title = "Help Center | PortfolioBuilder";
       else if (location.pathname === "/settings") title = "Settings | PortfolioBuilder";
 
       else if (location.pathname === "/login") title = "Login | PortfolioBuilder";
@@ -72,6 +73,7 @@ import Analytics from "./pages/Analytics.jsx";
 import Settings from "./pages/Settings.jsx";
 import Onboarding from "./pages/Onboarding.jsx";
 import CVPreview from "./pages/CVPreview.jsx";
+import HelpCenter from "./pages/HelpCenter.jsx";
 
 
 export default function App() {
@@ -109,6 +111,7 @@ export default function App() {
                 <Route path="/analytics" element={<Analytics />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/cv-preview" element={<CVPreview />} />
+                <Route path="/help" element={<HelpCenter />} />
               </Route>
 
               <Route path="*" element={<NotFound />} />

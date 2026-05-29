@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     'analytics',
     'ai',
     'themes',
+    'support',
 ]
 
 SITE_ID = 1
@@ -238,3 +239,19 @@ ACCOUNT_SIGNUP_FIELDS = ['email*']
 
 # AI / Gemini
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')
+
+# ── Email ─────────────────────────────────────────────────────────────────────
+# Development: prints emails to console.
+# Production (Render): set EMAIL_HOST / EMAIL_HOST_USER / EMAIL_HOST_PASSWORD
+# as environment variables in the Render dashboard.
+EMAIL_BACKEND = os.getenv(
+    'EMAIL_BACKEND',
+    'django.core.mail.backends.console.EmailBackend'
+)
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'PortfolioBuilder <noreply@portfoliobuilder.ai>')
+

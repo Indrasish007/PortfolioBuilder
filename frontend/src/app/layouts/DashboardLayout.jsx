@@ -1,5 +1,5 @@
 import { Outlet, NavLink, Link, useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, PenSquare, LayoutTemplate, BarChart3, Plus, ChevronDown, LogOut, Sparkles, Upload, FileText, X, Menu, Settings2 } from "lucide-react";
+import { LayoutDashboard, PenSquare, LayoutTemplate, BarChart3, Plus, ChevronDown, LogOut, Sparkles, Upload, FileText, X, Menu, Settings2, HelpCircle } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Logo from "../components/Logo.jsx";
@@ -17,6 +17,7 @@ const staticNav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/templates", label: "Templates", icon: LayoutTemplate },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
+  { to: "/help", label: "Help Center", icon: HelpCircle },
   { to: "/settings", label: "Settings", icon: Settings2 },
 ];
 
