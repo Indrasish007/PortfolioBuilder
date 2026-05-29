@@ -773,10 +773,10 @@ export default function Analytics() {
             <div className="flex items-center justify-between mb-5">
               <div>
                 <div className="font-semibold">Visitors by country</div>
-                <div className="text-xs text-muted-foreground mt-0.5">Total views per country · last 14 days</div>
+                <div className="text-xs text-muted-foreground mt-0.5">Total visits per country · last 14 days</div>
               </div>
               <Badge variant="glass">
-                {totalCountryViews > 0 ? `${totalCountryViews} total views` : "No data yet"}
+                {totalCountryViews > 0 ? `${totalCountryViews} total visits` : "No data yet"}
               </Badge>
             </div>
 
@@ -822,7 +822,7 @@ export default function Analytics() {
                                 </span>
                               )}
                               <span className="text-xs text-muted-foreground tabular-nums">
-                                {c.visits} {c.visits === 1 ? "view" : "views"}
+                                {c.visits} {c.visits === 1 ? "visit" : "visits"}
                               </span>
                               <span className="text-xs font-semibold tabular-nums w-9 text-right" style={{ color }}>
                                 {pct}%
