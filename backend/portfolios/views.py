@@ -31,8 +31,17 @@ class PortfolioViewSet(viewsets.ModelViewSet):
             print("UPDATE ERRORS:", serializer.errors)
         return super().update(request, *args, **kwargs)
 
-    def perform_create(self, serializer):
-        serializer.save()
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        # Record which portfolio was last edited on the user's profile (cross-device)
+        try:
+            profile, _ = instance.user.profile.__class__.objects.get_or_create(user=instance.user)
+            if profile.last_edited_portfolio_id != instance.pk:
+                profile.last_edited_portfolio_id = instance.pk
+                profile.save(update_fields=['last_edited_portfolio_id'])
+        except Exception:
+            pass  # Never let profile write failure break portfolio save
+
 
 class PublicPortfolioView(generics.RetrieveAPIView):
     serializer_class = PortfolioSerializer

@@ -16,6 +16,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
     linkedin   = serializers.URLField( source='profile.linkedin',  required=False, allow_blank=True)
     github     = serializers.URLField( source='profile.github',    required=False, allow_blank=True)
     avatar     = serializers.CharField(source='profile.avatar',    required=False, allow_blank=True)
+    # Tracks the last portfolio the user was editing (cross-device persistence)
+    last_edited_portfolio_id = serializers.IntegerField(
+        source='profile.last_edited_portfolio_id', required=False, allow_null=True
+    )
 
     class Meta:
         model  = CustomUser
@@ -23,6 +27,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'id', 'email', 'username', 'first_name', 'last_name',
             # Profile fields
             'name', 'phone', 'location', 'website', 'linkedin', 'github', 'avatar',
+            'last_edited_portfolio_id',
         ]
         read_only_fields = ['id', 'email']
 

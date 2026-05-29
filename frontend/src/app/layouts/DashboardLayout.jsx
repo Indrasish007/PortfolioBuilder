@@ -1,4 +1,4 @@
-import { Outlet, NavLink, Link, useNavigate } from "react-router-dom";
+import { Outlet, NavLink, Link, useNavigate, useLocation } from "react-router-dom";
 import { LayoutDashboard, PenSquare, LayoutTemplate, BarChart3, Plus, ChevronDown, LogOut, Sparkles, Upload, FileText, X, Menu, Settings2 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import Logo from "../components/Logo.jsx";
@@ -10,14 +10,87 @@ import NotificationBell from "../components/NotificationBell.jsx";
 import api from "../services/api.js";
 import { useToast } from "../context/ToasterContext.jsx";
 
-const nav = [
+const staticNav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/editor", label: "Editor", icon: PenSquare },
   { to: "/templates", label: "Templates", icon: LayoutTemplate },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/resume-builder", label: "Resume Builder", icon: Sparkles },
   { to: "/settings", label: "Settings", icon: Settings2 },
 ];
+
+// Smart Editor button — checks localStorage draft first, then DB, then opens fresh.
+// This is Button 3. It never clears the draft.
+function EditorNavLink({ onClick }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isActive = location.pathname.startsWith("/editor");
+
+  const handleClick = async (e) => {
+    e.preventDefault();
+    onClick?.();
+
+    // Priority 1: localStorage draft
+    try {
+      const rawDraft = localStorage.getItem("editorDraft");
+      if (rawDraft) {
+        const draft = JSON.parse(rawDraft);
+
+        if (draft.isNewUnsaved && draft.data) {
+          // Was editing a new unsaved portfolio — restore it
+          navigate("/editor", { state: { _smartRestore: true } });
+          return;
+        }
+
+        if (draft.portfolioId && draft.data) {
+          // Was editing an existing portfolio — go there (draft banner will restore)
+          navigate(`/editor/${draft.portfolioId}`);
+          return;
+        }
+      }
+    } catch { /* ignore */ }
+
+    // Priority 2: Last edited from DB
+    try {
+      const res = await fetch("/api/users/last-edited/", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+          "Content-Type": "application/json",
+        },
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.portfolio_id) {
+          navigate(`/editor/${json.portfolio_id}`);
+          return;
+        }
+      }
+    } catch { /* fall through */ }
+
+    // Fallback: localStorage ID
+    const localId = localStorage.getItem("lastEditedPortfolioId");
+    if (localId) {
+      navigate(`/editor/${localId}`);
+      return;
+    }
+
+    // Priority 3: Fresh editor (no draft, no last edited)
+    navigate("/editor", { state: { _smartRestore: true } });
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition w-full md:justify-center lg:justify-start ${
+        isActive
+          ? "bg-accent text-foreground shadow-card font-semibold"
+          : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
+      }`}
+    >
+      <PenSquare className="w-4 h-4 flex-shrink-0" />
+      <span className="md:hidden lg:inline">Editor</span>
+    </button>
+  );
+}
 
 export default function DashboardLayout() {
   const user = useAuthStore((s) => s.user) || { name: "User", email: "" };
@@ -153,7 +226,9 @@ export default function DashboardLayout() {
 
         {/* Nav links */}
         <nav className="px-3 py-2 flex-1 space-y-1">
-          {nav.map((n) => (
+          {/* Editor link — resumes last portfolio if one exists */}
+          <EditorNavLink onClick={() => setSidebarOpen(false)} />
+          {staticNav.map((n) => (
             <NavLink
               key={n.to}
               to={n.to}
@@ -366,11 +441,29 @@ export default function DashboardLayout() {
             {/* Actions group */}
             <div className="flex-1 flex justify-end gap-2.5">
               {/* Plus button with text on tablet/desktop */}
-              <Button as={Link} to="/editor" size="sm" className="hidden sm:inline-flex">
+              <Button
+                size="sm"
+                className="hidden sm:inline-flex"
+                onClick={() => {
+                  // Button 2: always blank — clear draft + navigate with forceNew
+                  localStorage.removeItem("editorDraft");
+                  localStorage.removeItem("lastEditedPortfolioId");
+                  navigate("/editor", { state: { forceNew: true } });
+                }}
+              >
                 <Plus className="w-4 h-4" /> New portfolio
               </Button>
               {/* Plus button icon-only on mobile */}
-              <Button as={Link} to="/editor" size="sm" className="sm:hidden inline-flex w-9 h-9 items-center justify-center p-0">
+              <Button
+                size="sm"
+                className="sm:hidden inline-flex w-9 h-9 items-center justify-center p-0"
+                onClick={() => {
+                  // Button 2: always blank — clear draft + navigate with forceNew
+                  localStorage.removeItem("editorDraft");
+                  localStorage.removeItem("lastEditedPortfolioId");
+                  navigate("/editor", { state: { forceNew: true } });
+                }}
+              >
                 <Plus className="w-4 h-4" />
               </Button>
             </div>

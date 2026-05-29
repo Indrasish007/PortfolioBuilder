@@ -32,5 +32,9 @@ class Profile(models.Model):
     calendly = models.URLField(blank=True, null=True)
     resume_link = models.TextField(blank=True, null=True)
 
+    # Tracks which portfolio the user was last editing — persists across devices.
+    # Stored as a plain int (not FK) so deleting a portfolio doesn't cascade-delete the profile.
+    last_edited_portfolio_id = models.IntegerField(blank=True, null=True)
+
     def __str__(self):
         return f"{self.user.email} Profile"

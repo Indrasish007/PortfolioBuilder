@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Eye, MousePointerClick, Download, Plus, ExternalLink, ArrowUp, Sparkles, Globe, Trash2, Loader2, Search, CheckSquare, Square, X } from "lucide-react";
+import { Eye, MousePointerClick, Download, Plus, ExternalLink, ArrowUp, Sparkles, Globe, Trash2, Loader2, Search, CheckSquare, Square, X, Clock } from "lucide-react";
 import GlassCard from "../components/GlassCard.jsx";
 import Button from "../components/Button.jsx";
 import Badge from "../components/Badge.jsx";
@@ -9,19 +9,33 @@ import api from "../services/api.js";
 import { useAuthStore } from "../store/authStore.js";
 import { useToast } from "../context/ToasterContext.jsx";
 
+/** Returns a human-readable relative time string, e.g. "2h ago" */
+function relativeTime(dateStr) {
+  if (!dateStr) return "";
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  return `${d}d ago`;
+}
+
 // stats will be fetched from backend
 
 export default function Dashboard() {
   const user = useAuthStore((s) => s.user);
   const [portfolios, setPortfolios] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [deleteConfirm, setDeleteConfirm] = useState(null); // array of ids
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isParsing, setIsParsing] = useState(false);
   const fileInputRef = useRef(null);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const lastPortfolioId = Number(localStorage.getItem("lastEditedPortfolioId") || 0);
 
   const [statsData, setStatsData] = useState({ total_views: 0, unique_visitors: 0, resume_downloads: 0 });
 
@@ -57,6 +71,11 @@ export default function Dashboard() {
       await Promise.all(deleteConfirm.map(id => api.delete(`/portfolios/${id}/`)));
       setPortfolios((prev) => prev.filter((p) => !deleteConfirm.includes(p.id)));
       setSelectedIds((prev) => prev.filter((id) => !deleteConfirm.includes(id)));
+      // Clear lastPortfolioId if the deleted portfolio was the last edited one
+      if (deleteConfirm.includes(lastPortfolioId)) {
+        localStorage.removeItem("lastEditedPortfolioId");
+        localStorage.removeItem("editorDraft");
+      }
     } catch (err) {
       console.error("Delete failed:", err);
     } finally {
@@ -153,7 +172,14 @@ export default function Dashboard() {
             accept="application/pdf"
             onChange={handleFileChange}
           />
-          <Button as={Link} to="/editor"><Plus className="w-4 h-4" /> Create new</Button>
+          <Button onClick={() => {
+            // Button 1: always blank — clear draft + navigate with forceNew
+            localStorage.removeItem("editorDraft");
+            localStorage.removeItem("lastEditedPortfolioId");
+            navigate("/editor", { state: { forceNew: true } });
+          }}>
+            <Plus className="w-4 h-4" /> Create new
+          </Button>
         </div>
       </div>
 
@@ -284,20 +310,35 @@ export default function Dashboard() {
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className="font-semibold text-sm sm:text-base truncate text-foreground">{p.name}</span>
                               <Badge variant={p.status === "Published" ? "success" : "warn"}>{p.status}</Badge>
+                              {p.id === lastPortfolioId && (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
+                                  style={{ background: "color-mix(in oklch, var(--brand) 12%, transparent)", color: "var(--brand)", border: "1px solid color-mix(in oklch, var(--brand) 25%, transparent)" }}
+                                >
+                                  <Clock className="w-2.5 h-2.5" /> Last edited
+                                </span>
+                              )}
                             </div>
                             <div className="text-xs text-muted-foreground mt-1 flex flex-wrap gap-x-2 gap-y-0.5">
                               <span>{p.template}</span>
                               <span className="opacity-40">•</span>
                               <span>{p.views || 0} views</span>
                               <span className="opacity-40">•</span>
-                              <span>Updated {new Date(p.updated_at).toLocaleDateString()}</span>
+                              <span>Updated {relativeTime(p.updated_at)}</span>
                             </div>
                           </div>
                         </div>
 
                         {/* Action buttons: bottom on mobile, right on tablet/desktop */}
                         <div className="flex items-center justify-end gap-2 border-t border-border/40 pt-3 sm:border-t-0 sm:pt-0 shrink-0">
-                          <Button as={Link} to={`/editor/${p.id}`} size="sm" variant="outline" className="flex-1 sm:flex-initial justify-center py-2.5 h-11 sm:h-9">Edit</Button>
+                          <Button
+                            as={Link}
+                            to={`/editor/${p.id}`}
+                            onClick={() => localStorage.setItem("lastEditedPortfolioId", String(p.id))}
+                            size="sm" variant="outline"
+                            className="flex-1 sm:flex-initial justify-center py-2.5 h-11 sm:h-9"
+                          >
+                            Edit
+                          </Button>
                           <Button
                             as="a"
                             href={p.status === "Published" && p.slug ? `/p/${p.slug}` : `/p/${p.id}`}

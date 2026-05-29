@@ -43,6 +43,14 @@ export const useAuthStore = create((set, get) => ({
       const next = { ...get().user, ...patch };
       localStorage.setItem('user_data', JSON.stringify(next));
       set({ user: next });
+
+      // Sync last_edited_portfolio_id from DB → localStorage for cross-device continuity.
+      // Only override if the DB has a value AND localStorage is empty (don't clobber a
+      // more-recent local preference that hasn't been synced yet).
+      if (d.last_edited_portfolio_id && !localStorage.getItem('lastEditedPortfolioId')) {
+        localStorage.setItem('lastEditedPortfolioId', String(d.last_edited_portfolio_id));
+      }
+
       return d;
     } catch (err) {
       console.error('fetchUser failed', err);
@@ -85,6 +93,7 @@ export const useAuthStore = create((set, get) => ({
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('user_data');
+    localStorage.removeItem('lastEditedPortfolioId');
     set({ user: null });
     window.location.href = '/login';
   },

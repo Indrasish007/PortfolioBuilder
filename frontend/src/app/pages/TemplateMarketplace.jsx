@@ -405,7 +405,8 @@ export default function TemplateMarketplace() {
     if (isFromResume && reviewedData) {
       // Reset to blank slate first, then populate from reviewed data
       resetPortfolio();
-      // Use microtask so reset flushes before updates
+      // Use microtask so reset flushes before updates, then navigate AFTER
+      // all fields are written so the editor mounts with a fully-populated store.
       Promise.resolve().then(() => {
         const r = reviewedData;
         if (r.full_name) updateField("user.name", r.full_name);
@@ -452,13 +453,16 @@ export default function TemplateMarketplace() {
           });
         }
         setTemplate(templateId);
+        // Navigate AFTER populating — editor will skip resetPortfolio via fromOnboarding flag
+        resetOnboarding();
+        navigate("/editor", { state: { fromOnboarding: true } });
       });
     } else {
       // Skip path: just set template and go
       setTemplate(templateId);
+      resetOnboarding();
+      navigate("/editor", { state: { fromOnboarding: true } });
     }
-    resetOnboarding();
-    navigate("/editor");
   }, [isFromResume, reviewedData, updateField, resetPortfolio, setTemplate, resetOnboarding, navigate]);
 
   const handleTemplateSelect = useCallback((templateId, templateObj) => {

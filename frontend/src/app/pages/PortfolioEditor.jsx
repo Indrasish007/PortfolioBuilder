@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, Reorder, AnimatePresence } from "framer-motion";
-import { Undo2, Redo2, RotateCcw, Save, Eye, EyeOff, Smartphone, Tablet, Monitor, Plus, GripVertical, Image as ImageIcon, Sparkles, Trash2, Github, Globe, Linkedin, Twitter, Facebook, Instagram, Type, Palette, Settings2, CheckCircle2, Loader2, ChevronDown, ChevronUp, ArrowUp, ArrowDown, FileText, X, Calendar, ExternalLink } from "lucide-react";
+import { Undo2, Redo2, RotateCcw, Save, Eye, EyeOff, Smartphone, Tablet, Monitor, Plus, GripVertical, Image as ImageIcon, Sparkles, Trash2, Github, Globe, Linkedin, Twitter, Facebook, Instagram, Type, Palette, Settings2, CheckCircle2, Loader2, ChevronDown, ChevronUp, ArrowUp, ArrowDown, FileText, X, Calendar, ExternalLink, Check, AlertTriangle, RefreshCw } from "lucide-react";
 import { useNavigate, useParams, useSearchParams, useLocation } from "react-router-dom";
 import GlassCard from "../components/GlassCard.jsx";
 import Button from "../components/Button.jsx";
@@ -12,11 +12,19 @@ import LivePortfolio from "../templates/LivePortfolio.jsx";
 import { useToast } from "../context/ToasterContext.jsx";
 import { useAuthStore } from "../store/authStore.js";
 import api from "../services/api.js";
+import useAutoSave from "../hooks/useAutoSave.js";
 
 const sectionTypes = ["About", "Skills", "Experience", "Education", "Projects", "Services", "Languages", "Awards", "Certifications", "Volunteer", "Testimonials", "References", "Blogs", "Gallery", "Videos", "Music", "FAQ", "Contact", "Custom"];
 
 export default function PortfolioEditor() {
-  const { portfolio, template, themeName, setTemplate, setThemeName, updateField, undo, redo, fetchPortfolio, resetPortfolio, savePortfolio, isLoading } = usePortfolioStore();
+  const {
+    portfolio, template, themeName,
+    setTemplate, setThemeName, updateField,
+    undo, redo,
+    fetchPortfolio, resetPortfolio, savePortfolio, loadDraftData,
+    isLoading,
+  } = usePortfolioStore();
+
   const [device, setDevice] = useState("desktop");
   const [tab, setTab] = useState("content");
   const [activeSection, setActiveSection] = useState(null);
@@ -26,7 +34,14 @@ export default function PortfolioEditor() {
   const [isPublishing, setIsPublishing] = useState(false);
   const authUser = useAuthStore((s) => s.user) || {};
   const [portfolioName, setPortfolioName] = useState("");
-  const hasFetched = useRef(false);
+
+  // ── Draft restore banner ──────────────────────────────────────────────────
+  const [draftBanner, setDraftBanner] = useState(null);
+
+  // ── Leave & Save modal ──────────────────────────────────────────────────
+  const [leaveModalOpen, setLeaveModalOpen] = useState(false);
+  const pendingNavRef = useRef(null);
+
   const defaultSections = ["About", "Skills", "Experience", "Projects", "Education", "Testimonials", "Contact"];
   const sections = portfolio?.sections || defaultSections;
   const setSections = (newSections) => updateField("sections", newSections);
@@ -44,6 +59,11 @@ export default function PortfolioEditor() {
   const projects = portfolio?.projects || [];
   const username = user.username || "preview";
 
+  // ── Auto-save via hook (ref-based, never stale) ──────────────────────────
+  const { saveStatus, triggerSave } = useAutoSave(
+    portfolio, template, themeName, savePortfolio, activeSection
+  );
+
   const handleSave = async () => {
     if (!portfolio?.id) {
       setPortfolioName(portfolio?.name || "My Portfolio");
@@ -59,6 +79,8 @@ export default function PortfolioEditor() {
       toast({ title: "Portfolio saved!", description: "Your changes have been saved.", type: "success" });
       setSaveModalOpen(false);
       if (!id && newId) {
+        localStorage.setItem("lastEditedPortfolioId", String(newId));
+        api.post("/users/last-edited/", { portfolio_id: newId }).catch(() => {});
         navigate(`/editor/${newId}`, { replace: true });
       }
     } catch {
@@ -123,77 +145,136 @@ export default function PortfolioEditor() {
     }
   };
 
-  const hasInitialised = useRef(false);
-
   useEffect(() => {
-    if (id) {
-      fetchPortfolio(id);
-      hasInitialised.current = true;
+
+    // ── Case 0: forceNew — "Create New" / "New Portfolio" buttons ────────────
+    // Always opens a completely blank editor. Never restores anything.
+    if (location.state?.forceNew) {
+      resetPortfolio();
+      // Draft was already cleared by the button handler before navigating
       return;
     }
 
-    // ── New / CV-parsed portfolio (no saved id) ───────────────────────────
+    // ── Case 1: /editor/:id ─────────────────────────────────────────────────
+    if (id) {
+      fetchPortfolio(id).then((data) => {
+        if (!data) {
+          localStorage.removeItem("lastEditedPortfolioId");
+          localStorage.removeItem("editorDraft");
+          navigate("/editor", { replace: true });
+          toast({ title: "Portfolio not found", description: "Starting with a fresh editor.", type: "error" });
+          return;
+        }
+
+        // Record as last-edited
+        localStorage.setItem("lastEditedPortfolioId", String(data.id));
+        api.post("/users/last-edited/", { portfolio_id: data.id }).catch(() => {});
+
+        // Check if localStorage draft is newer than DB (unsaved changes)
+        try {
+          const rawDraft = localStorage.getItem("editorDraft");
+          if (rawDraft) {
+            const draft = JSON.parse(rawDraft);
+            if (draft.portfolioId === data.id && draft.savedAt && draft.data) {
+              const draftTime = new Date(draft.savedAt).getTime();
+              const dbTime = data.updated_at ? new Date(data.updated_at).getTime() : 0;
+              if (draftTime > dbTime + 5000) {
+                setDraftBanner({ localDraft: draft });
+              }
+            }
+          }
+        } catch { /* ignore */ }
+      });
+      return;
+    }
+
+    // ── Case 2: CV-parsed portfolio ──────────────────────────────────────
     if (location.state?.parsedCV) {
-      // Always apply fresh CV data – this is an intentional parse action
       const cvData = location.state.parsedCV;
       resetPortfolio();
-      hasInitialised.current = true;
       Promise.resolve().then(() => {
-        // Profile identity
         if (cvData.full_name)  updateField("user.name",     cvData.full_name);
         if (cvData.headline)   updateField("user.title",    cvData.headline);
         if (cvData.bio)        updateField("user.bio",      cvData.bio);
         if (cvData.email)      updateField("user.email",    cvData.email);
         if (cvData.phone)      updateField("user.phone",    cvData.phone);
         if (cvData.location)   updateField("user.location", cvData.location);
-        // Social links from parser
         if (cvData.social_links && cvData.social_links.length > 0) {
           cvData.social_links.forEach(({ platform, url }) => {
-            if (platform && url) {
-              updateField(`user.social.${platform.toLowerCase()}`, url);
-            }
+            if (platform && url) updateField(`user.social.${platform.toLowerCase()}`, url);
           });
         }
-        // Portfolio sections
-        if (cvData.skills     && cvData.skills.length > 0)     updateField("skills",     cvData.skills);
-        if (cvData.languages  && cvData.languages.length > 0)  updateField("languages",  cvData.languages);
-        if (cvData.experience && cvData.experience.length > 0) updateField("experience", cvData.experience);
-        if (cvData.education  && cvData.education.length > 0)  updateField("education",  cvData.education);
-        if (cvData.projects   && cvData.projects.length > 0)   updateField("projects",   cvData.projects);
+        if (cvData.skills?.length)     updateField("skills",     cvData.skills);
+        if (cvData.languages?.length)  updateField("languages",  cvData.languages);
+        if (cvData.experience?.length) updateField("experience", cvData.experience);
+        if (cvData.education?.length)  updateField("education",  cvData.education);
+        if (cvData.projects?.length)   updateField("projects",   cvData.projects);
         if (cvData.resume_link) updateField("user.resume_link", cvData.resume_link);
       });
       return;
     }
 
-    // ── Arriving via "Use This Template" (?template= query param) ────────
-    // This path is ALWAYS a brand-new portfolio request.  resetPortfolio()
-    // was already called by TemplateMarketplace before navigating here, but
-    // we enforce it again as a safety net in case the store still holds a
-    // previously-open portfolio's data (e.g. race conditions, direct URL
-    // entry with a ?template= param, etc.).
+    // ── Case 3: ?template= query param ──────────────────────────────────
     const templateParam = searchParams.get("template");
     if (templateParam) {
-      // Unconditional reset — the user explicitly asked for a new portfolio.
-      // This must NOT be gated on alreadyHasData because that data belongs
-      // to a DIFFERENT (previously-loaded) portfolio, not this new one.
       resetPortfolio();
-      hasInitialised.current = true;
       Promise.resolve().then(() => setTemplate(templateParam));
       return;
     }
 
-    // ── Plain /editor visit (no id, no template param) ────────────────────
-    // Skip reset when arriving from CVPreview — it already populated the
-    // store before navigating here (fromCVImport flag). For every other
-    // plain /editor visit (i.e. "+ Create new") reset unconditionally so
-    // stale data from a previously-edited portfolio never bleeds through.
-    if (!location.state?.fromCVImport) {
-      resetPortfolio();
-    }
-    hasInitialised.current = true;
-  }, [id, location.state]);
+    // ── Case 4: Editor sidebar button — smart restore ────────────────────
+    // Priority 1: localStorage draft (covers both new-unsaved AND existing-unsaved)
+    // Priority 2: Last saved portfolio from DB
+    // Priority 3: Fresh blank editor
+    if (!location.state?.fromCVImport && !location.state?.fromOnboarding) {
+      const openSmartRestore = async () => {
 
-  // Close preview overlay on Escape key
+        // ── Priority 1: Check localStorage draft ─────────────────────────
+        try {
+          const rawDraft = localStorage.getItem("editorDraft");
+          if (rawDraft) {
+            const draft = JSON.parse(rawDraft);
+
+            if (draft.isNewUnsaved && draft.data) {
+              // User was editing a brand-new portfolio that was never saved
+              loadDraftData(draft.data, draft.template, draft.themeName);
+              return;
+            }
+
+            if (draft.portfolioId && draft.data) {
+              // User was editing an existing portfolio with unsaved local changes
+              // Navigate to that portfolio — the draft banner will offer to restore
+              navigate(`/editor/${draft.portfolioId}`, { replace: true });
+              return;
+            }
+          }
+        } catch { /* ignore malformed draft */ }
+
+        // ── Priority 2: Last edited portfolio from DB ────────────────────
+        try {
+          const res = await api.get("/users/last-edited/");
+          const portfolioId = res.data?.portfolio_id;
+          if (portfolioId) {
+            navigate(`/editor/${portfolioId}`, { replace: true });
+            return;
+          }
+        } catch { /* fall through */ }
+
+        // Fallback: localStorage ID (offline / DB unreachable)
+        const localId = localStorage.getItem("lastEditedPortfolioId");
+        if (localId) {
+          navigate(`/editor/${localId}`, { replace: true });
+          return;
+        }
+
+        // ── Priority 3: Fresh blank editor ──────────────────────────────
+        resetPortfolio();
+      };
+      openSmartRestore();
+    }
+  }, [id, location.state]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Escape closes preview
   useEffect(() => {
     const onKey = (e) => { if (e.key === "Escape") setPreviewOpen(false); };
     window.addEventListener("keydown", onKey);
@@ -384,7 +465,64 @@ export default function PortfolioEditor() {
       )}
     </AnimatePresence>
 
-    {/* Full-screen live preview overlay */}
+    {/* ── Leave & Save modal ── */}
+    <AnimatePresence>
+      {leaveModalOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+        >
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            className="glass rounded-2xl p-6 max-w-sm w-full mx-4 border border-border shadow-xl"
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-amber-400" />
+              </div>
+              <div>
+                <div className="font-semibold">Unsaved changes</div>
+                <div className="text-xs text-muted-foreground">Your portfolio has edits that haven't been saved yet.</div>
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground mb-5">
+              Leave now? Your changes will be auto-saved before you go.
+            </p>
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  pendingNavRef.current = null;
+                  setLeaveModalOpen(false);
+                }}
+              >
+                Stay
+              </Button>
+              <Button
+                size="sm"
+                onClick={async () => {
+                  setLeaveModalOpen(false);
+                  await triggerSave();
+                  const dest = pendingNavRef.current;
+                  pendingNavRef.current = null;
+                  if (dest) navigate(dest);
+                }}
+              >
+                {saveStatus === "saving" ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Save className="w-3.5 h-3.5 mr-1" />}
+                Leave &amp; Save
+              </Button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+
     <AnimatePresence>
       {previewOpen && (
         <motion.div
@@ -429,6 +567,55 @@ export default function PortfolioEditor() {
     <div className="grid lg:grid-cols-[400px_1fr] gap-4 h-[calc(100vh-120px)]">
       <div className="flex flex-col gap-3 min-h-0">
         <BackButton fallback="/dashboard" className="mb-0 w-max" />
+
+        {/* ── Draft restore banner ── */}
+        <AnimatePresence>
+          {draftBanner && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              className="flex items-start gap-3 px-3 py-2.5 rounded-xl border text-sm"
+              style={{ background: "color-mix(in oklch, var(--brand) 8%, var(--card))", borderColor: "color-mix(in oklch, var(--brand) 30%, transparent)" }}
+            >
+              <RefreshCw className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: "var(--brand)" }} />
+              <div className="flex-1 min-w-0">
+                <span className="font-semibold text-xs" style={{ color: "var(--brand)" }}>Unsaved changes found</span>
+                <span className="text-xs text-muted-foreground ml-1.5">We found local changes newer than the last saved version.</span>
+                <div className="flex gap-2 mt-2">
+                  <button
+                    onClick={() => {
+                      const d = draftBanner.localDraft;
+                      if (d.data) {
+                        Object.entries({ portfolio: d.data, template: d.template || template, themeName: d.themeName || themeName })
+                          .forEach(([, v]) => {});
+                        // Restore by manually setting store fields
+                        if (d.data.user?.name) updateField("user.name", d.data.user.name);
+                        Object.keys(d.data).forEach((k) => {
+                          if (k !== "user") updateField(k, d.data[k]);
+                        });
+                      }
+                      setDraftBanner(null);
+                    }}
+                    className="text-[11px] px-2.5 py-1 rounded-lg font-bold text-white transition hover:brightness-110"
+                    style={{ background: "linear-gradient(135deg, var(--brand), var(--brand-2))" }}
+                  >
+                    Restore
+                  </button>
+                  <button
+                    onClick={() => { localStorage.removeItem("editorDraft"); setDraftBanner(null); }}
+                    className="text-[11px] px-2.5 py-1 rounded-lg border border-border/60 text-muted-foreground hover:text-foreground hover:bg-accent/40 transition"
+                  >
+                    Discard
+                  </button>
+                </div>
+              </div>
+              <button onClick={() => setDraftBanner(null)} className="text-muted-foreground hover:text-foreground transition flex-shrink-0">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Portfolio name title */}
         {(portfolio?.name || portfolio?.id) && (
@@ -678,6 +865,22 @@ export default function PortfolioEditor() {
             {isLoading ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Save className="w-3 h-3 mr-1" />}
             Save
           </Button>
+          {/* Auto-save status indicator */}
+          {saveStatus !== "idle" && (
+            <span className={`text-[10px] font-medium flex items-center gap-1 px-2 py-0.5 rounded-full border transition-all ${
+              saveStatus === "saving" ? "text-amber-400 border-amber-500/20 bg-amber-500/8" :
+              saveStatus === "saved"  ? "text-emerald-400 border-emerald-500/20 bg-emerald-500/8" :
+                                       "text-red-400 border-red-500/20 bg-red-500/8"
+            }`}>
+              {saveStatus === "saving" && <Loader2 className="w-2.5 h-2.5 animate-spin" />}
+              {saveStatus === "saved"  && <Check className="w-2.5 h-2.5" />}
+              {saveStatus === "failed" && <AlertTriangle className="w-2.5 h-2.5" />}
+              {saveStatus === "saving" ? "Saving…" : saveStatus === "saved" ? "All changes saved" : "Save failed"}
+              {saveStatus === "failed" && (
+                <button onClick={() => triggerSave()} className="ml-1 underline">Retry</button>
+              )}
+            </span>
+          )}
           <div className="flex-1 flex items-center justify-center gap-1">
             {[
               { id: "desktop", i: Monitor }, { id: "tablet", i: Tablet }, { id: "mobile", i: Smartphone },
