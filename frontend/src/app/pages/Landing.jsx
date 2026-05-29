@@ -160,7 +160,7 @@ function ShowcaseSection() {
           <h2 className="text-4xl md:text-5xl font-bold mt-3">From blank page to portfolio<br /><span className="gradient-text">in minutes.</span></h2>
           <p className="text-muted-foreground mt-4 max-w-md">Pick from award-winning templates and let our AI co-pilot help you rewrite your bio, polish your project descriptions, and optimize your story for recruiters.</p>
           <ul className="mt-6 space-y-3">
-            {["Section-aware AI rewriting","Industry-specific template suggestions","Tone, length and language controls","One-click apply or accept individually"].map((f) => (
+            {["Section-aware AI rewriting", "Industry-specific template suggestions", "Tone, length and language controls", "One-click apply or accept individually"].map((f) => (
               <li key={f} className="flex items-center gap-3 text-sm"><Check className="w-4 h-4 text-emerald-400" />{f}</li>
             ))}
           </ul>
