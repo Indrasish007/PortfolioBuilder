@@ -310,3 +310,15 @@ html.theme-transitioning body {
     transition-duration: 0.01ms;
   }
 }
+
+/* Scroll-triggered fade-in & slide-up animations */
+.animate-on-scroll {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-on-scroll.animate-in {
+  opacity: 1;
+  transform: translateY(0);
+}

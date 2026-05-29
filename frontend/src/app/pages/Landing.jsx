@@ -1,11 +1,14 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Sparkles, Wand2, Zap, Layers, BarChart3, Globe, Code2, ImageIcon, MessageSquare, Briefcase, GraduationCap, Star, Check, Plus, Minus, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { ArrowRight, Sparkles, Wand2, Zap, Layers, BarChart3, Globe, Code2, ImageIcon, MessageSquare, Briefcase, GraduationCap, Check, Plus, Minus, ChevronRight } from "lucide-react";
+import { useState, useEffect } from "react";
 import Button from "../components/Button.jsx";
 import Badge from "../components/Badge.jsx";
 import GlassCard from "../components/GlassCard.jsx";
 import { templates } from "../services/templates.js";
+import AboutSection from "../components/AboutSection.jsx";
+import GeneratorShowcase from "../components/GeneratorShowcase.jsx";
+import ContactSection from "../components/ContactSection.jsx";
 
 
 const fadeUp = {
@@ -14,15 +17,30 @@ const fadeUp = {
 };
 
 export default function Landing() {
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash === "#about" || hash === "#showcase" || hash === "#contact") {
+      setTimeout(() => {
+        const id = hash.substring(1);
+        const el = document.getElementById(id);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth" });
+        }
+      }, 100);
+    }
+  }, []);
+
   return (
     <div className="relative">
       <Hero />
       <LogoCloud />
+      <AboutSection />
+      <GeneratorShowcase />
+      <ContactSection />
       <ShowcaseSection />
       <BentoFeatures />
       <TemplatesCarousel />
       <Stats />
-      <Testimonials />
       <FAQ />
       <CTA />
     </div>
@@ -56,9 +74,6 @@ function Hero() {
         <motion.div initial="hidden" animate="show" variants={fadeUp} custom={3} className="mt-8 flex items-center justify-center gap-3 flex-wrap">
           <Button as={Link} to="/signup" size="lg">
             Build mine free <ArrowRight className="w-4 h-4" />
-          </Button>
-          <Button as={Link} to="/demo" variant="glass" size="lg">
-            Live Demo
           </Button>
         </motion.div>
         <motion.div initial="hidden" animate="show" variants={fadeUp} custom={4} className="mt-3 text-xs text-muted-foreground">
@@ -151,7 +166,6 @@ function ShowcaseSection() {
           </ul>
           <div className="mt-7 flex gap-3">
             <Button as={Link} to="/signup">Build my portfolio <ArrowRight className="w-4 h-4" /></Button>
-            <Button as={Link} to="/templates" variant="outline">Browse templates</Button>
           </div>
         </div>
         <GlassCard className="rounded-3xl p-5" glow>
@@ -231,7 +245,6 @@ function TemplatesCarousel() {
             <h2 className="text-4xl md:text-5xl font-bold mt-3">Start from a winner.</h2>
             <p className="text-muted-foreground mt-2">12 award-worthy templates. Switch any time without losing edits.</p>
           </div>
-          <Button as={Link} to="/templates" variant="outline">Browse all</Button>
         </div>
       </div>
       <div className="relative">
@@ -286,36 +299,7 @@ function Stats() {
   );
 }
 
-function Testimonials() {
-  const list = [
-    { name: "Mira Levy", role: "Designer @ Notion", quote: "Replaced 3 days of fiddling with Webflow with 8 minutes of joy. The result actually looked better." },
-    { name: "Hassan A.", role: "Indie hacker", quote: "I shipped 4 portfolios for clients in one weekend. They all thought I'd hand-coded each one." },
-    { name: "Yuki Tanaka", role: "ML Engineer @ DeepMind", quote: "Finally a portfolio builder that doesn't pretend AI is just a search bar." },
-    { name: "Leo Park", role: "PM @ Stripe", quote: "The AI suggestions are eerily good. It rewrote my 'about' better than I could." },
-  ];
-  return (
-    <section className="py-24">
-      <div className="max-w-7xl mx-auto px-5">
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <Badge variant="glass">Testimonials</Badge>
-          <h2 className="text-4xl md:text-5xl font-bold mt-3">People who don't usually love portfolio builders.</h2>
-        </div>
-        <div className="columns-1 md:columns-2 gap-5 [&>*]:mb-5">
-          {list.map((t) => (
-            <GlassCard key={t.name} className="break-inside-avoid">
-              <div className="flex gap-1 mb-3">{Array.from({ length: 5 }).map((_, i) => <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />)}</div>
-              <p className="text-sm leading-relaxed">"{t.quote}"</p>
-              <div className="mt-4 text-sm">
-                <div className="font-medium">{t.name}</div>
-                <div className="text-xs text-muted-foreground">{t.role}</div>
-              </div>
-            </GlassCard>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
+
 
 function FAQ() {
   const items = [
