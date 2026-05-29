@@ -1,8 +1,13 @@
 import { Link } from "react-router-dom";
-import { Github, Twitter, Linkedin } from "lucide-react";
+import { ArrowUp } from "lucide-react";
 import Logo from "./Logo.jsx";
 
 export default function Footer() {
+  const handleScrollToTop = (e) => {
+    e.preventDefault();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
     <footer className="relative mt-24 border-t border-border/60">
       <div className="absolute inset-x-0 -top-20 h-20 hero-bg opacity-50 pointer-events-none" />
@@ -13,9 +18,13 @@ export default function Footer() {
             The AI portfolio builder for designers, developers and founders. Beautiful by default.
           </p>
           <div className="flex items-center gap-2 mt-5">
-            <a className="w-9 h-9 inline-flex items-center justify-center rounded-lg glass hover:scale-105 transition" href="#"><Github className="w-4 h-4" /></a>
-            <a className="w-9 h-9 inline-flex items-center justify-center rounded-lg glass hover:scale-105 transition" href="#"><Twitter className="w-4 h-4" /></a>
-            <a className="w-9 h-9 inline-flex items-center justify-center rounded-lg glass hover:scale-105 transition" href="#"><Linkedin className="w-4 h-4" /></a>
+            <button
+              onClick={handleScrollToTop}
+              className="w-9 h-9 inline-flex items-center justify-center rounded-lg glass hover:scale-105 transition cursor-pointer"
+              title="Go to Top"
+            >
+              <ArrowUp className="w-4 h-4" />
+            </button>
           </div>
         </div>
         {[
@@ -35,7 +44,7 @@ export default function Footer() {
       </div>
       <div className="border-t border-border/60">
         <div className="max-w-7xl mx-auto px-5 h-14 flex flex-wrap items-center justify-between text-xs text-muted-foreground">
-          <div>© {new Date().getFullYear()} PortfolioAI. All rights reserved.</div>
+          <div>© {new Date().getFullYear()} PortfolioBuilder. All rights reserved.</div>
           <div className="flex gap-4"><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Cookies</a></div>
         </div>
       </div>

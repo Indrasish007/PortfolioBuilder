@@ -1,6 +1,7 @@
 import { Outlet, NavLink, Link, useNavigate, useLocation } from "react-router-dom";
 import { LayoutDashboard, PenSquare, LayoutTemplate, BarChart3, Plus, ChevronDown, LogOut, Sparkles, Upload, FileText, X, Menu, Settings2 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Logo from "../components/Logo.jsx";
 import ThemeToggle from "../components/ThemeToggle.jsx";
 import Button from "../components/Button.jsx";
@@ -9,12 +10,13 @@ import CommandPalette from "../components/CommandPalette.jsx";
 import NotificationBell from "../components/NotificationBell.jsx";
 import api from "../services/api.js";
 import { useToast } from "../context/ToasterContext.jsx";
+import { motion, AnimatePresence } from "framer-motion";
+import logoImg from "../assets/logo.png";
 
 const staticNav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/templates", label: "Templates", icon: LayoutTemplate },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
-  { to: "/resume-builder", label: "Resume Builder", icon: Sparkles },
   { to: "/settings", label: "Settings", icon: Settings2 },
 ];
 
@@ -98,6 +100,12 @@ export default function DashboardLayout() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 768);
+  const [logoPopupOpen, setLogoPopupOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const [isParsing, setIsParsing] = useState(false);
   const [hasPendingCV, setHasPendingCV] = useState(
     () => !!sessionStorage.getItem("pendingParsedCV")
@@ -434,8 +442,15 @@ export default function DashboardLayout() {
                   }`}
                 />
               </button>
-              <div className="w-8 h-8 rounded-lg bg-brand flex items-center justify-center text-white font-bold flex-shrink-0">P</div>
-              <span className="font-semibold text-lg hidden md:block">PortfolioBuilder</span>
+              <button
+                onClick={() => setLogoPopupOpen(true)}
+                className="flex items-center gap-2 hover:scale-[1.03] transition-transform active:scale-[0.98] focus:outline-none cursor-pointer"
+              >
+                <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 bg-white flex items-center justify-center border border-border/20 shadow-glow">
+                  <img src={logoImg} alt="Logo" className="w-full h-full object-contain p-1" />
+                </div>
+                <span className="font-semibold text-lg hidden md:block text-left">Portfolio<span className="gradient-text">Builder</span></span>
+              </button>
             </div>
 
             {/* Actions group */}
@@ -474,8 +489,14 @@ export default function DashboardLayout() {
                 onClick={() => setProfileOpen((o) => !o)}
                 className="flex items-center gap-2 h-9 pl-1 pr-2 rounded-lg glass"
               >
-                <div className="w-7 h-7 rounded-md gradient-bg flex items-center justify-center text-xs font-semibold text-white">
-                  {user.name?.[0] || "U"}
+                <div className="w-7 h-7 rounded-md overflow-hidden flex-shrink-0 border border-border/20">
+                  {user.avatar ? (
+                    <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full gradient-bg flex items-center justify-center text-xs font-semibold text-white">
+                      {user.name?.[0] || "U"}
+                    </div>
+                  )}
                 </div>
                 <span className="hidden sm:inline text-sm">{user.name}</span>
                 <ChevronDown className="w-3 h-3" />
@@ -560,6 +581,54 @@ export default function DashboardLayout() {
       </div>
 
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+
+      {/* Logo Popup Modal */}
+      {mounted && createPortal(
+        <AnimatePresence>
+          {logoPopupOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 backdrop-blur-md p-4"
+              onClick={() => setLogoPopupOpen(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                transition={{ type: "spring", damping: 25, stiffness: 350 }}
+                onClick={(e) => e.stopPropagation()}
+                className="glass rounded-3xl p-8 max-w-lg w-full border border-border/50 shadow-glow relative bg-background/90 text-center space-y-6"
+              >
+                <button
+                  onClick={() => setLogoPopupOpen(false)}
+                  className="absolute top-4 right-4 p-2 rounded-xl glass text-muted-foreground hover:text-foreground transition cursor-pointer"
+                  aria-label="Close popup"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+
+                <div className="bg-white p-6 rounded-2xl border border-border/20 shadow-card flex items-center justify-center">
+                  <img src={logoImg} alt="PortfolioBuilder Logo" className="max-h-28 object-contain" />
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="text-xl font-bold gradient-text">PortfolioBuilder</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Build Your Future. Showcase Your Success.
+                  </p>
+                </div>
+
+                <div className="text-xs text-muted-foreground/60 leading-relaxed border-t border-border/40 pt-4">
+                  Thank you for using PortfolioBuilder. Create, customize, and share stunning portfolios instantly with AI.
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 }

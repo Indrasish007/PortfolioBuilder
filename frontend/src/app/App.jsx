@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { ThemeProvider } from "./context/ThemeContext.jsx";
 import { ToasterProvider } from "./context/ToasterContext.jsx";
 import { OnboardingProvider } from "./context/OnboardingContext.jsx";
@@ -19,7 +19,7 @@ function SEOManager() {
       else if (location.pathname === "/templates") title = "Templates | PortfolioBuilder";
       else if (location.pathname === "/analytics") title = "Analytics | PortfolioBuilder";
       else if (location.pathname === "/settings") title = "Settings | PortfolioBuilder";
-      else if (location.pathname === "/resume-builder") title = "Resume Builder | PortfolioBuilder";
+
       else if (location.pathname === "/login") title = "Login | PortfolioBuilder";
       else if (location.pathname === "/signup") title = "Sign Up | PortfolioBuilder";
       
@@ -72,7 +72,7 @@ import Analytics from "./pages/Analytics.jsx";
 import Settings from "./pages/Settings.jsx";
 import Onboarding from "./pages/Onboarding.jsx";
 import CVPreview from "./pages/CVPreview.jsx";
-import ResumeBuilder from "./pages/ResumeBuilder.jsx";
+
 
 export default function App() {
   return (
@@ -101,7 +101,7 @@ export default function App() {
 
               <Route element={<DashboardLayout />}>
                 <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/resume-builder" element={<ResumeBuilder />} />
+                <Route path="/resume-builder" element={<Navigate to="/dashboard" replace />} />
                 <Route path="/onboarding" element={<Onboarding />} />
                 <Route path="/editor" element={<PortfolioEditor />} />
                 <Route path="/editor/:id" element={<PortfolioEditor />} />

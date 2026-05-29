@@ -5,7 +5,6 @@ import { Search, LayoutDashboard, PenSquare, LayoutTemplate, BarChart3, Settings
 
 const items = [
   { label: "Go to dashboard", to: "/dashboard", icon: LayoutDashboard, group: "Navigate" },
-  { label: "Open Resume Builder", to: "/resume-builder", icon: Sparkles, group: "Navigate" },
   { label: "Open editor", to: "/editor", icon: PenSquare, group: "Navigate" },
   { label: "Browse templates", to: "/templates", icon: LayoutTemplate, group: "Navigate" },
   { label: "View analytics", to: "/analytics", icon: BarChart3, group: "Navigate" },

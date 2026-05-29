@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Mail, MapPin, MessageSquare, Send, CheckCircle } from "lucide-react";
+import { Mail, MessageSquare, Send, CheckCircle } from "lucide-react";
 import GlassCard from "./GlassCard.jsx";
 import Button from "./Button.jsx";
 import Badge from "./Badge.jsx";
@@ -79,19 +79,14 @@ export default function ContactSection() {
                 </div>
                 <div>
                   <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Email Us</h4>
-                  <p className="text-base font-medium mt-1">support@portfoliobuilder.ai</p>
+                  <p className="text-base font-medium mt-1">
+                    <a href="mailto:indrasishadhya770@gmail.com" className="hover:text-brand transition">
+                      indrasishadhya770@gmail.com
+                    </a>
+                  </p>
                 </div>
               </div>
 
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl glass border border-brand/20 flex items-center justify-center shrink-0">
-                  <MapPin className="w-5 h-5 text-brand" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Our Office</h4>
-                  <p className="text-base font-medium mt-1">San Francisco, California, USA</p>
-                </div>
-              </div>
 
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-xl glass border border-brand/20 flex items-center justify-center shrink-0">

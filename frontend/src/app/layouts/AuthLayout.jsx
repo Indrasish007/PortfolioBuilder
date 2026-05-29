@@ -22,7 +22,7 @@ export default function AuthLayout() {
             ))}
           </div>
         </div>
-        <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} PortfolioAI</p>
+        <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} PortfolioBuilder</p>
       </div>
       <div className="flex flex-col">
         <div className="flex items-center justify-between p-5 lg:hidden">
