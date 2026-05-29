@@ -23,10 +23,92 @@ export default function BrutalistLayout({ p, t, id, portfolioId }) {
 
   return (
     <div style={{ background:t.bg, color:t.fg, fontFamily:font, minHeight:"100%" }}>
+      <style>{`
+        .brutalist-project-card {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+        
+        .brutalist-project-img {
+          width: 100%;
+          height: auto;
+          aspect-ratio: 16/10;
+          object-fit: cover;
+        }
+        
+        .brutalist-project-links {
+          display: flex;
+          flex-direction: row;
+          gap: 16px;
+        }
+        
+        .brutalist-blog-card {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+        
+        .brutalist-blog-links {
+          display: flex;
+          flex-direction: row;
+          gap: 16px;
+        }
+        
+        .brutalist-hero-accent {
+          display: none;
+        }
+
+        @media (min-width: 768px) {
+          .brutalist-project-card {
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+          }
+          
+          .brutalist-project-img {
+            width: 140px;
+            height: 100px;
+            aspect-ratio: auto;
+            flex-shrink: 0;
+          }
+          
+          .brutalist-project-links {
+            flex-direction: column;
+            gap: 8px;
+            align-items: flex-end;
+          }
+          
+          .brutalist-blog-card {
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+          }
+          
+          .brutalist-blog-links {
+            flex-direction: column;
+            gap: 8px;
+            align-items: flex-end;
+          }
+          
+          .brutalist-hero-accent {
+            display: block;
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 200px;
+            height: 100%;
+            background: #facc15;
+            z-index: 0;
+          }
+        }
+      `}</style>
 
       {/* ── Hero ── */}
       <div style={{ padding:isMono?"clamp(32px,6vw,60px) clamp(16px,5vw,48px)":"clamp(24px,4vw,48px)", borderBottom:border, position:"relative" }}>
-        {!isMono && <div style={{ position:"absolute", top:0, right:0, width:200, height:"100%", background:"#facc15", zIndex:0 }} />}
+        {!isMono && <div className="brutalist-hero-accent" />}
         <div style={{ position:"relative", zIndex:1 }}>
           <div style={{ display:"flex", alignItems:"flex-start", gap:32, flexWrap:"wrap" }}>
             {u.avatar && (
@@ -133,7 +215,7 @@ export default function BrutalistLayout({ p, t, id, portfolioId }) {
           <div style={{ marginBottom:48 }}>
             {lbl("Projects")}
             {isMono
-              ? <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))", gap:2 }}>
+              ? <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(min(260px,100%),1fr))", gap:2 }}>
                   {p.projects.map((proj,i) => (
                     <div key={i} style={{ border:"2px solid #111", padding: proj.image ? 0 : 20, background:i%2===0?"#f5f5f5":"#efefef", display: "flex", flexDirection: "column", overflow: "hidden" }}>
                       {proj.image && (
@@ -157,16 +239,16 @@ export default function BrutalistLayout({ p, t, id, portfolioId }) {
                 </div>
               : <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
                   {p.projects.map((proj,i) => (
-                    <div key={i} style={{ border:`3px solid ${i===0?ac:`${ac}40`}`, padding:20, display:"flex", justifyContent:"space-between", gap:20, flexWrap:"wrap", alignItems: "center" }}>
+                    <div key={i} className="brutalist-project-card" style={{ border:`3px solid ${i===0?ac:`${ac}40`}` }}>
                       {proj.image && (
-                        <img src={proj.image} alt={proj.title} loading="lazy" style={{ width: 140, height: 100, objectFit: "cover", border: `2px solid ${ac}`, boxShadow: `4px 4px 0px ${ac}`, flexShrink: 0 }} />
+                        <img src={proj.image} alt={proj.title} loading="lazy" className="brutalist-project-img" style={{ border: `2px solid ${ac}`, boxShadow: `4px 4px 0px ${ac}` }} />
                       )}
                       <div style={{ flex:1, minWidth: 200 }}>
                         <h3 style={{ fontWeight:400, fontSize:22, textTransform:"uppercase", marginBottom:6, margin:0 }}>{proj.title}</h3>
                         <p style={{ fontSize:13, opacity:0.65, lineHeight:1.65, fontFamily:"Inter,sans-serif", marginBottom:10 }}>{proj.description}</p>
                         <Tags items={proj.tech||[]} bg={`${ac}20`} fg={ac} radius="0" />
                       </div>
-                      <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                      <div className="brutalist-project-links">
                         {proj.github && <a href={proj.github} target="_blank" rel="noreferrer" onClick={() => trackProjectClick(proj.id, 'github')} style={{ color:ac, fontSize:12, fontFamily:"Inter,sans-serif" }}>CODE ↗</a>}
                         {proj.live   && <a href={proj.live}   target="_blank" rel="noreferrer" onClick={() => trackProjectClick(proj.id, 'live')} style={{ color:ac, fontSize:12, fontFamily:"Inter,sans-serif" }}>LIVE ↗</a>}
                       </div>
@@ -182,7 +264,7 @@ export default function BrutalistLayout({ p, t, id, portfolioId }) {
           <div style={{ marginBottom:48 }}>
             {lbl("Blogs")}
             {isMono
-              ? <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))", gap:2 }}>
+              ? <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(min(260px,100%),1fr))", gap:2 }}>
                   {p.blogs.map((b,i) => (
                     <div key={i} style={{ border:"2px solid #111", padding:20, background:i%2===0?"#f5f5f5":"#efefef" }}>
                       <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
@@ -196,13 +278,13 @@ export default function BrutalistLayout({ p, t, id, portfolioId }) {
                 </div>
               : <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
                   {p.blogs.map((b,i) => (
-                    <div key={i} style={{ border:`3px solid ${i===0?ac:`${ac}40`}`, padding:20, display:"flex", justifyContent:"space-between", gap:20, flexWrap:"wrap" }}>
+                    <div key={i} className="brutalist-blog-card" style={{ border:`3px solid ${i===0?ac:`${ac}40`}` }}>
                       <div style={{ flex:1 }}>
                         <h3 style={{ fontWeight:400, fontSize:22, textTransform:"uppercase", marginBottom:6, margin:0 }}>{b.title}</h3>
                         {b.date && <div style={{ fontSize:13, color:ac, marginBottom:6 }}>{b.date}</div>}
                         <p style={{ fontSize:13, opacity:0.65, lineHeight:1.65, fontFamily:"Inter,sans-serif", marginBottom:10 }}>{b.excerpt}</p>
                       </div>
-                      <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                      <div className="brutalist-blog-links">
                         {b.url && <a href={b.url} target="_blank" rel="noreferrer" style={{ color:ac, fontSize:12, fontFamily:"Inter,sans-serif" }}>READ ↗</a>}
                       </div>
                     </div>
@@ -232,7 +314,7 @@ export default function BrutalistLayout({ p, t, id, portfolioId }) {
         {p.testimonials?.length > 0 && (
           <div style={{ marginBottom:48 }}>
             {lbl("Testimonials")}
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))", gap:isMono?2:8 }}>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(min(260px,100%),1fr))", gap:isMono?2:8 }}>
               {p.testimonials.map((tt,i) => (
                 <blockquote key={i} style={{ border:border, padding:20, margin:0, fontStyle:"italic", fontSize:13, lineHeight:1.8, fontFamily:"Inter,sans-serif" }}>
                   "{tt.quote}"

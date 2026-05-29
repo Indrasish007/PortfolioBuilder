@@ -20,66 +20,200 @@ export default function SidebarLayout({ p, t, id, portfolioId }) {
 
   return (
     <div style={{ background: t.bg, color: t.fg, fontFamily: font, minHeight:"100%" }}>
+      <style>{`
+        .sidebar-layout-container {
+          display: flex;
+          flex-direction: column;
+          min-height: 100vh;
+        }
+        
+        .sidebar-layout-aside {
+          width: 100%;
+          max-width: 100%;
+          flex-shrink: 0;
+          background: ${acBg};
+          border-bottom: 1px solid ${ac}25;
+          padding: 32px 24px 24px;
+          box-sizing: border-box;
+        }
+        
+        .sidebar-layout-aside-content {
+          display: flex;
+          flex-direction: row;
+          flex-wrap: wrap;
+          gap: 20px;
+          align-items: center;
+        }
+        
+        .sidebar-layout-avatar {
+          width: clamp(72px, 15vw, 96px);
+          height: clamp(88px, 18vw, 116px);
+          border-radius: ${id === "developer" ? "0" : id === "obsidian" ? "4px" : id === "architect" ? "8px" : "12px"};
+          object-fit: cover;
+          border: ${id === "developer" ? "none" : `1px solid ${ac}40`};
+          box-shadow: 0 4px 20px rgba(0,0,0,0.35);
+          flex-shrink: 0;
+        }
+        
+        .sidebar-layout-aside-info {
+          flex: 1;
+          min-width: 160px;
+        }
+        
+        .sidebar-layout-name {
+          font-size: clamp(18px, 4vw, 24px);
+          font-weight: 700;
+          line-height: 1.2;
+          margin: 0 0 6px;
+          color: #ffffff;
+        }
+        
+        .sidebar-layout-title {
+          font-size: clamp(12px, 2.5vw, 14px);
+          color: ${ac};
+          margin-bottom: 14px;
+          font-weight: 500;
+        }
+        
+        .sidebar-layout-contact-list {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          margin-bottom: 14px;
+        }
+        
+        .sidebar-layout-contact-item {
+          font-size: clamp(11px, 2vw, 12px);
+          color: #ffffff;
+          opacity: 0.6;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          word-break: break-all;
+        }
+        
+        .sidebar-layout-extra-info {
+          margin-top: 24px;
+          border-top: 1px solid ${ac}15;
+          padding-top: 16px;
+          width: 100%;
+        }
+        
+        .sidebar-layout-main {
+          flex: 1;
+          padding: clamp(24px, 5vw, 48px) clamp(16px, 4vw, 32px);
+          min-width: 0;
+          max-width: 100%;
+          box-sizing: border-box;
+        }
+        
+        @media (min-width: 768px) {
+          .sidebar-layout-container {
+            flex-direction: row;
+          }
+          
+          .sidebar-layout-aside {
+            width: ${sideW}px;
+            max-width: ${sideW}px;
+            min-height: 100vh;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            overflow-y: auto;
+            border-bottom: none;
+            border-right: 1px solid ${ac}25;
+            padding: 48px 32px 32px;
+          }
+          
+          .sidebar-layout-aside-content {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 24px;
+          }
+          
+          .sidebar-layout-avatar {
+            width: 140px;
+            height: 170px;
+            margin-bottom: 8px;
+          }
+          
+          .sidebar-layout-aside-info {
+            width: 100%;
+            flex: none;
+          }
+          
+          .sidebar-layout-name {
+            font-size: 26px;
+            margin-bottom: 8px;
+          }
+          
+          .sidebar-layout-title {
+            font-size: 15px;
+            margin-bottom: 20px;
+          }
+          
+          .sidebar-layout-contact-list {
+            gap: 8px;
+            margin-bottom: 20px;
+          }
+          
+          .sidebar-layout-contact-item {
+            font-size: 12px;
+            opacity: 0.5;
+          }
+          
+          .sidebar-layout-main {
+            padding: 60px 48px;
+          }
+        }
+      `}</style>
 
       {/* ── Responsive wrapper: column on mobile, row on md+ ── */}
-      <div style={{ display:"flex", flexDirection:"column" }}>
+      <div className="sidebar-layout-container">
 
-      {/* ── Sidebar (top strip on mobile, left panel on md+) ── */}
-      <div style={{
-        width: "100%",
-        maxWidth: "100%",
-        flexShrink:0,
-        background: acBg,
-        borderBottom: `1px solid ${ac}25`,
-        padding: "32px 24px 24px",
-        boxSizing:"border-box",
-      }}>
-        {/* Mobile: horizontal layout */}
-        <div style={{ display:"flex", flexWrap:"wrap", gap:16, alignItems:"flex-start" }}>
-          {u.avatar && (
-            <img src={u.avatar} alt={`${u.name || "User"} profile picture`} loading="lazy" style={{
-              width: 72, height: 88,
-              borderRadius: id === "developer" ? 0 : id === "obsidian" ? "4px" : id === "architect" ? "8px" : "12px",
-              objectFit: "cover",
-              border: id === "developer" ? "none" : `1px solid ${ac}40`,
-              boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
-              flexShrink: 0,
-            }} />
+        {/* ── Sidebar (top strip on mobile, left panel on md+) ── */}
+        <aside className="sidebar-layout-aside">
+          {/* Mobile: horizontal layout */}
+          <div className="sidebar-layout-aside-content">
+            {u.avatar && (
+              <img src={u.avatar} alt={`${u.name || "User"} profile picture`} loading="lazy" className="sidebar-layout-avatar" />
+            )}
+            <div className="sidebar-layout-aside-info">
+              <h1 className="sidebar-layout-name">{u.name}</h1>
+              <div className="sidebar-layout-title">{u.title}</div>
+              <div className="sidebar-layout-contact-list">
+                {u.location && <div className="sidebar-layout-contact-item">📍 {u.location}</div>}
+                {u.email    && <div className="sidebar-layout-contact-item">✉ {u.email}</div>}
+                {u.phone    && <div className="sidebar-layout-contact-item">📞 {u.phone}</div>}
+              </div>
+              <Soc user={u} fg="#ffffff" size={14} portfolioId={portfolioId} />
+            </div>
+          </div>
+
+          {id === "terminal" && (
+            <div style={{ marginTop:20, fontSize:11, fontFamily:"ui-monospace,monospace", lineHeight:2 }}>
+              <div style={{ color:"#fff", opacity:0.35 }}>$ whoami</div>
+              <div style={{ color: ac }}>{u.name || "user"}</div>
+              <div style={{ color:"#fff", opacity:0.35 }}>$ status</div>
+              <div style={{ color: ac }}>available ✓</div>
+            </div>
           )}
-          <div style={{ flex: 1, minWidth: 160 }}>
-            <h1 style={{ fontSize:15, fontWeight:700, lineHeight:1.2, marginBottom:4, color:"#fff", margin: "0 0 4px" }}>{u.name}</h1>
-            <div style={{ fontSize:11, color:ac, marginBottom:12 }}>{u.title}</div>
-            {u.location && <div style={{ fontSize:11, color:"#fff", opacity:0.4, marginBottom:4 }}>📍 {u.location}</div>}
-            {u.email    && <div style={{ fontSize:11, color:"#fff", opacity:0.4, marginBottom:4, wordBreak:"break-all" }}>✉ {u.email}</div>}
-            {u.phone    && <div style={{ fontSize:11, color:"#fff", opacity:0.4, marginBottom:12, wordBreak:"break-all" }}>📞 {u.phone}</div>}
-            <Soc user={u} fg="#ffffff" size={14} portfolioId={portfolioId} />
-          </div>
-        </div>
 
-        {id === "terminal" && (
-          <div style={{ marginTop:20, fontSize:11, fontFamily:"ui-monospace,monospace", lineHeight:2 }}>
-            <div style={{ color:"#fff", opacity:0.35 }}>$ whoami</div>
-            <div style={{ color: ac }}>{u.name || "user"}</div>
-            <div style={{ color:"#fff", opacity:0.35 }}>$ status</div>
-            <div style={{ color: ac }}>available ✓</div>
-          </div>
-        )}
+          {id === "architect" && (
+            <div style={{ marginTop:20, borderTop:`1px solid ${ac}20`, paddingTop:16, display:"flex", flexWrap:"wrap", gap:"10px 24px" }}>
+              {["About","Skills","Projects","Experience","Contact"].map(s => (
+                <a key={s} href={`#${s.toLowerCase()}`} style={{ fontSize:12, color:"#fff", opacity:0.5, textDecoration:"none" }}
+                  onMouseEnter={e=>e.currentTarget.style.opacity=1}
+                  onMouseLeave={e=>e.currentTarget.style.opacity=0.5}>
+                  {s}
+                </a>
+              ))}
+            </div>
+          )}
+        </aside>
 
-        {id === "architect" && (
-          <div style={{ marginTop:20, borderTop:`1px solid ${ac}20`, paddingTop:16, display:"flex", flexWrap:"wrap", gap:"10px 24px" }}>
-            {["About","Skills","Projects","Experience","Contact"].map(s => (
-              <a key={s} href={`#${s.toLowerCase()}`} style={{ fontSize:12, color:"#fff", opacity:0.5, textDecoration:"none" }}
-                onMouseEnter={e=>e.currentTarget.style.opacity=1}
-                onMouseLeave={e=>e.currentTarget.style.opacity=0.5}>
-                {s}
-              </a>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* ── Main ── */}
-      <div style={{ flex:1, padding:"32px 20px", minWidth:0, maxWidth:"100%", boxSizing:"border-box" }}>
+        {/* ── Main ── */}
+        <main className="sidebar-layout-main">
 
         {/* About / bio */}
         {id === "terminal" ? (
@@ -148,7 +282,7 @@ export default function SidebarLayout({ p, t, id, portfolioId }) {
         {p.projects?.length > 0 && (
           <div style={{ marginBottom:36 }} id="projects">
             {lbl("Projects")}
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))", gap:14 }}>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(min(260px,100%),1fr))", gap:16 }}>
               {p.projects.map((proj,i) => (
                 <div key={i} style={{
                   border: `1px solid ${ac}25`,
@@ -187,7 +321,7 @@ export default function SidebarLayout({ p, t, id, portfolioId }) {
         {p.blogs?.length > 0 && (
           <div style={{ marginBottom:36 }} id="blogs">
             {lbl("Blogs")}
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))", gap:14 }}>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(min(260px,100%),1fr))", gap:16 }}>
               {p.blogs.map((b,i) => (
                 <div key={i} style={{
                   border: `1px solid ${ac}25`,
@@ -229,7 +363,7 @@ export default function SidebarLayout({ p, t, id, portfolioId }) {
         {p.services?.length > 0 && (
           <div style={{ marginBottom:36 }}>
             {lbl("Services")}
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))", gap:12 }}>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(min(220px,100%),1fr))", gap:16 }}>
               {p.services.map((s,i) => (
                 <div key={i} style={{ border:`1px solid ${ac}20`, borderRadius:radius, padding:16 }}>
                   <h3 style={{ fontWeight:600, fontSize:14, marginBottom:4, margin:0 }}>{s.name}</h3>
@@ -245,7 +379,7 @@ export default function SidebarLayout({ p, t, id, portfolioId }) {
         {p.testimonials?.length > 0 && (
           <div style={{ marginBottom:36 }}>
             {lbl("Testimonials")}
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))", gap:12 }}>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(min(260px,100%),1fr))", gap:16 }}>
               {p.testimonials.map((tt,i) => (
                 <blockquote key={i} style={{ border:`1px solid ${ac}20`, borderRadius:radius, padding:16, margin:0, fontStyle:"italic", fontSize:13, lineHeight:1.75 }}>
                   "{tt.quote}"
@@ -314,7 +448,7 @@ export default function SidebarLayout({ p, t, id, portfolioId }) {
             </div>
           </div>
         )}
-      </div>
+        </main>
       </div>
     </div>
   );
