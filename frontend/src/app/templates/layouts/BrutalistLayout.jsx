@@ -28,6 +28,7 @@ export default function BrutalistLayout({ p, t, id, portfolioId }) {
           display: flex;
           flex-direction: column;
           gap: 16px;
+          padding: 20px;
         }
         
         .brutalist-project-img {
@@ -47,6 +48,7 @@ export default function BrutalistLayout({ p, t, id, portfolioId }) {
           display: flex;
           flex-direction: column;
           gap: 16px;
+          padding: 20px;
         }
         
         .brutalist-blog-links {
@@ -57,6 +59,28 @@ export default function BrutalistLayout({ p, t, id, portfolioId }) {
         
         .brutalist-hero-accent {
           display: none;
+        }
+
+        .brutalist-hero-container {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+          gap: 24px;
+        }
+        .brutalist-hero-info {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
+        .brutalist-hero-bio {
+          text-align: center;
+          margin-top: 24px;
+        }
+        .brutalist-hero-soc {
+          display: flex;
+          justify-content: center;
+          margin-top: 20px;
         }
 
         @media (min-width: 768px) {
@@ -103,6 +127,22 @@ export default function BrutalistLayout({ p, t, id, portfolioId }) {
             background: #facc15;
             z-index: 0;
           }
+
+          .brutalist-hero-container {
+            flex-direction: row;
+            align-items: flex-start;
+            text-align: left;
+            gap: 32px;
+          }
+          .brutalist-hero-info {
+            align-items: flex-start;
+          }
+          .brutalist-hero-bio {
+            text-align: left;
+          }
+          .brutalist-hero-soc {
+            justify-content: flex-start;
+          }
         }
       `}</style>
 
@@ -110,7 +150,7 @@ export default function BrutalistLayout({ p, t, id, portfolioId }) {
       <div style={{ padding:isMono?"clamp(32px,6vw,60px) clamp(16px,5vw,48px)":"clamp(24px,4vw,48px)", borderBottom:border, position:"relative" }}>
         {!isMono && <div className="brutalist-hero-accent" />}
         <div style={{ position:"relative", zIndex:1 }}>
-          <div style={{ display:"flex", alignItems:"flex-start", gap:32, flexWrap:"wrap" }}>
+          <div className="brutalist-hero-container">
             {u.avatar && (
               <img src={u.avatar} alt={`${u.name || "User"} profile picture`} loading="lazy" style={{
                 width: "min(200px, 60vw)",
@@ -125,7 +165,7 @@ export default function BrutalistLayout({ p, t, id, portfolioId }) {
                 marginBottom: 16
               }} />
             )}
-            <div>
+            <div className="brutalist-hero-info">
               <div style={{ fontSize:isMono?11:13, opacity:0.5, marginBottom:8, letterSpacing:"0.15em", textTransform:"uppercase", fontFamily:"Inter,sans-serif" }}>{u.title}</div>
               <h1 style={{ fontSize:`clamp(${isMono?"24px":"36px"}, 7vw, ${isMono?"52px":"72px"})`, fontWeight:900, lineHeight:0.95, margin:"0 0 16px",
                 letterSpacing:isMono?"-0.03em":"0", color:fg,
@@ -139,8 +179,8 @@ export default function BrutalistLayout({ p, t, id, portfolioId }) {
               {u.phone    && <div style={{ fontSize:12, opacity:0.45, fontFamily:"Inter,sans-serif" }}>📞 {u.phone}</div>}
             </div>
           </div>
-          <p style={{ marginTop:24, opacity:0.7, lineHeight:1.8, fontSize:15, maxWidth:600, fontFamily:"Inter,sans-serif", whiteSpace: "pre-wrap" }}>{u.bio}</p>
-          <div style={{ marginTop:20 }}><Soc user={u} fg={t.fg} portfolioId={portfolioId} /></div>
+          <p className="brutalist-hero-bio" style={{ opacity:0.7, lineHeight:1.8, fontSize:15, maxWidth:600, fontFamily:"Inter,sans-serif", whiteSpace: "pre-wrap" }}>{u.bio}</p>
+          <div className="brutalist-hero-soc"><Soc user={u} fg={t.fg} portfolioId={portfolioId} /></div>
         </div>
       </div>
 

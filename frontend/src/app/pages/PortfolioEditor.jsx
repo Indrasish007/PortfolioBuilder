@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { motion, Reorder, AnimatePresence } from "framer-motion";
 import { Undo2, Redo2, RotateCcw, Save, Eye, EyeOff, Smartphone, Tablet, Monitor, Plus, GripVertical, Image as ImageIcon, Sparkles, Trash2, Github, Globe, Linkedin, Twitter, Facebook, Instagram, Type, Palette, Settings2, CheckCircle2, Loader2, ChevronDown, ChevronUp, ArrowUp, ArrowDown, FileText, X, Calendar, ExternalLink, Check, AlertTriangle, RefreshCw } from "lucide-react";
 import { useNavigate, useParams, useSearchParams, useLocation } from "react-router-dom";
@@ -13,6 +14,59 @@ import { useToast } from "../context/ToasterContext.jsx";
 import { useAuthStore } from "../store/authStore.js";
 import api from "../services/api.js";
 import useAutoSave from "../hooks/useAutoSave.js";
+
+function FramePreview({ children, className, style }) {
+  const [contentRef, setContentRef] = useState(null);
+  const mountNode = contentRef?.contentWindow?.document?.body;
+  const headNode = contentRef?.contentWindow?.document?.head;
+
+  useEffect(() => {
+    if (!headNode) return;
+    const ownerDocument = headNode.ownerDocument;
+    
+    // Copy stylesheets from parent document
+    const styles = document.querySelectorAll('style, link[rel="stylesheet"]');
+    styles.forEach((styleEl) => {
+      const clone = styleEl.cloneNode(true);
+      headNode.appendChild(clone);
+    });
+    
+    // Scoped body styles inside iframe
+    const styleBlock = ownerDocument.createElement('style');
+    styleBlock.textContent = `
+      body {
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+        height: 100%;
+        background-color: transparent;
+      }
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(155, 155, 155, 0.3);
+        border-radius: 4px;
+      }
+    `;
+    headNode.appendChild(styleBlock);
+  }, [headNode]);
+
+  return (
+    <iframe
+      ref={setContentRef}
+      title="Preview"
+      className={className}
+      style={{ ...style, border: "none" }}
+    >
+      {mountNode && createPortal(children, mountNode)}
+    </iframe>
+  );
+}
 
 const sectionTypes = ["About", "Skills", "Experience", "Education", "Projects", "Services", "Languages", "Awards", "Certifications", "Volunteer", "Testimonials", "References", "Blogs", "Gallery", "Videos", "Music", "FAQ", "Contact", "Custom"];
 
@@ -552,13 +606,15 @@ export default function PortfolioEditor() {
             </div>
           </div>
           {/* Preview content */}
-          <div className="flex-1 overflow-auto flex items-start justify-center bg-muted/30">
+          <div className="flex-1 overflow-hidden flex items-start justify-center bg-muted/30">
             <motion.div
               animate={{ width: { desktop: "100%", tablet: "768px", mobile: "390px" }[device] }}
               transition={{ duration: 0.25 }}
-              className="min-h-full bg-background shadow-2xl"
+              className="h-full w-full max-w-full bg-background shadow-2xl overflow-hidden"
             >
-              <LivePortfolio portfolio={portfolio} template={template} themeName={themeName} />
+              <FramePreview className="w-full h-full">
+                <LivePortfolio portfolio={portfolio} template={template} themeName={themeName} />
+              </FramePreview>
             </motion.div>
           </div>
         </motion.div>
@@ -899,9 +955,11 @@ export default function PortfolioEditor() {
           <motion.div
             animate={{ width: widths[device] }}
             transition={{ duration: 0.3 }}
-            className="h-full max-w-full overflow-y-auto rounded-xl border border-border bg-background shadow-card"
+            className="h-full w-full max-w-full rounded-xl border border-border bg-background shadow-card overflow-hidden"
           >
-            <LivePortfolio portfolio={portfolio} template={template} themeName={themeName} />
+            <FramePreview className="w-full h-full">
+              <LivePortfolio portfolio={portfolio} template={template} themeName={themeName} />
+            </FramePreview>
           </motion.div>
         </div>
       </div>
