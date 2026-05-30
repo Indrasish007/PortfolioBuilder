@@ -292,10 +292,10 @@ class HelpCenterChatView(APIView):
             system_prompt = """You are a helpful support assistant for PortfolioBuilder. Help users with creating portfolios, templates, themes, analytics, portfolio score, project insights, settings, AI rewrite feature and troubleshooting. Be friendly, concise and helpful."""
             
             _MODEL_FALLBACK = [
-                'gemini-1.5-flash',
-                'gemini-1.5-flash-8b',
                 'gemini-2.0-flash',
-                'gemini-1.0-pro',
+                'gemini-2.0-flash-lite',
+                'gemini-1.5-flash',
+                'gemini-1.5-pro',
             ]
             
             bot_reply = None
@@ -317,12 +317,22 @@ class HelpCenterChatView(APIView):
                     break
                 except Exception as model_err:
                     err_str = str(model_err)
-                    if '429' in err_str or 'quota' in err_str.lower() or 'ResourceExhausted' in type(model_err).__name__:
-                        print(f"[Chat] Quota exceeded for {model_name}, trying next...")
+                    err_type = type(model_err).__name__
+                    # Continue to next model on: quota, rate limit, not found, not supported
+                    should_retry = (
+                        '429' in err_str
+                        or '404' in err_str
+                        or 'quota' in err_str.lower()
+                        or 'not found' in err_str.lower()
+                        or 'not supported' in err_str.lower()
+                        or 'ResourceExhausted' in err_type
+                    )
+                    if should_retry:
+                        print(f"[Chat] Model {model_name} unavailable ({err_type}), trying next...")
                         last_error = model_err
                         continue
-                    # Non-quota error — don't retry
-                    print(f"[Chat] ERROR with {model_name}: {type(model_err).__name__}: {err_str[:200]}")
+                    # Hard error (auth failure, network, etc.) — stop immediately
+                    print(f"[Chat] Hard error with {model_name}: {err_type}: {err_str[:200]}")
                     last_error = model_err
                     break
             
