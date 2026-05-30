@@ -1,7 +1,7 @@
 import os
 import threading
 from django.utils import timezone
-from django.core.mail import EmailMessage
+import resend
 from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -14,74 +14,70 @@ from .serializers import SupportTicketSerializer, SupportTicketCreateSerializer,
 SUPPORT_EMAIL = 'indrasishadhya770@gmail.com'
 
 
-def send_email_in_background(ticket, user_id):
-    """Fire-and-forget email sender — runs in a daemon thread, never blocks the response."""
+def send_email_with_resend(ticket_id, user_name, user_email, category, subject, message, user_id):
     try:
-        print(f"📧 Email thread started for ticket #{ticket.id}")
-        print(f"📧 EMAIL_BACKEND:   {settings.EMAIL_BACKEND}")
-        print(f"📧 EMAIL_HOST:      {settings.EMAIL_HOST}")
-        print(f"📧 EMAIL_PORT:      {settings.EMAIL_PORT}")
-        print(f"📧 EMAIL_USE_TLS:   {settings.EMAIL_USE_TLS}")
-        print(f"📧 EMAIL_HOST_USER: {settings.EMAIL_HOST_USER}")
-
-        if not settings.EMAIL_HOST_USER:
-            print("❌ EMAIL_HOST_USER is empty — check Render environment variables!")
-            return
-
-        if not settings.EMAIL_HOST_PASSWORD:
-            print("❌ EMAIL_HOST_PASSWORD is empty — check Render environment variables!")
-            return
-
-        email = EmailMessage(
-            subject=f"[PortfolioBuilder Support] [{ticket.get_category_display()}] — {ticket.subject}",
-            body=f"""
+        print(f"📧 Sending email via Resend for ticket #{ticket_id}")
+        print(f"📧 RESEND_API_KEY exists: {bool(settings.RESEND_API_KEY)}")
+        
+        resend.api_key = settings.RESEND_API_KEY
+        
+        params = {
+            "from": "PortfolioBuilder Support <onboarding@resend.dev>",
+            "to": ["indrasishadhya770@gmail.com"],
+            "reply_to": user_email,
+            "subject": f"[PortfolioBuilder Support] [{category}] — {subject}",
+            "text": f"""
 New Support Ticket Received
 ===========================
-Ticket ID: #{ticket.id}
-From: {ticket.user_name} ({ticket.user_email})
-Category: {ticket.get_category_display()}
-Subject: {ticket.subject}
+Ticket ID: #{ticket_id}
+From: {user_name} ({user_email})
+Category: {category}
+Subject: {subject}
 Status: Pending
 
 Message:
-{ticket.message}
+{message}
 
 ---
 User ID: {user_id}
-            """,
-            from_email='ad0141001@smtp-brevo.com',  # Use Brevo sender not Gmail
-            to=['indrasishadhya770@gmail.com'],
-            reply_to=[ticket.user_email]
-        )
-
-        print(f"📧 Attempting to send email to {SUPPORT_EMAIL}...")
-        email.send()
-        print(f"✅ Email successfully sent for ticket #{ticket.id}")
-
+            """
+        }
+        
+        email = resend.Emails.send(params)
+        print(f"✅ Email sent via Resend for ticket #{ticket_id}: {email}")
+        return True
+        
     except Exception as e:
-        print(f"❌ Email failed for ticket #{ticket.id}: {type(e).__name__}: {str(e)}")
+        print(f"❌ Resend email failed for ticket #{ticket_id}: {type(e).__name__}: {str(e)}")
+        return False
 
 
 
 def _send_reply_notification(ticket: SupportTicket):
     """Send reply notification email to the user."""
     try:
-        subject = f"[PortfolioBuilder] Reply to your support ticket: {ticket.subject}"
-        body = (
-            f"Hi {ticket.user_name},\n\n"
-            f"You have a new reply to your support ticket.\n\n"
-            f"Subject: {ticket.subject}\n\n"
-            f"--- Reply ---\n{ticket.admin_reply}\n\n"
-            f"If you have further questions, please submit a new ticket from your PortfolioBuilder dashboard.\n\n"
-            f"Best regards,\nThe PortfolioBuilder Team"
-        )
-        email = EmailMessage(
-            subject=subject,
-            body=body,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            to=[ticket.user_email],
-        )
-        email.send(fail_silently=True)
+        print(f"📧 Sending reply notification email via Resend for ticket #{ticket.id}")
+        resend.api_key = settings.RESEND_API_KEY
+        params = {
+            "from": "PortfolioBuilder Support <onboarding@resend.dev>",
+            "to": [ticket.user_email],
+            "subject": f"[PortfolioBuilder] Reply to your support ticket: {ticket.subject}",
+            "text": f"""Hi {ticket.user_name},
+
+You have a new reply to your support ticket.
+
+Subject: {ticket.subject}
+
+--- Reply ---
+{ticket.admin_reply}
+
+If you have further questions, please submit a new ticket from your PortfolioBuilder dashboard.
+
+Best regards,
+The PortfolioBuilder Team"""
+        }
+        email = resend.Emails.send(params)
+        print(f"✅ Reply notification email sent via Resend for ticket #{ticket.id}: {email}")
     except Exception as e:
         print(f"[SupportEmail] Failed to send reply notification: {e}")
 
@@ -90,7 +86,9 @@ class SupportTicketListCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        tickets = SupportTicket.objects.filter(user=request.user)
+        tickets = SupportTicket.objects.filter(
+            user=request.user
+        ).order_by('-created_at')
         serializer = SupportTicketSerializer(tickets, many=True)
         return Response(serializer.data)
 
@@ -107,20 +105,27 @@ class SupportTicketListCreateView(APIView):
                 user_email=request.user.email,
                 status='pending',
             )
-            print(f"[SupportTicket] ✅ Ticket #{ticket.id} saved")
+            print(f"✅ Ticket #{ticket.id} saved to database")
 
-            # Step 2 — Send email in background (NEVER blocks response)
-            thread = threading.Thread(
-                target=send_email_in_background,
+            # Step 2 — Send email via Resend HTTP API
+            import threading
+            email_thread = threading.Thread(
+                target=send_email_with_resend,
                 args=(
-                    ticket,
+                    ticket.id,
+                    ticket.user_name,
+                    ticket.user_email,
+                    ticket.get_category_display(),
+                    ticket.subject,
+                    ticket.message,
                     request.user.id,
                 ),
                 daemon=True,
             )
-            thread.start()
+            email_thread.start()
+            print(f"📧 Resend email thread started for ticket #{ticket.id}")
 
-            # Step 3 — Return success IMMEDIATELY without waiting for email
+            # Step 3 — Return success immediately
             return Response({
                 'message': 'Support ticket created successfully',
                 'ticket_id': ticket.id,
@@ -128,7 +133,7 @@ class SupportTicketListCreateView(APIView):
             }, status=201)
 
         except Exception as e:
-            print(f"[SupportTicket] ❌ Error: {e}")
+            print(f"❌ Ticket creation error: {str(e)}")
             return Response(
                 {'error': f'Failed to create ticket: {str(e)}'},
                 status=500,

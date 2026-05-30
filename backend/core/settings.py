@@ -254,19 +254,9 @@ ACCOUNT_SIGNUP_FIELDS = ['email*']
 # AI / Gemini
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')
 
-# ── Email ─────────────────────────────────────────────────────────────────────
-# Development: prints emails to console.
-# Production (Render): set EMAIL_HOST / EMAIL_HOST_USER / EMAIL_HOST_PASSWORD
-# as environment variables in the Render dashboard.
-EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
-EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp-relay.brevo.com')
-EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
-EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
-DEFAULT_FROM_EMAIL = 'ad0141001@smtp-brevo.com'
-# Prevent SMTP connections from hanging indefinitely (e.g. on Render when creds are misconfigured).
-# If the connection is not established within this many seconds, raise SMTPConnectError.
-EMAIL_TIMEOUT = int(os.environ.get('EMAIL_TIMEOUT', '10'))
+# Resend API
+import resend
+RESEND_API_KEY = os.environ.get('RESEND_API_KEY', '')
+resend.api_key = RESEND_API_KEY
 
 
