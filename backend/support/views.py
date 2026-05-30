@@ -17,6 +17,21 @@ SUPPORT_EMAIL = 'indrasishadhya770@gmail.com'
 def send_email_in_background(ticket_id, user_name, user_email, category, subject, message):
     """Fire-and-forget email sender — runs in a daemon thread, never blocks the response."""
     try:
+        print(f"📧 Email thread started for ticket #{ticket_id}")
+        print(f"📧 EMAIL_BACKEND:   {settings.EMAIL_BACKEND}")
+        print(f"📧 EMAIL_HOST:      {settings.EMAIL_HOST}")
+        print(f"📧 EMAIL_PORT:      {settings.EMAIL_PORT}")
+        print(f"📧 EMAIL_USE_TLS:   {settings.EMAIL_USE_TLS}")
+        print(f"📧 EMAIL_HOST_USER: {settings.EMAIL_HOST_USER}")
+
+        if not settings.EMAIL_HOST_USER:
+            print("❌ EMAIL_HOST_USER is empty — check Render environment variables!")
+            return
+
+        if not settings.EMAIL_HOST_PASSWORD:
+            print("❌ EMAIL_HOST_PASSWORD is empty — check Render environment variables!")
+            return
+
         email = EmailMessage(
             subject=f"[PortfolioBuilder Support] [{category}] — {subject}",
             body=(
@@ -30,10 +45,13 @@ def send_email_in_background(ticket_id, user_name, user_email, category, subject
             to=[SUPPORT_EMAIL],
             reply_to=[user_email],
         )
-        email.send(fail_silently=True)
-        print(f"[SupportEmail] ✅ Email sent for ticket #{ticket_id}")
+
+        print(f"📧 Attempting to send email to {SUPPORT_EMAIL}...")
+        email.send(fail_silently=False)
+        print(f"✅ Email successfully sent for ticket #{ticket_id}")
+
     except Exception as e:
-        print(f"[SupportEmail] ❌ Email failed for ticket #{ticket_id}: {e}")
+        print(f"❌ Email failed for ticket #{ticket_id}: {type(e).__name__}: {str(e)}")
 
 
 
