@@ -364,10 +364,13 @@ function ChatbotTab() {
       setChatHistory([...updatedHistory, botMsg]);
     } catch (error) {
       console.error('Chat error:', error);
+      const serverError = error.response?.data?.error;
       setChatHistory([...updatedHistory, {
         id: Date.now() + 1,
         role: 'assistant',
-        content: 'Sorry, I could not process your message. Please try again.',
+        content: serverError
+          ? `Error: ${serverError}. Please check the console for details.`
+          : 'Sorry, I could not process your message. Please try again.',
         timestamp: new Date()
       }]);
     } finally {

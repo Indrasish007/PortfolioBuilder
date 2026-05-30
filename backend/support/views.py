@@ -16,8 +16,8 @@ SUPPORT_EMAIL = 'indrasishadhya770@gmail.com'
 
 def send_email_with_resend(ticket_id, user_name, user_email, category, subject, message, user_id):
     try:
-        print(f"📧 Sending email via Resend for ticket #{ticket_id}")
-        print(f"📧 RESEND_API_KEY exists: {bool(settings.RESEND_API_KEY)}")
+        print(f"[Resend] Sending email for ticket #{ticket_id}")
+        print(f"[Resend] RESEND_API_KEY exists: {bool(settings.RESEND_API_KEY)}")
         
         resend.api_key = settings.RESEND_API_KEY
         
@@ -44,11 +44,11 @@ User ID: {user_id}
         }
         
         email = resend.Emails.send(params)
-        print(f"✅ Email sent via Resend for ticket #{ticket_id}: {email}")
+        print(f"[Resend] Email sent for ticket #{ticket_id}: {email}")
         return True
         
     except Exception as e:
-        print(f"❌ Resend email failed for ticket #{ticket_id}: {type(e).__name__}: {str(e)}")
+        print(f"[Resend] FAILED for ticket #{ticket_id}: {type(e).__name__}: {str(e)}")
         return False
 
 
@@ -56,7 +56,7 @@ User ID: {user_id}
 def _send_reply_notification(ticket: SupportTicket):
     """Send reply notification email to the user."""
     try:
-        print(f"📧 Sending reply notification email via Resend for ticket #{ticket.id}")
+        print(f"[SupportEmail] Sending reply notification for ticket #{ticket.id}")
         resend.api_key = settings.RESEND_API_KEY
         params = {
             "from": "PortfolioBuilder Support <onboarding@resend.dev>",
@@ -77,7 +77,7 @@ Best regards,
 The PortfolioBuilder Team"""
         }
         email = resend.Emails.send(params)
-        print(f"✅ Reply notification email sent via Resend for ticket #{ticket.id}: {email}")
+        print(f"[SupportEmail] Reply notification sent for ticket #{ticket.id}: {email}")
     except Exception as e:
         print(f"[SupportEmail] Failed to send reply notification: {e}")
 
@@ -105,7 +105,7 @@ class SupportTicketListCreateView(APIView):
                 user_email=request.user.email,
                 status='pending',
             )
-            print(f"✅ Ticket #{ticket.id} saved to database")
+            print(f"[SupportTicket] Ticket #{ticket.id} saved to database")
 
             # Step 2 — Send email via Resend HTTP API
             import threading
@@ -123,7 +123,7 @@ class SupportTicketListCreateView(APIView):
                 daemon=True,
             )
             email_thread.start()
-            print(f"📧 Resend email thread started for ticket #{ticket.id}")
+            print(f"[SupportTicket] Resend email thread started for ticket #{ticket.id}")
 
             # Step 3 — Return success immediately
             return Response({
@@ -133,7 +133,7 @@ class SupportTicketListCreateView(APIView):
             }, status=201)
 
         except Exception as e:
-            print(f"❌ Ticket creation error: {str(e)}")
+            print(f"[SupportTicket] ERROR: {str(e)}")
             return Response(
                 {'error': f'Failed to create ticket: {str(e)}'},
                 status=500,
@@ -242,145 +242,114 @@ _CHAT_MODEL_CANDIDATES = [
 
 class HelpCenterChatView(APIView):
     permission_classes = [IsAuthenticated]
-
+    
     def post(self, request):
         try:
-            user_message = request.data.get('message', '').strip()
-
-            if not user_message:
-                return Response(
-                    {'error': 'Message is required'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-            # Save user message to database
+            user_message = request.data.get('message', '')
+            
+            print(f"[Chat] Received from {request.user.username}: {user_message[:50]}")
+            
+            if not user_message or not user_message.strip():
+                return Response({'error': 'Message is required'}, status=400)
+            
+            # Check Gemini key from environment
+            gemini_key = os.environ.get('GEMINI_API_KEY', '') or getattr(settings, 'GEMINI_API_KEY', '')
+            print(f"[Chat] GEMINI_API_KEY exists: {bool(gemini_key)}")
+            print(f"[Chat] GEMINI_API_KEY length: {len(gemini_key)}")
+            
+            if not gemini_key:
+                print("[Chat] ERROR: GEMINI_API_KEY is missing from environment!")
+                return Response({'error': 'AI service not configured — GEMINI_API_KEY missing'}, status=500)
+            
+            # Save user message
             ChatMessage.objects.create(
                 user=request.user,
                 role='user',
-                content=user_message
+                content=user_message.strip()
             )
-
-            # Fetch full history as a LIST (not QuerySet) to avoid negative slicing AssertionError
+            
+            # Fetch history as list
             history_list = list(
                 ChatMessage.objects.filter(
                     user=request.user
                 ).order_by('created_at')
             )
-
-            # Build a plain-text conversation prompt from DB history
-            # Exclude the message we just saved in the history lines
-            history_lines = ''
-            for msg in history_list[:-1]:
-                role_label = 'User' if msg.role == 'user' else 'Assistant'
-                history_lines += f"{role_label}: {msg.content}\n"
-
-            full_prompt = (
-                f"{_CHATBOT_SYSTEM_PROMPT}\n\n"
-                + (f"Conversation so far:\n{history_lines}" if history_lines else "")
-                + f"User: {user_message}\nAssistant:"
-            )
-
-            # Resolve API key
-            api_key = os.getenv("GEMINI_API_KEY") or settings.GEMINI_API_KEY
-            if not api_key:
-                from dotenv import load_dotenv
-                load_dotenv()
-                api_key = os.getenv("GEMINI_API_KEY", "")
-
-            print(f"[HelpCenterChat] API key present: {bool(api_key)}, length: {len(api_key)}")
-
+            print(f"[Chat] History length: {len(history_list)}")
+            
+            # Build Gemini history
+            gemini_history = []
+            if len(history_list) > 1:
+                for msg in history_list[:-1]:
+                    gemini_history.append({
+                        'role': 'model' if msg.role == 'bot' else 'user',
+                        'parts': [{'text': msg.content}]
+                    })
+            
+            # Configure Gemini — try models in order until one works
+            import google.generativeai as genai
+            genai.configure(api_key=gemini_key)
+            
+            system_prompt = """You are a helpful support assistant for PortfolioBuilder. Help users with creating portfolios, templates, themes, analytics, portfolio score, project insights, settings, AI rewrite feature and troubleshooting. Be friendly, concise and helpful."""
+            
+            _MODEL_FALLBACK = [
+                'gemini-1.5-flash',
+                'gemini-1.5-flash-8b',
+                'gemini-2.0-flash',
+                'gemini-1.0-pro',
+            ]
+            
             bot_reply = None
-
-            if api_key and not api_key.startswith("your_") and api_key != "mock_key":
-
-                # ── Primary: google-genai SDK ──────────────────────────────────────
+            last_error = None
+            
+            for model_name in _MODEL_FALLBACK:
                 try:
-                    from google import genai
-                    from google.genai import types
-
-                    client = genai.Client(api_key=api_key)
-                    last_error = None
-
-                    for model_name in _CHAT_MODEL_CANDIDATES:
-                        try:
-                            response = client.models.generate_content(
-                                model=model_name,
-                                contents=full_prompt,
-                                config=types.GenerateContentConfig(
-                                    temperature=0.7,
-                                    max_output_tokens=512,
-                                ),
-                            )
-                            raw = (response.text or "").strip()
-                            if raw:
-                                print(f"[HelpCenterChat] Success with model: {model_name}")
-                                bot_reply = raw
-                                break
-                        except Exception as exc:
-                            err_str = str(exc)
-                            if any(x in err_str for x in ("429", "RESOURCE_EXHAUSTED", "quota")):
-                                print(f"[HelpCenterChat] Quota exhausted for {model_name}, trying next...")
-                                last_error = exc
-                                continue
-                            print(f"[HelpCenterChat] Error with {model_name}: {exc}")
-                            last_error = exc
-                            continue
-
-                    if not bot_reply:
-                        print(f"[HelpCenterChat] All google-genai models failed. Last: {last_error}")
-
-                except ImportError as ie:
-                    print(f"[HelpCenterChat] google-genai SDK not available: {ie}")
-
-                # ── Fallback: raw HTTP REST API ────────────────────────────────────
-                if not bot_reply:
-                    import requests as _req
-                    for model_name in ["gemini-2.0-flash", "gemini-1.5-flash"]:
-                        try:
-                            url = (
-                                f"https://generativelanguage.googleapis.com/v1beta/models/"
-                                f"{model_name}:generateContent?key={api_key}"
-                            )
-                            payload = {
-                                "systemInstruction": {"parts": [{"text": _CHATBOT_SYSTEM_PROMPT}]},
-                                "contents": [{"parts": [{"text": full_prompt}]}],
-                                "generationConfig": {"maxOutputTokens": 512, "temperature": 0.7},
-                            }
-                            resp = _req.post(url, json=payload, timeout=30)
-                            print(f"[HelpCenterChat] REST fallback {model_name} → HTTP {resp.status_code}")
-                            if resp.status_code == 200:
-                                data = resp.json()
-                                text = data['candidates'][0]['content']['parts'][0]['text'].strip()
-                                if text:
-                                    bot_reply = text
-                                    break
-                            else:
-                                print(f"[HelpCenterChat] REST error: {resp.text[:400]}")
-                        except Exception as exc:
-                            print(f"[HelpCenterChat] REST fallback error ({model_name}): {exc}")
-
-            else:
-                print("[HelpCenterChat] No valid GEMINI_API_KEY — skipping AI call.")
-
+                    print(f"[Chat] Trying model: {model_name}")
+                    model = genai.GenerativeModel(model_name)
+                    chat = model.start_chat(history=gemini_history)
+                    full_message = (
+                        f"{system_prompt}\n\nUser: {user_message.strip()}"
+                        if not gemini_history
+                        else user_message.strip()
+                    )
+                    response = chat.send_message(full_message)
+                    bot_reply = response.text
+                    print(f"[Chat] Success with {model_name}: {bot_reply[:50]}")
+                    break
+                except Exception as model_err:
+                    err_str = str(model_err)
+                    if '429' in err_str or 'quota' in err_str.lower() or 'ResourceExhausted' in type(model_err).__name__:
+                        print(f"[Chat] Quota exceeded for {model_name}, trying next...")
+                        last_error = model_err
+                        continue
+                    # Non-quota error — don't retry
+                    print(f"[Chat] ERROR with {model_name}: {type(model_err).__name__}: {err_str[:200]}")
+                    last_error = model_err
+                    break
+            
             if not bot_reply:
-                print("[HelpCenterChat] All AI paths failed — returning fallback reply.")
-                bot_reply = (
-                    "I'm sorry, I'm having trouble connecting to the AI right now. "
-                    "Please try again in a moment, or use the Contact Support tab "
-                    "to reach us directly."
-                )
-
-            # Save bot reply to database
+                err_str = str(last_error) if last_error else ''
+                if '429' in err_str or 'quota' in err_str.lower():
+                    bot_reply = (
+                        "I'm currently unavailable due to API rate limits. "
+                        "Please try again in a minute, or use the Contact Support tab to reach us directly."
+                    )
+                else:
+                    raise last_error if last_error else Exception("No reply from AI")
+            
+            # Save bot reply
             ChatMessage.objects.create(
                 user=request.user,
                 role='bot',
                 content=bot_reply
             )
-
+            
             return Response({'reply': bot_reply})
-
+            
         except Exception as e:
-            print(f"Chat error: {str(e)}")
+            print(f"[Chat] ERROR type: {type(e).__name__}")
+            print(f"[Chat] ERROR message: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return Response(
                 {'error': str(e)},
                 status=500
