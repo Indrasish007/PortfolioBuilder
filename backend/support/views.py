@@ -1,4 +1,5 @@
 import os
+import threading
 from django.utils import timezone
 from django.core.mail import EmailMessage
 from django.conf import settings
@@ -13,31 +14,26 @@ from .serializers import SupportTicketSerializer, SupportTicketCreateSerializer,
 SUPPORT_EMAIL = 'indrasishadhya770@gmail.com'
 
 
-def _send_support_email(ticket: SupportTicket):
-    """Send notification email to support address. Logs errors but never raises."""
+def send_email_in_background(ticket_id, user_name, user_email, category, subject, message):
+    """Fire-and-forget email sender — runs in a daemon thread, never blocks the response."""
     try:
-        subject = f"[PortfolioBuilder Support] [{ticket.get_category_display()}] — {ticket.subject}"
-        body = (
-            f"New support ticket received.\n\n"
-            f"From: {ticket.user_name} <{ticket.user_email}>\n"
-            f"User ID: {ticket.user_id or 'N/A'}\n"
-            f"Category: {ticket.get_category_display()}\n"
-            f"Subject: {ticket.subject}\n"
-            f"Submitted: {ticket.created_at.strftime('%Y-%m-%d %H:%M UTC')}\n\n"
-            f"--- Message ---\n{ticket.message}\n"
-        )
         email = EmailMessage(
-            subject=subject,
-            body=body,
-            from_email=settings.DEFAULT_FROM_EMAIL,
+            subject=f"[PortfolioBuilder Support] [{category}] — {subject}",
+            body=(
+                f"New Support Ticket #{ticket_id}\n"
+                f"From: {user_name} ({user_email})\n"
+                f"Category: {category}\n"
+                f"Subject: {subject}\n\n"
+                f"Message:\n{message}"
+            ),
+            from_email=settings.EMAIL_HOST_USER,
             to=[SUPPORT_EMAIL],
-            reply_to=[ticket.user_email],
+            reply_to=[user_email],
         )
-        # fail_silently=False so the outer try/except catches SMTP errors and logs them
-        email.send(fail_silently=False)
+        email.send(fail_silently=True)
+        print(f"[SupportEmail] ✅ Email sent for ticket #{ticket_id}")
     except Exception as e:
-        print(f"[SupportEmail] Failed to send for ticket #{ticket.id}: {e}")
-        raise  # Re-raise so the caller's try/except can log it too
+        print(f"[SupportEmail] ❌ Email failed for ticket #{ticket_id}: {e}")
 
 
 
@@ -73,52 +69,47 @@ class SupportTicketListCreateView(APIView):
         return Response(serializer.data)
 
     def post(self, request):
-        print(f"[SupportTicket] POST started — user: {request.user.username} ({request.user.email})")
-        print(f"[SupportTicket] Request data: {request.data}")
         try:
-            # ── Step 1: Validate incoming data ─────────────────────────────────
             serializer = SupportTicketCreateSerializer(data=request.data)
             if not serializer.is_valid():
-                print(f"[SupportTicket] Validation errors: {serializer.errors}")
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                return Response(serializer.errors, status=400)
 
-            # ── Step 2: Determine user_name / user_email with fallbacks ────────
-            # The serializer accepts user_name/user_email from the request body,
-            # but if they are empty or missing we fall back to the authenticated
-            # user's profile so the ticket is never saved with blank identity.
-            validated = serializer.validated_data
-            user_name = (validated.get('user_name') or '').strip() or (
-                request.user.get_full_name() or request.user.username
-            )
-            user_email = (validated.get('user_email') or '').strip() or request.user.email
-
-            # ── Step 3: Save ticket to database FIRST ──────────────────────────
+            # Step 1 — Save ticket to database immediately
             ticket = serializer.save(
                 user=request.user,
-                user_name=user_name,
-                user_email=user_email,
+                user_name=request.user.get_full_name() or request.user.username,
+                user_email=request.user.email,
                 status='pending',
             )
-            print(f"[SupportTicket] ✅ Ticket #{ticket.id} saved to database")
+            print(f"[SupportTicket] ✅ Ticket #{ticket.id} saved")
 
-            # ── Step 4: Send email in isolated try/except (never blocks save) ──
-            try:
-                _send_support_email(ticket)
-                print(f"[SupportTicket] ✅ Email dispatched for ticket #{ticket.id}")
-            except Exception as email_exc:
-                # Email failure must NEVER fail the request — ticket is already saved
-                print(f"[SupportTicket] ❌ Email dispatch error for ticket #{ticket.id}: {email_exc}")
+            # Step 2 — Send email in background (NEVER blocks response)
+            thread = threading.Thread(
+                target=send_email_in_background,
+                args=(
+                    ticket.id,
+                    ticket.user_name,
+                    ticket.user_email,
+                    ticket.get_category_display(),
+                    ticket.subject,
+                    ticket.message,
+                ),
+                daemon=True,
+            )
+            thread.start()
 
-            # ── Step 5: Return success ─────────────────────────────────────────
-            return Response(SupportTicketSerializer(ticket).data, status=status.HTTP_201_CREATED)
+            # Step 3 — Return success IMMEDIATELY without waiting for email
+            return Response({
+                'message': 'Support ticket created successfully',
+                'ticket_id': ticket.id,
+                'status': 'pending',
+            }, status=201)
 
-        except Exception as exc:
-            print(f"[SupportTicket] ❌ Ticket creation failed: {exc}")
-            import traceback
-            traceback.print_exc()
+        except Exception as e:
+            print(f"[SupportTicket] ❌ Error: {e}")
             return Response(
-                {'error': f'Failed to create ticket: {str(exc)}'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                {'error': f'Failed to create ticket: {str(e)}'},
+                status=500,
             )
 
 
