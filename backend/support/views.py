@@ -14,10 +14,10 @@ from .serializers import SupportTicketSerializer, SupportTicketCreateSerializer,
 SUPPORT_EMAIL = 'indrasishadhya770@gmail.com'
 
 
-def send_email_in_background(ticket_id, user_name, user_email, category, subject, message):
+def send_email_in_background(ticket, user_id):
     """Fire-and-forget email sender — runs in a daemon thread, never blocks the response."""
     try:
-        print(f"📧 Email thread started for ticket #{ticket_id}")
+        print(f"📧 Email thread started for ticket #{ticket.id}")
         print(f"📧 EMAIL_BACKEND:   {settings.EMAIL_BACKEND}")
         print(f"📧 EMAIL_HOST:      {settings.EMAIL_HOST}")
         print(f"📧 EMAIL_PORT:      {settings.EMAIL_PORT}")
@@ -33,25 +33,33 @@ def send_email_in_background(ticket_id, user_name, user_email, category, subject
             return
 
         email = EmailMessage(
-            subject=f"[PortfolioBuilder Support] [{category}] — {subject}",
-            body=(
-                f"New Support Ticket #{ticket_id}\n"
-                f"From: {user_name} ({user_email})\n"
-                f"Category: {category}\n"
-                f"Subject: {subject}\n\n"
-                f"Message:\n{message}"
-            ),
-            from_email=settings.EMAIL_HOST_USER,
-            to=[SUPPORT_EMAIL],
-            reply_to=[user_email],
+            subject=f"[PortfolioBuilder Support] [{ticket.get_category_display()}] — {ticket.subject}",
+            body=f"""
+New Support Ticket Received
+===========================
+Ticket ID: #{ticket.id}
+From: {ticket.user_name} ({ticket.user_email})
+Category: {ticket.get_category_display()}
+Subject: {ticket.subject}
+Status: Pending
+
+Message:
+{ticket.message}
+
+---
+User ID: {user_id}
+            """,
+            from_email='ad0141001@smtp-brevo.com',  # Use Brevo sender not Gmail
+            to=['indrasishadhya770@gmail.com'],
+            reply_to=[ticket.user_email]
         )
 
         print(f"📧 Attempting to send email to {SUPPORT_EMAIL}...")
-        email.send(fail_silently=False)
-        print(f"✅ Email successfully sent for ticket #{ticket_id}")
+        email.send()
+        print(f"✅ Email successfully sent for ticket #{ticket.id}")
 
     except Exception as e:
-        print(f"❌ Email failed for ticket #{ticket_id}: {type(e).__name__}: {str(e)}")
+        print(f"❌ Email failed for ticket #{ticket.id}: {type(e).__name__}: {str(e)}")
 
 
 
@@ -105,12 +113,8 @@ class SupportTicketListCreateView(APIView):
             thread = threading.Thread(
                 target=send_email_in_background,
                 args=(
-                    ticket.id,
-                    ticket.user_name,
-                    ticket.user_email,
-                    ticket.get_category_display(),
-                    ticket.subject,
-                    ticket.message,
+                    ticket,
+                    request.user.id,
                 ),
                 daemon=True,
             )
