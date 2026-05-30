@@ -116,7 +116,7 @@ export default function NotificationBell() {
           id="notification-bell-dropdown"
           role="dialog"
           aria-label="Project activity panel"
-          className="absolute right-0 mt-2 rounded-xl overflow-hidden"
+          className="absolute right-0 mt-2 rounded-xl overflow-hidden notification-dropdown"
           style={{
             width: "clamp(300px, 92vw, 360px)",
             zIndex: 60,
@@ -232,11 +232,22 @@ export default function NotificationBell() {
         </div>
       )}
 
-      {/* Dropdown animation keyframe */}
+      {/* Dropdown animation keyframe & responsive styles */}
       <style>{`
         @keyframes dropdownIn {
           from { opacity: 0; transform: translateY(-6px) scale(0.97); }
           to   { opacity: 1; transform: translateY(0)   scale(1);    }
+        }
+        @media (max-width: 640px) {
+          .notification-dropdown {
+            position: fixed !important;
+            top: 4.5rem !important;
+            left: 1rem !important;
+            right: 1rem !important;
+            width: auto !important;
+            max-width: none !important;
+            transform-origin: top right !important;
+          }
         }
       `}</style>
     </div>

@@ -142,13 +142,7 @@ class AIRewriteAboutView(APIView):
 
     # Same priority order as ai_parser.py — first available quota wins
     _MODEL_CANDIDATES = [
-        "gemini-2.5-flash-lite",
-        "gemini-2.5-flash",
-        "gemini-flash-lite-latest",
-        "gemini-flash-latest",
-        "gemini-2.0-flash-lite",
         "gemini-2.0-flash",
-        "gemini-1.5-flash",
     ]
 
     def post(self, request):
@@ -214,7 +208,7 @@ class AIRewriteAboutView(APIView):
                 print("[AIRewriteAboutView] google-genai not installed, falling back to requests.")
 
         # Fallback: raw HTTP requests (catches cases where google-genai isn't installed)
-        fallback_models = ["gemini-2.0-flash", "gemini-1.5-flash"]
+        fallback_models = ["gemini-2.0-flash"]
         for model_name in fallback_models:
             ai_reply = get_ai_response(prompt, model=model_name)
             if ai_reply:
@@ -241,13 +235,7 @@ class AIRewriteProjectView(APIView):
     authentication_classes = []
 
     _MODEL_CANDIDATES = [
-        "gemini-2.5-flash-lite",
-        "gemini-2.5-flash",
-        "gemini-flash-lite-latest",
-        "gemini-flash-latest",
-        "gemini-2.0-flash-lite",
         "gemini-2.0-flash",
-        "gemini-1.5-flash",
     ]
 
     # ── GitHub helpers ────────────────────────────────────────────────────────
@@ -482,7 +470,7 @@ class AIRewriteProjectView(APIView):
                 print("[AIRewriteProjectView] google-genai not installed, falling back to requests.")
 
         # Fallback: raw HTTP requests
-        fallback_models = ["gemini-2.0-flash", "gemini-1.5-flash"]
+        fallback_models = ["gemini-2.0-flash"]
         for model_name in fallback_models:
             ai_reply = get_ai_response(prompt, model=model_name)
             if ai_reply:

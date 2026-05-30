@@ -95,7 +95,7 @@ graph TD
 | **Backend** | [Django 6.0](https://www.djangoproject.com/) | Main high-performance MVC/API framework |
 | | [Django REST Framework](https://www.django-rest-framework.org/) | Clean Restful API design, views, and serialization |
 | | [dj-rest-auth](https://django-rest-auth.readthedocs.io/) & [simple-jwt](https://django-rest-framework-simplejwt.readthedocs.io/) | Stateless token-based JSON Web Token authorization |
-| **AI / Parsers** | [Google GenAI SDK](https://github.com/google/generative-ai-python) | Gemini-2.5/Gemini-Pro prompt and CV completions |
+| **AI / Parsers** | [Google GenAI SDK](https://github.com/google/generative-ai-python) | Gemini-2.0 prompt and CV completions |
 | | [pdfplumber](https://github.com/jasonmc/pdfplumber) & [mammoth](https://github.com/mwilliamson/python-mammoth) | Rich text extractors for PDF & DOCX resumes |
 | | [Playwright](https://playwright.dev/) | Headless browser for live portfolio snapshots & testing |
 | **Storage** | [Cloudinary](https://cloudinary.com/) | Automated media optimizations and cloud hosting for uploads |

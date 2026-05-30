@@ -1,7 +1,7 @@
 """
 ai_parser.py — Send extracted resume text to Gemini and parse structured JSON.
 
-Uses the new `google-genai` SDK (google.genai) with gemini-2.5-flash-lite.
+Uses the new `google-genai` SDK (google.genai) with gemini-2.0-flash.
 """
 import json
 import os
@@ -17,8 +17,8 @@ Do NOT include any explanation, markdown fences, or extra text — just raw JSON
 Return this exact JSON structure (use null for missing fields, empty arrays for missing lists):
 
 {{
-  "full_name": "string",
-  "headline": "string — one-line job title or role summary",
+  "full_name": "string — The person's complete full name. EXTRACTION RULES: (1) It is almost always the VERY FIRST non-empty line of the CV. (2) It is usually in ALL CAPS, Title Case, or bold. (3) It appears BEFORE any contact info like email or phone. (4) It is typically 2–4 words (e.g. 'John Doe', 'JOHN DOE', 'Maria Clara Santos'). (5) NEVER return 'Name not found', 'N/A', or any placeholder — return empty string '' if genuinely absent.",
+  "headline": "string — The person's professional title or tagline. EXTRACTION RULES: (1) Usually the line immediately below the name. (2) Short phrase like 'Software Engineer', 'Full Stack Developer', 'Final Year B.Tech Student', 'UI/UX Designer'. (3) If not explicit, infer from the most recent job title or the degree being pursued. (4) NEVER return 'Headline not found' — return empty string '' if genuinely absent.",
   "bio": "string — 2-3 sentence professional summary",
   "email": "string or null",
   "phone": "string or null — extract any phone number exactly as written, including country code prefix (e.g. +91 9876543210)",
@@ -73,10 +73,13 @@ Return this exact JSON structure (use null for missing fields, empty arrays for 
   ]
 }}
 
-CRITICAL LANGUAGE CLASSIFICATION RULES:
-- Natural/spoken/written human languages (e.g., English, Bengali, Hindi, Spanish, French, Arabic, Mandarin, Urdu, Tamil, etc.) must ALWAYS be classified under the "languages" section — NEVER under "skills".
-- A language entry may include proficiency level if mentioned (e.g., "Bengali - Native", "English - Fluent", "Hindi - Intermediate"). If no proficiency is mentioned, default to "Fluent".
-- Programming languages (e.g., Python, JavaScript, Java, C++) are NOT human languages — classify them under "skills".
+CRITICAL RULES:
+- Return ONLY the JSON — no explanation, no markdown, no backticks.
+- full_name: the FIRST LINE of the CV is almost always the name. Extract it.
+- headline: the line immediately after the name is almost always the title/role.
+- NEVER output 'not found', 'N/A', 'None', or any placeholder for full_name or headline — use empty string '' if truly missing.
+- Natural/spoken human languages (English, Bengali, Hindi, Spanish…) ALWAYS go in "languages", NEVER in "skills".
+- Programming languages (Python, JavaScript, Java, C++…) go in "skills".
 
 Text to parse:
 {resume_text}
@@ -84,11 +87,6 @@ Text to parse:
 
 # Model preference order — first with available quota is used
 _MODEL_CANDIDATES = [
-    "gemini-2.5-flash-lite",     # confirmed working
-    "gemini-2.5-flash",
-    "gemini-flash-lite-latest",
-    "gemini-flash-latest",
-    "gemini-2.0-flash-lite",
     "gemini-2.0-flash",
 ]
 
@@ -237,6 +235,7 @@ def parse_resume_with_ai(resume_text: str) -> dict:
             f"AI returned invalid JSON. Raw response:\n{raw[:500]}"
         ) from exc
 
+    print(f"[ai_parser] ✅ Parsed — name={data.get('full_name')!r}  headline={data.get('headline')!r}")
     return _sanitise(data)
 
 
@@ -249,9 +248,25 @@ def _sanitise(data: dict) -> dict:
     # Strictly differentiate languages from skills
     clean_skills, clean_languages = differentiate_skills_and_languages(raw_skills, raw_languages)
 
+    # Guard: never let Gemini's "not found" placeholder strings leak through
+    _NOT_FOUND_PHRASES = (
+        "not found", "n/a", "none", "not available", "not provided",
+        "not specified", "not mentioned", "not stated", "unknown",
+    )
+
+    def _clean_text_field(val: str) -> str:
+        """Return empty string if the value looks like a placeholder."""
+        v = val.strip()
+        if v.lower() in _NOT_FOUND_PHRASES:
+            return ""
+        for phrase in _NOT_FOUND_PHRASES:
+            if phrase in v.lower():
+                return ""
+        return v
+
     return {
-        "full_name":       _str(data.get("full_name")),
-        "headline":        _str(data.get("headline")),
+        "full_name":       _clean_text_field(_str(data.get("full_name"))),
+        "headline":        _clean_text_field(_str(data.get("headline"))),
         "bio":             _str(data.get("bio")),
         "email":           _str(data.get("email")),
         "phone":           _str(data.get("phone")),

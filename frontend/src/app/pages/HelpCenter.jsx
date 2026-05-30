@@ -1,9 +1,9 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Search, ChevronDown, ChevronUp, Send, MessageSquare, Mail,
-  Inbox, HelpCircle, CheckCircle, XCircle, Clock, Bot,
-  Loader2, Tag, ChevronRight, RotateCcw, Trash2
+  Search, ChevronDown, ChevronUp, Send, Mail,
+  Inbox, HelpCircle, CheckCircle, XCircle, Clock,
+  Loader2, ChevronRight, Trash2
 } from "lucide-react";
 import GlassCard from "../components/GlassCard.jsx";
 import Button from "../components/Button.jsx";
@@ -74,7 +74,7 @@ const FAQ_DATA = [
     category: "🤖 AI Features",
     questions: [
       { q: "How does the AI rewrite feature work?", a: "In the editor, click the '✨ Rewrite with AI' button next to your bio or project description. The AI analyzes your text and produces a polished, professional version." },
-      { q: "Which AI model is used for rewriting?", a: "We use Google Gemini (gemini-2.5-flash or gemini-2.0-flash) for all AI rewrites and CV parsing." },
+      { q: "Which AI model is used for rewriting?", a: "We use Google Gemini (gemini-2.0-flash) for all AI rewrites and CV parsing." },
       { q: "Can I undo an AI rewrite?", a: "Yes! After an AI rewrite, an 'Undo' button appears briefly. You can also just retype or paste your original text back." },
       { q: "Why is the AI rewrite button not working?", a: "Ensure you have some text in the field before clicking rewrite. If it still fails, the AI service may be temporarily unavailable — try again in a minute." },
     ],
@@ -224,332 +224,6 @@ function FAQTab() {
           );
         })}
       </div>
-    </div>
-  );
-}
-
-// ─── AI Chatbot Tab ───────────────────────────────────────────────────────────
-const QUICK_CHIPS = [
-  "How do I create a portfolio?",
-  "Why is my analytics showing 0?",
-  "How do I get a perfect score?",
-  "How does AI rewrite work?",
-];
-
-const getGroupLabel = (dateInput) => {
-  if (!dateInput) return "";
-  const d = new Date(dateInput);
-  if (isNaN(d.getTime())) return "";
-
-  const today = new Date();
-  const yesterday = new Date();
-  yesterday.setDate(today.getDate() - 1);
-
-  if (d.toDateString() === today.toDateString()) {
-    return "Today";
-  } else if (d.toDateString() === yesterday.toDateString()) {
-    return "Yesterday";
-  } else {
-    const day = String(d.getDate()).padStart(2, '0');
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const year = d.getFullYear();
-    return `${day}/${month}/${year}`;
-  }
-};
-
-const formatTime = (dateInput) => {
-  if (!dateInput) return "";
-  const d = new Date(dateInput);
-  if (isNaN(d.getTime())) return "";
-  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-};
-
-function ChatbotTab() {
-  const [chatHistory, setChatHistory] = useState([]);
-  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
-  const [input, setInput] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
-  const [chipsUsed, setChipsUsed] = useState(false);
-  const bottomRef = useRef(null);
-
-  useEffect(() => {
-    const loadChatHistory = async () => {
-      try {
-        setIsLoadingHistory(true);
-        const response = await api.get("/support/chat/history/");
-        const messagesData = response.data.messages || [];
-
-        if (messagesData.length > 0) {
-          setChatHistory(
-            messagesData.map((msg) => ({
-              id: msg.id,
-              role: msg.role === 'bot' ? 'assistant' : 'user',
-              content: msg.content,
-              timestamp: new Date(msg.created_at),
-            }))
-          );
-        } else {
-          // If history is empty, show the greeting
-          setChatHistory([
-            {
-              id: Date.now(),
-              role: "assistant",
-              content: "Hi! 👋 I'm your PortfolioBuilder assistant. Ask me anything about the platform!",
-              timestamp: new Date(),
-            },
-          ]);
-          setChipsUsed(false);
-        }
-      } catch (error) {
-        console.error("Failed to load chat history:", error);
-        // If history fetch fails show error message and start fresh session
-        setChatHistory([
-          {
-            id: "error-greeting",
-            role: "assistant",
-            content: "Could not load chat history. Starting a new session.",
-            timestamp: new Date(),
-          },
-          {
-            id: Date.now(),
-            role: "assistant",
-            content: "Hi! 👋 I'm your PortfolioBuilder assistant. Ask me anything about the platform!",
-            timestamp: new Date(),
-          }
-        ]);
-        setChipsUsed(false);
-      } finally {
-        setIsLoadingHistory(false);
-      }
-    };
-
-    loadChatHistory();
-  }, []);
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatHistory, isTyping]);
-
-  const sendMessage = async (text) => {
-    const trimmed = (text || input).trim();
-    if (!trimmed || isTyping) return;
-
-    setInput("");
-    setChipsUsed(true);
-
-    // Optimistically add user message to UI
-    const userMsg = {
-      id: Date.now(),
-      role: 'user',
-      content: trimmed,
-      timestamp: new Date()
-    };
-
-    const updatedHistory = [...chatHistory, userMsg];
-    setChatHistory(updatedHistory);
-    setIsTyping(true);
-
-    try {
-      const res = await api.post("/support/chat/", {
-        message: trimmed,
-      });
-
-      // Add bot reply to UI
-      const botMsg = {
-        id: Date.now() + 1,
-        role: 'assistant',
-        content: res.data.reply,
-        timestamp: new Date()
-      };
-      setChatHistory([...updatedHistory, botMsg]);
-    } catch (error) {
-      console.error('Chat error:', error);
-      const serverError = error.response?.data?.error;
-      setChatHistory([...updatedHistory, {
-        id: Date.now() + 1,
-        role: 'assistant',
-        content: serverError
-          ? `Error: ${serverError}. Please check the console for details.`
-          : 'Sorry, I could not process your message. Please try again.',
-        timestamp: new Date()
-      }]);
-    } finally {
-      setIsTyping(false);
-    }
-  };
-
-  const clearHistory = async () => {
-    const confirmClear = window.confirm(
-      "Are you sure you want to clear your entire chat history? This cannot be undone."
-    );
-    if (!confirmClear) return;
-
-    try {
-      await api.delete("/support/chat/clear/");
-      setChatHistory([]);
-      // Show greeting again after clearing
-      setChatHistory([
-        {
-          id: Date.now(),
-          role: "assistant",
-          content: "Hi! 👋 Chat history cleared. How can I help you today?",
-          timestamp: new Date(),
-        },
-      ]);
-      setChipsUsed(false);
-    } catch (error) {
-      console.error("Failed to clear history:", error);
-    }
-  };
-
-  let lastGroupLabel = null;
-
-  return (
-    <div className="flex flex-col min-h-[360px] max-h-[580px] h-[60vh] sm:h-[580px]">
-      {/* Chatbot Header */}
-      <div className="flex items-center gap-2 mb-5 border-b border-border/40 pb-4">
-        <div className="w-8 h-8 rounded-full gradient-bg flex items-center justify-center">
-          <Bot className="w-4 h-4 text-white" />
-        </div>
-        <div>
-          <h3 className="font-semibold text-sm">PortfolioBuilder Assistant</h3>
-          <p className="text-xs text-muted-foreground">Powered by AI · Persistent history</p>
-        </div>
-        <div className="ml-auto flex items-center gap-3">
-          <button
-            onClick={clearHistory}
-            className="text-xs text-muted-foreground hover:text-red-400 flex items-center gap-1 transition"
-            title="Clear Chat History"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Clear History</span>
-          </button>
-          <div className="h-4 w-[1px] bg-border/40 hidden sm:block"></div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-xs text-emerald-400">Online</span>
-          </div>
-        </div>
-      </div>
-
-      {isLoadingHistory ? (
-        <div className="flex-1 flex flex-col items-center justify-center py-20 gap-3">
-          <Loader2 className="w-8 h-8 animate-spin text-brand" />
-          <p className="text-sm text-muted-foreground animate-pulse">Loading chat history...</p>
-        </div>
-      ) : (
-        <>
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto space-y-4 pr-1 pb-2">
-            <AnimatePresence initial={false}>
-              {chatHistory.map((msg, i) => {
-                const groupLabel = getGroupLabel(msg.timestamp);
-                const showSeparator = groupLabel && groupLabel !== lastGroupLabel;
-                lastGroupLabel = groupLabel;
-
-                return (
-                  <div key={msg.id || i} className="space-y-4">
-                    {showSeparator && (
-                      <div className="flex items-center justify-center my-4 opacity-80">
-                        <div className="h-[1px] bg-border/30 flex-1"></div>
-                        <span className="text-[10px] sm:text-xs text-muted-foreground px-3 py-1 bg-accent/20 rounded-full font-medium tracking-wider uppercase">
-                          {groupLabel}
-                        </span>
-                        <div className="h-[1px] bg-border/30 flex-1"></div>
-                      </div>
-                    )}
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className={`flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
-                    >
-                      {msg.role === "assistant" && (
-                        <div className="w-8 h-8 rounded-full flex-shrink-0 gradient-bg flex items-center justify-center animate-fade-in">
-                          <Bot className="w-4 h-4 text-white" />
-                        </div>
-                      )}
-                      <div className="flex flex-col gap-1 max-w-[80%]">
-                        <div
-                          className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-                            msg.role === "user"
-                              ? "bg-brand text-white rounded-tr-sm ml-auto"
-                              : "glass border border-border/40 rounded-tl-sm text-foreground"
-                          }`}
-                        >
-                          {msg.content}
-                        </div>
-                        <span className={`text-[10px] text-muted-foreground px-1 ${msg.role === "user" ? "text-right" : "text-left"}`}>
-                          {formatTime(msg.timestamp)}
-                        </span>
-                      </div>
-                    </motion.div>
-                  </div>
-                );
-              })}
-
-              {/* Quick chips after first message */}
-              {!chipsUsed && chatHistory.length === 1 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className="flex flex-wrap gap-2 pl-11"
-                >
-                  {QUICK_CHIPS.map((chip) => (
-                    <button
-                      key={chip}
-                      onClick={() => sendMessage(chip)}
-                      className="text-xs glass border border-border/40 px-3 py-1.5 rounded-full hover:border-brand/50 hover:text-brand transition"
-                    >
-                      {chip}
-                    </button>
-                  ))}
-                </motion.div>
-              )}
-
-              {/* Typing indicator */}
-              {isTyping && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex gap-3"
-                >
-                  <div className="w-8 h-8 rounded-full flex-shrink-0 gradient-bg flex items-center justify-center">
-                    <Bot className="w-4 h-4 text-white" />
-                  </div>
-                  <div className="glass border border-border/40 rounded-2xl rounded-tl-sm px-4 py-3 flex gap-1 items-center">
-                    {[0, 0.15, 0.3].map((d, i) => (
-                      <span
-                        key={i}
-                        className="w-2 h-2 rounded-full bg-muted-foreground"
-                        style={{ animation: `bounce 1s ease-in-out ${d}s infinite` }}
-                      />
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-            <div ref={bottomRef} />
-          </div>
-
-          {/* Input */}
-          <div className="flex gap-2 pt-3 border-t border-border/40">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
-              placeholder="Ask me anything about PortfolioBuilder…"
-              disabled={isTyping}
-              className="flex-1 h-11 px-4 rounded-xl border border-border bg-background/50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand transition disabled:opacity-50"
-            />
-            <Button onClick={() => sendMessage()} disabled={!input.trim() || isTyping} size="sm" className="h-11 px-4">
-              {isTyping ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-            </Button>
-          </div>
-        </>
-      )}
     </div>
   );
 }
@@ -880,7 +554,6 @@ function InboxTab() {
 // ─── Main HelpCenter Page ─────────────────────────────────────────────────────
 const TABS = [
   { id: "faq", label: "FAQ & Search", icon: Search },
-  { id: "chat", label: "AI Chatbot", icon: Bot },
   { id: "contact", label: "Contact Support", icon: Mail },
   { id: "inbox", label: "My Inbox", icon: Inbox },
 ];
@@ -898,7 +571,7 @@ export default function HelpCenter() {
           <h1 className="text-2xl font-bold">Help Center</h1>
         </div>
         <p className="text-muted-foreground text-sm">
-          Find answers, chat with AI, or reach our support team.
+          Find answers or reach our support team.
         </p>
       </div>
 
@@ -930,11 +603,7 @@ export default function HelpCenter() {
           transition={{ duration: 0.2 }}
         >
           {activeTab === "faq" && <FAQTab />}
-          {activeTab === "chat" && (
-            <GlassCard className="rounded-2xl p-6">
-              <ChatbotTab />
-            </GlassCard>
-          )}
+
           {activeTab === "contact" && (
             <GlassCard className="rounded-2xl p-6">
               <div className="flex items-center gap-2 mb-6">
