@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, ChevronDown, ChevronUp, Send, MessageSquare, Mail,
   Inbox, HelpCircle, CheckCircle, XCircle, Clock, Bot,
-  Loader2, Tag, ChevronRight, RotateCcw,
+  Loader2, Tag, ChevronRight, RotateCcw, Trash2
 } from "lucide-react";
 import GlassCard from "../components/GlassCard.jsx";
 import Button from "../components/Button.jsx";
@@ -11,6 +11,7 @@ import Badge from "../components/Badge.jsx";
 import { useAuthStore } from "../store/authStore.js";
 import api from "../services/api.js";
 import BackButton from "../components/BackButton.jsx";
+import { useToast } from "../context/ToasterContext.jsx";
 
 
 // ─── FAQ Data ────────────────────────────────────────────────────────────────
@@ -689,6 +690,8 @@ function InboxTab() {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchTickets = async () => {
@@ -703,6 +706,38 @@ function InboxTab() {
     };
     fetchTickets();
   }, []);
+
+  const deleteTicket = async (e, ticketId) => {
+    e.stopPropagation(); // Avoid selecting/opening the ticket details
+    const confirmed = window.confirm(
+      'Are you sure you want to delete this support ticket? This action cannot be undone.'
+    );
+    
+    if (!confirmed) return;
+    
+    try {
+      setDeletingId(ticketId);
+      await api.delete(`/support/tickets/${ticketId}/`);
+      
+      // Remove deleted ticket from UI immediately
+      setTickets(prev => prev.filter(ticket => ticket.id !== ticketId));
+      toast({
+        title: "Ticket deleted successfully",
+        description: "The support ticket has been permanently removed.",
+        type: "success"
+      });
+      
+    } catch (error) {
+      console.error('Delete error:', error);
+      toast({
+        title: "Failed to delete ticket",
+        description: "An error occurred while trying to delete this ticket. Please try again.",
+        type: "error"
+      });
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -792,7 +827,7 @@ function InboxTab() {
             onClick={() => setSelected(ticket)}
             className="cursor-pointer"
           >
-            <GlassCard className="rounded-2xl p-4 hover:shadow-glow transition">
+            <GlassCard className="rounded-2xl p-4 hover:shadow-glow transition relative group">
               <div className="flex items-start gap-3 justify-between flex-wrap">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -808,11 +843,27 @@ function InboxTab() {
                     {ticket.message.slice(0, 100)}{ticket.message.length > 100 ? "…" : ""}
                   </p>
                 </div>
-                <div className="text-right flex-shrink-0">
+                <div className="text-right flex-shrink-0 flex flex-col items-end justify-between h-full min-h-[50px]">
                   <p className="text-xs text-muted-foreground">
                     {new Date(ticket.created_at).toLocaleDateString()}
                   </p>
-                  <ChevronRight className="w-4 h-4 text-muted-foreground ml-auto mt-1" />
+                  <div className="flex items-center gap-2 mt-2">
+                    {ticket.status !== 'closed' && (
+                      <button
+                        onClick={(e) => deleteTicket(e, ticket.id)}
+                        disabled={deletingId !== null}
+                        className="p-1.5 rounded-lg text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition"
+                        title="Delete ticket"
+                      >
+                        {deletingId === ticket.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    )}
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  </div>
                 </div>
               </div>
             </GlassCard>

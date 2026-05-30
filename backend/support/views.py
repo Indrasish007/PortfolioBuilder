@@ -145,10 +145,41 @@ class SupportTicketDetailView(APIView):
 
     def get(self, request, ticket_id):
         try:
-            ticket = SupportTicket.objects.get(id=ticket_id, user=request.user)
+            ticket = SupportTicket.objects.get(
+                id=ticket_id,
+                user=request.user
+            )
+            serializer = SupportTicketSerializer(ticket)
+            return Response(serializer.data)
         except SupportTicket.DoesNotExist:
-            return Response({'error': 'Ticket not found.'}, status=status.HTTP_404_NOT_FOUND)
-        return Response(SupportTicketSerializer(ticket).data)
+            return Response(
+                {'error': 'Ticket not found'},
+                status=404
+            )
+
+    def delete(self, request, ticket_id):
+        try:
+            ticket = SupportTicket.objects.get(
+                id=ticket_id,
+                user=request.user  # Only owner can delete
+            )
+            ticket_id = ticket.id
+            ticket.delete()
+            print(f"✅ Ticket #{ticket_id} deleted by user {request.user.username}")
+            return Response(
+                {'message': f'Ticket #{ticket_id} deleted successfully'},
+                status=200
+            )
+        except SupportTicket.DoesNotExist:
+            return Response(
+                {'error': 'Ticket not found or you do not have permission to delete it'},
+                status=404
+            )
+        except Exception as e:
+            return Response(
+                {'error': f'Failed to delete ticket: {str(e)}'},
+                status=500
+            )
 
 
 class AdminReplyView(APIView):
