@@ -14,7 +14,7 @@ SUPPORT_EMAIL = 'indrasishadhya770@gmail.com'
 
 
 def _send_support_email(ticket: SupportTicket):
-    """Send notification email to support address. Falls back silently on error."""
+    """Send notification email to support address. Logs errors but never raises."""
     try:
         subject = f"[PortfolioBuilder Support] [{ticket.get_category_display()}] — {ticket.subject}"
         body = (
@@ -33,9 +33,12 @@ def _send_support_email(ticket: SupportTicket):
             to=[SUPPORT_EMAIL],
             reply_to=[ticket.user_email],
         )
-        email.send(fail_silently=True)
+        # fail_silently=False so the outer try/except catches SMTP errors and logs them
+        email.send(fail_silently=False)
     except Exception as e:
-        print(f"[SupportEmail] Failed to send: {e}")
+        print(f"[SupportEmail] Failed to send for ticket #{ticket.id}: {e}")
+        raise  # Re-raise so the caller's try/except can log it too
+
 
 
 def _send_reply_notification(ticket: SupportTicket):
@@ -70,14 +73,53 @@ class SupportTicketListCreateView(APIView):
         return Response(serializer.data)
 
     def post(self, request):
-        serializer = SupportTicketCreateSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        print(f"[SupportTicket] POST started — user: {request.user.username} ({request.user.email})")
+        print(f"[SupportTicket] Request data: {request.data}")
+        try:
+            # ── Step 1: Validate incoming data ─────────────────────────────────
+            serializer = SupportTicketCreateSerializer(data=request.data)
+            if not serializer.is_valid():
+                print(f"[SupportTicket] Validation errors: {serializer.errors}")
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        ticket = serializer.save(user=request.user)
-        _send_support_email(ticket)
+            # ── Step 2: Determine user_name / user_email with fallbacks ────────
+            # The serializer accepts user_name/user_email from the request body,
+            # but if they are empty or missing we fall back to the authenticated
+            # user's profile so the ticket is never saved with blank identity.
+            validated = serializer.validated_data
+            user_name = (validated.get('user_name') or '').strip() or (
+                request.user.get_full_name() or request.user.username
+            )
+            user_email = (validated.get('user_email') or '').strip() or request.user.email
 
-        return Response(SupportTicketSerializer(ticket).data, status=status.HTTP_201_CREATED)
+            # ── Step 3: Save ticket to database FIRST ──────────────────────────
+            ticket = serializer.save(
+                user=request.user,
+                user_name=user_name,
+                user_email=user_email,
+                status='pending',
+            )
+            print(f"[SupportTicket] ✅ Ticket #{ticket.id} saved to database")
+
+            # ── Step 4: Send email in isolated try/except (never blocks save) ──
+            try:
+                _send_support_email(ticket)
+                print(f"[SupportTicket] ✅ Email dispatched for ticket #{ticket.id}")
+            except Exception as email_exc:
+                # Email failure must NEVER fail the request — ticket is already saved
+                print(f"[SupportTicket] ❌ Email dispatch error for ticket #{ticket.id}: {email_exc}")
+
+            # ── Step 5: Return success ─────────────────────────────────────────
+            return Response(SupportTicketSerializer(ticket).data, status=status.HTTP_201_CREATED)
+
+        except Exception as exc:
+            print(f"[SupportTicket] ❌ Ticket creation failed: {exc}")
+            import traceback
+            traceback.print_exc()
+            return Response(
+                {'error': f'Failed to create ticket: {str(exc)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 
 class SupportTicketDetailView(APIView):

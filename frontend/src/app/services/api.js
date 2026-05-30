@@ -7,7 +7,9 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 15000, // 15s timeout — prevents "Sending…" from hanging forever if server is unresponsive
 });
+
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('access_token');

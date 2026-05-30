@@ -591,12 +591,22 @@ function ContactTab() {
       await api.post("/support/tickets/", formData);
       setSubmitted(true);
       setFormData({ user_name: user.name || "", user_email: user.email || "", category: "general", subject: "", message: "" });
-    } catch {
-      setSubmitError("❌ Failed to send message. Please try again.");
+    } catch (err) {
+      console.error("[ContactTab] Submit error:", err);
+      const isTimeout = err.code === "ECONNABORTED" || err.message?.includes("timeout");
+      if (isTimeout) {
+        setSubmitError("❌ Request timed out. The server took too long to respond — please try again.");
+      } else {
+        const serverMsg = err.response?.data?.error || err.response?.data?.detail || "";
+        setSubmitError(serverMsg
+          ? `❌ ${serverMsg}`
+          : "❌ Failed to send message. Please check your connection and try again.");
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
+
 
   if (submitted) {
     return (
