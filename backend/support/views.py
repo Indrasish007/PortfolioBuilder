@@ -7,8 +7,8 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 
-from .models import SupportTicket
-from .serializers import SupportTicketSerializer, SupportTicketCreateSerializer
+from .models import SupportTicket, ChatMessage
+from .serializers import SupportTicketSerializer, SupportTicketCreateSerializer, ChatMessageSerializer
 
 SUPPORT_EMAIL = 'indrasishadhya770@gmail.com'
 
@@ -135,7 +135,7 @@ _CHATBOT_SYSTEM_PROMPT = (
     "Always be friendly, concise, and helpful. If you don't know something "
     "specific about the user's account data, tell them to use the Contact "
     "Support form so the team can help directly. "
-    "Keep responses short and easy to understand. "
+    "Keep responses short and easy to understand.\n"
     "Do NOT use markdown formatting — respond in plain text only."
 )
 
@@ -153,106 +153,184 @@ class HelpCenterChatView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        user_message = request.data.get('message', '').strip()
-        chat_history = request.data.get('history', [])  # [{role, content}, ...]
+        try:
+            user_message = request.data.get('message', '').strip()
 
-        if not user_message:
-            return Response({'error': 'Message is required.'}, status=status.HTTP_400_BAD_REQUEST)
+            if not user_message:
+                return Response(
+                    {'error': 'Message is required'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
-        # Build a plain-text conversation prompt
-        history_lines = ''
-        for entry in chat_history[-10:]:
-            role_label = 'User' if entry.get('role') == 'user' else 'Assistant'
-            history_lines += f"{role_label}: {entry.get('content', '')}\n"
+            # Save user message to database
+            ChatMessage.objects.create(
+                user=request.user,
+                role='user',
+                content=user_message
+            )
 
-        full_prompt = (
-            f"{_CHATBOT_SYSTEM_PROMPT}\n\n"
-            + (f"Conversation so far:\n{history_lines}" if history_lines else "")
-            + f"User: {user_message}\nAssistant:"
-        )
+            # Fetch full history as a LIST (not QuerySet) to avoid negative slicing AssertionError
+            history_list = list(
+                ChatMessage.objects.filter(
+                    user=request.user
+                ).order_by('created_at')
+            )
 
-        # Resolve API key
-        api_key = os.getenv("GEMINI_API_KEY") or settings.GEMINI_API_KEY
-        if not api_key:
-            from dotenv import load_dotenv
-            load_dotenv()
-            api_key = os.getenv("GEMINI_API_KEY", "")
+            # Build a plain-text conversation prompt from DB history
+            # Exclude the message we just saved in the history lines
+            history_lines = ''
+            for msg in history_list[:-1]:
+                role_label = 'User' if msg.role == 'user' else 'Assistant'
+                history_lines += f"{role_label}: {msg.content}\n"
 
-        print(f"[HelpCenterChat] API key present: {bool(api_key)}, length: {len(api_key)}")
+            full_prompt = (
+                f"{_CHATBOT_SYSTEM_PROMPT}\n\n"
+                + (f"Conversation so far:\n{history_lines}" if history_lines else "")
+                + f"User: {user_message}\nAssistant:"
+            )
 
-        if api_key and not api_key.startswith("your_") and api_key != "mock_key":
+            # Resolve API key
+            api_key = os.getenv("GEMINI_API_KEY") or settings.GEMINI_API_KEY
+            if not api_key:
+                from dotenv import load_dotenv
+                load_dotenv()
+                api_key = os.getenv("GEMINI_API_KEY", "")
 
-            # ── Primary: google-genai SDK ──────────────────────────────────────
-            try:
-                from google import genai
-                from google.genai import types
+            print(f"[HelpCenterChat] API key present: {bool(api_key)}, length: {len(api_key)}")
 
-                client = genai.Client(api_key=api_key)
-                last_error = None
+            bot_reply = None
 
-                for model_name in _CHAT_MODEL_CANDIDATES:
-                    try:
-                        response = client.models.generate_content(
-                            model=model_name,
-                            contents=full_prompt,
-                            config=types.GenerateContentConfig(
-                                temperature=0.7,
-                                max_output_tokens=512,
-                            ),
-                        )
-                        raw = (response.text or "").strip()
-                        if raw:
-                            print(f"[HelpCenterChat] Success with model: {model_name}")
-                            return Response({'reply': raw})
-                    except Exception as exc:
-                        err_str = str(exc)
-                        if any(x in err_str for x in ("429", "RESOURCE_EXHAUSTED", "quota")):
-                            print(f"[HelpCenterChat] Quota exhausted for {model_name}, trying next...")
+            if api_key and not api_key.startswith("your_") and api_key != "mock_key":
+
+                # ── Primary: google-genai SDK ──────────────────────────────────────
+                try:
+                    from google import genai
+                    from google.genai import types
+
+                    client = genai.Client(api_key=api_key)
+                    last_error = None
+
+                    for model_name in _CHAT_MODEL_CANDIDATES:
+                        try:
+                            response = client.models.generate_content(
+                                model=model_name,
+                                contents=full_prompt,
+                                config=types.GenerateContentConfig(
+                                    temperature=0.7,
+                                    max_output_tokens=512,
+                                ),
+                            )
+                            raw = (response.text or "").strip()
+                            if raw:
+                                print(f"[HelpCenterChat] Success with model: {model_name}")
+                                bot_reply = raw
+                                break
+                        except Exception as exc:
+                            err_str = str(exc)
+                            if any(x in err_str for x in ("429", "RESOURCE_EXHAUSTED", "quota")):
+                                print(f"[HelpCenterChat] Quota exhausted for {model_name}, trying next...")
+                                last_error = exc
+                                continue
+                            print(f"[HelpCenterChat] Error with {model_name}: {exc}")
                             last_error = exc
                             continue
-                        print(f"[HelpCenterChat] Error with {model_name}: {exc}")
-                        last_error = exc
-                        continue
 
-                print(f"[HelpCenterChat] All google-genai models failed. Last: {last_error}")
+                    if not bot_reply:
+                        print(f"[HelpCenterChat] All google-genai models failed. Last: {last_error}")
 
-            except ImportError as ie:
-                print(f"[HelpCenterChat] google-genai SDK not available: {ie}")
+                except ImportError as ie:
+                    print(f"[HelpCenterChat] google-genai SDK not available: {ie}")
 
-            # ── Fallback: raw HTTP REST API ────────────────────────────────────
-            import requests as _req
-            for model_name in ["gemini-2.0-flash", "gemini-1.5-flash"]:
-                try:
-                    url = (
-                        f"https://generativelanguage.googleapis.com/v1beta/models/"
-                        f"{model_name}:generateContent?key={api_key}"
-                    )
-                    payload = {
-                        "systemInstruction": {"parts": [{"text": _CHATBOT_SYSTEM_PROMPT}]},
-                        "contents": [{"parts": [{"text": full_prompt}]}],
-                        "generationConfig": {"maxOutputTokens": 512, "temperature": 0.7},
-                    }
-                    resp = _req.post(url, json=payload, timeout=30)
-                    print(f"[HelpCenterChat] REST fallback {model_name} → HTTP {resp.status_code}")
-                    if resp.status_code == 200:
-                        data = resp.json()
-                        text = data['candidates'][0]['content']['parts'][0]['text'].strip()
-                        if text:
-                            return Response({'reply': text})
-                    else:
-                        print(f"[HelpCenterChat] REST error: {resp.text[:400]}")
-                except Exception as exc:
-                    print(f"[HelpCenterChat] REST fallback error ({model_name}): {exc}")
+                # ── Fallback: raw HTTP REST API ────────────────────────────────────
+                if not bot_reply:
+                    import requests as _req
+                    for model_name in ["gemini-2.0-flash", "gemini-1.5-flash"]:
+                        try:
+                            url = (
+                                f"https://generativelanguage.googleapis.com/v1beta/models/"
+                                f"{model_name}:generateContent?key={api_key}"
+                            )
+                            payload = {
+                                "systemInstruction": {"parts": [{"text": _CHATBOT_SYSTEM_PROMPT}]},
+                                "contents": [{"parts": [{"text": full_prompt}]}],
+                                "generationConfig": {"maxOutputTokens": 512, "temperature": 0.7},
+                            }
+                            resp = _req.post(url, json=payload, timeout=30)
+                            print(f"[HelpCenterChat] REST fallback {model_name} → HTTP {resp.status_code}")
+                            if resp.status_code == 200:
+                                data = resp.json()
+                                text = data['candidates'][0]['content']['parts'][0]['text'].strip()
+                                if text:
+                                    bot_reply = text
+                                    break
+                            else:
+                                print(f"[HelpCenterChat] REST error: {resp.text[:400]}")
+                        except Exception as exc:
+                            print(f"[HelpCenterChat] REST fallback error ({model_name}): {exc}")
 
-        else:
-            print("[HelpCenterChat] No valid GEMINI_API_KEY — skipping AI call.")
+            else:
+                print("[HelpCenterChat] No valid GEMINI_API_KEY — skipping AI call.")
 
-        # ── Last-resort friendly reply ─────────────────────────────────────────
-        print("[HelpCenterChat] All AI paths failed — returning fallback reply.")
-        return Response({
-            'reply': (
-                "I'm sorry, I'm having trouble connecting to the AI right now. "
-                "Please try again in a moment, or use the Contact Support tab "
-                "to reach us directly."
+            if not bot_reply:
+                print("[HelpCenterChat] All AI paths failed — returning fallback reply.")
+                bot_reply = (
+                    "I'm sorry, I'm having trouble connecting to the AI right now. "
+                    "Please try again in a moment, or use the Contact Support tab "
+                    "to reach us directly."
+                )
+
+            # Save bot reply to database
+            ChatMessage.objects.create(
+                user=request.user,
+                role='bot',
+                content=bot_reply
             )
-        })
+
+            return Response({'reply': bot_reply})
+
+        except Exception as e:
+            print(f"Chat error: {str(e)}")
+            return Response(
+                {'error': str(e)},
+                status=500
+            )
+
+
+class ChatHistoryView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            messages = ChatMessage.objects.filter(
+                user=request.user
+            ).order_by('created_at')
+
+            serializer = ChatMessageSerializer(messages, many=True)
+            return Response({
+                'messages': serializer.data
+            })
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=500
+            )
+
+
+class ClearChatHistoryView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request):
+        try:
+            deleted_count, _ = ChatMessage.objects.filter(
+                user=request.user
+            ).delete()
+
+            return Response({
+                'message': 'Chat history cleared successfully',
+                'deleted': deleted_count
+            })
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=500
+            )

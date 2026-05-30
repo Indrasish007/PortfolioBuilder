@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import SupportTicket
+from .models import SupportTicket, ChatMessage
 
 
 class SupportTicketSerializer(serializers.ModelSerializer):
@@ -17,3 +17,11 @@ class SupportTicketCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = SupportTicket
         fields = ['category', 'subject', 'message', 'user_name', 'user_email']
+
+
+class ChatMessageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ChatMessage
+        fields = ['id', 'role', 'content', 'created_at']
+        read_only_fields = ['id', 'created_at']
+
