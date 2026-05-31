@@ -31,6 +31,7 @@ export const defaultPortfolio = {
   references: [],
   faqs: [],
   contact: { email: "", calendly: "" },
+  custom: {},
 };
 
 export const mockPortfolios = [

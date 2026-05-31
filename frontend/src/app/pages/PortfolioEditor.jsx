@@ -881,11 +881,25 @@ export default function PortfolioEditor() {
               </GlassCard>
               <GlassCard>
                 <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Typography</div>
-                <select className="w-full h-9 rounded-lg bg-input/40 border border-border text-sm px-3">
-                  <option>Inter + Space Grotesk</option>
-                  <option>Geist</option>
-                  <option>Söhne + Tiempos</option>
-                  <option>JetBrains Mono</option>
+                <select
+                  value={portfolio?.custom?.typography || "Inter + Space Grotesk"}
+                  onChange={(e) => updateField("custom.typography", e.target.value)}
+                  className="w-full h-9 rounded-lg bg-background/50 border border-border text-sm px-3 focus:outline-none focus:ring-1 focus:ring-brand/40 text-foreground cursor-pointer"
+                >
+                  {[
+                    "Inter + Space Grotesk",
+                    "Geist",
+                    "Söhne + Tiempos",
+                    "JetBrains Mono",
+                    "Syne + Lora",
+                    "Outfit + Plus Jakarta",
+                    "Playfair + Source Sans",
+                    "Cinzel + Montserrat"
+                  ].map((font) => (
+                    <option key={font} value={font} className="bg-[#18181b] text-[#f4f4f5] dark:bg-[#18181b] dark:text-[#f4f4f5] py-2">
+                      {font}
+                    </option>
+                  ))}
                 </select>
               </GlassCard>
             </>

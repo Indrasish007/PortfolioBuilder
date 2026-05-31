@@ -1,5 +1,5 @@
 import { Mail, Github, ExternalLink, Phone } from "lucide-react";
-import { Soc, Tags, FAQList, SectionLabel, VideoEmbed, MusicEmbed, GalleryAlbum, handleResumeDownload, trackProjectClick } from "./shared.jsx";
+import { Soc, Tags, FAQList, SectionLabel, VideoEmbed, MusicEmbed, GalleryAlbum, handleResumeDownload, trackProjectClick, handleScrollToSection } from "./shared.jsx";
 
 // classic, startup, forest, oceanic
 export default function BizLayout({ p, t, id, portfolioId }) {
@@ -7,7 +7,7 @@ export default function BizLayout({ p, t, id, portfolioId }) {
 
   // radius/font stay template-specific; bg/fg/ac come from theme `t`
   const radius = { classic:"4px", startup:"8px", forest:"4px", oceanic:"8px" }[id] || "6px";
-  const font   = "Inter,sans-serif";
+  const font   = "var(--font-body, 'Inter,sans-serif')";
   const ac     = t.ac;
   const fg     = t.fg;
 
@@ -21,10 +21,15 @@ export default function BizLayout({ p, t, id, portfolioId }) {
       <div style={{ background: t.bg, borderBottom: `1px solid ${ac}20`, padding: "12px clamp(16px, 4vw, 48px)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
         <div style={{ fontWeight: 800, fontSize: 18, color: ac }}>{u.name?.split(" ")[0] || "Portfolio"}</div>
         <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-          {["About", "Projects", "Experience", "Contact"].map(s => (
-            <a key={s} href={`#${s.toLowerCase()}`} style={{ fontSize: 13, color: fg, opacity: 0.5, textDecoration: "none" }}
+          {[
+            { label: "About", id: "about", show: true },
+            { label: "Projects", id: "projects", show: p.projects?.length > 0 },
+            { label: "Experience", id: "experience", show: p.experience?.length > 0 },
+            { label: "Contact", id: "contact", show: !!(u.email || u.phone) }
+          ].filter(item => item.show).map(s => (
+            <a key={s.label} href={`#${s.id}`} onClick={(e) => handleScrollToSection(e, s.id)} style={{ fontSize: 13, color: fg, opacity: 0.5, textDecoration: "none" }}
               onMouseEnter={e => e.currentTarget.style.opacity = 1}
-              onMouseLeave={e => e.currentTarget.style.opacity = 0.5}>{s}</a>
+              onMouseLeave={e => e.currentTarget.style.opacity = 0.5}>{s.label}</a>
           ))}
         </div>
       </div>

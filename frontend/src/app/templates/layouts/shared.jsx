@@ -73,6 +73,50 @@ export function trackProjectClick(projectId, linkType = 'live') {
   } catch (_) {}
 }
 
+export function handleScrollToSection(e, sectionId) {
+  if (e && e.preventDefault) e.preventDefault();
+  const doc = e?.target?.ownerDocument || document;
+  const el = doc.getElementById(sectionId);
+  if (el) {
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
+export function getLayoutFonts(typography, defaultBody = "Inter,sans-serif", defaultHeading = null) {
+  if (!typography) return { body: defaultBody, heading: defaultHeading || defaultBody };
+  
+  let headingFont = "'Space Grotesk', sans-serif";
+  let bodyFont = "'Inter', sans-serif";
+  
+  if (typography === "Inter + Space Grotesk") {
+    headingFont = "'Space Grotesk', sans-serif";
+    bodyFont = "'Inter', sans-serif";
+  } else if (typography === "Geist") {
+    headingFont = "'Geist', sans-serif";
+    bodyFont = "'Geist', sans-serif";
+  } else if (typography === "Söhne + Tiempos") {
+    headingFont = "'Playfair Display', serif";
+    bodyFont = "'Instrument Sans', sans-serif";
+  } else if (typography === "JetBrains Mono") {
+    headingFont = "'JetBrains Mono', monospace";
+    bodyFont = "'JetBrains Mono', monospace";
+  } else if (typography === "Syne + Lora") {
+    headingFont = "'Syne', sans-serif";
+    bodyFont = "'Lora', serif";
+  } else if (typography === "Outfit + Plus Jakarta") {
+    headingFont = "'Outfit', sans-serif";
+    bodyFont = "'Plus Jakarta Sans', sans-serif";
+  } else if (typography === "Playfair + Source Sans") {
+    headingFont = "'Playfair Display', serif";
+    bodyFont = "'Source Sans 3', sans-serif";
+  } else if (typography === "Cinzel + Montserrat") {
+    headingFont = "'Cinzel', serif";
+    bodyFont = "'Montserrat', sans-serif";
+  }
+  
+  return { body: bodyFont, heading: headingFont };
+}
+
 export function Soc({ user, fg, size = 15, portfolioId }) {
   const links = [
     [user?.github || user?.social?.github, Github],

@@ -1,11 +1,11 @@
 import { Mail, Github, ExternalLink, Phone } from "lucide-react";
-import { Soc, Tags, FAQList, SectionLabel, sn, VideoEmbed, MusicEmbed, GalleryAlbum, trackProjectClick } from "./shared.jsx";
+import { Soc, Tags, FAQList, SectionLabel, sn, VideoEmbed, MusicEmbed, GalleryAlbum, trackProjectClick, handleScrollToSection } from "./shared.jsx";
 
 // developer, obsidian, architect, terminal
 export default function SidebarLayout({ p, t, id, portfolioId }) {
   const u = p.user || {};
   const mono  = ["developer","terminal"].includes(id);
-  const font  = mono ? "ui-monospace,monospace" : "Inter,sans-serif";
+  const font  = mono ? "ui-monospace,monospace" : "var(--font-body, 'Inter,sans-serif')";
   // Sidebar panel bg stays template-specific; accent and main bg come from theme `t`
   const acBg  = { developer:"#0d1117", obsidian:"#0a0a0a", architect:"#0c1623", terminal:"#0d0d0d" }[id] || t.bg;
   const ac    = t.ac;
@@ -201,11 +201,17 @@ export default function SidebarLayout({ p, t, id, portfolioId }) {
 
           {id === "architect" && (
             <div style={{ marginTop:20, borderTop:`1px solid ${ac}20`, paddingTop:16, display:"flex", flexWrap:"wrap", gap:"10px 24px" }}>
-              {["About","Skills","Projects","Experience","Contact"].map(s => (
-                <a key={s} href={`#${s.toLowerCase()}`} style={{ fontSize:12, color:"#fff", opacity:0.5, textDecoration:"none" }}
+              {[
+                { label: "About", id: "about", show: true },
+                { label: "Skills", id: "skills", show: p.skills?.length > 0 },
+                { label: "Projects", id: "projects", show: p.projects?.length > 0 },
+                { label: "Experience", id: "experience", show: p.experience?.length > 0 },
+                { label: "Contact", id: "contact", show: !!(u.email || u.phone) }
+              ].filter(item => item.show).map(s => (
+                <a key={s.label} href={`#${s.id}`} onClick={(e) => handleScrollToSection(e, s.id)} style={{ fontSize:12, color:"#fff", opacity:0.5, textDecoration:"none" }}
                   onMouseEnter={e=>e.currentTarget.style.opacity=1}
                   onMouseLeave={e=>e.currentTarget.style.opacity=0.5}>
-                  {s}
+                  {s.label}
                 </a>
               ))}
             </div>
@@ -217,14 +223,14 @@ export default function SidebarLayout({ p, t, id, portfolioId }) {
 
         {/* About / bio */}
         {id === "terminal" ? (
-          <div style={{ marginBottom:36, padding:20, background:"#000", border:`1px solid ${ac}30`, borderRadius:4 }}>
+          <div id="about" style={{ marginBottom:36, padding:20, background:"#000", border:`1px solid ${ac}30`, borderRadius:4 }}>
             <div style={{ color:ac, fontFamily:"ui-monospace,monospace", fontSize:12, lineHeight:2 }}>
               <div><span style={{ opacity:0.4 }}>$ </span>cat about.txt</div>
               <div style={{ marginTop:8, color:"#fff", opacity:0.8, whiteSpace: "pre-wrap" }}>{u.bio}</div>
             </div>
           </div>
         ) : (
-          <div style={{ marginBottom:40 }}>
+          <div id="about" style={{ marginBottom:40 }}>
             <p style={{ opacity:0.7, lineHeight:1.85, maxWidth:580, fontSize:15, whiteSpace: "pre-wrap" }}>{u.bio}</p>
           </div>
         )}

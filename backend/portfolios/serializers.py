@@ -33,6 +33,8 @@ class TestimonialSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'role', 'quote']
 
 class BlogSerializer(serializers.ModelSerializer):
+    url = serializers.URLField(required=False, allow_null=True, allow_blank=True)
+
     class Meta:
         model = Blog
         fields = ['id', 'title', 'date', 'dateRaw', 'excerpt', 'url']
@@ -43,6 +45,13 @@ class ProfileSerializer(serializers.ModelSerializer):
     # silently overwritten by the auth email.
     email = serializers.EmailField(required=False, allow_null=True, allow_blank=True)
     username = serializers.CharField(source='user.username', read_only=True)
+    github = serializers.URLField(required=False, allow_null=True, allow_blank=True)
+    twitter = serializers.URLField(required=False, allow_null=True, allow_blank=True)
+    linkedin = serializers.URLField(required=False, allow_null=True, allow_blank=True)
+    facebook = serializers.URLField(required=False, allow_null=True, allow_blank=True)
+    instagram = serializers.URLField(required=False, allow_null=True, allow_blank=True)
+    website = serializers.URLField(required=False, allow_null=True, allow_blank=True)
+    calendly = serializers.URLField(required=False, allow_null=True, allow_blank=True)
 
     class Meta:
         model = Profile

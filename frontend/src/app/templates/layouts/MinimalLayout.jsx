@@ -6,7 +6,7 @@ export default function MinimalLayout({ p, t, id, portfolioId }) {
   const u = p.user || {};
   const mono  = id === "typewriter";
   const serif = id === "paper";
-  const font  = mono ? "ui-monospace,monospace" : serif ? "Georgia,serif" : "Inter,sans-serif";
+  const font  = mono ? "ui-monospace,monospace" : serif ? "Georgia,serif" : "var(--font-body, 'Inter,sans-serif')";
   const maxW  = id === "minimal" ? 580 : 700;
   const gap   = id === "minimal" ? 80  : 60;
   const lbl   = (txt) => <SectionLabel text={mono ? `// ${txt}` : txt} style={{ fontFamily: mono ? "ui-monospace,monospace" : font }} />;
@@ -17,7 +17,7 @@ export default function MinimalLayout({ p, t, id, portfolioId }) {
       <div style={{ maxWidth:maxW, margin:"0 auto" }}>
 
         {/* ── Hero ── */}
-        <div style={{ marginBottom:gap }}>
+        <div id="about" style={{ marginBottom:gap }}>
           {u.avatar && (
             <img src={u.avatar} alt={`${u.name || "User"} profile picture`} loading="lazy" style={{ width:"min(240px, 70vw)", height:"auto", aspectRatio:"5/6", borderRadius:"16px", objectFit:"cover", marginBottom:24, border:`1px solid ${t.fg}15`, boxShadow:"0 10px 30px rgba(0,0,0,0.08)" }} />
           )}

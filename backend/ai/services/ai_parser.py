@@ -10,84 +10,98 @@ import re
 from django.conf import settings
 
 
-_PROMPT_TEMPLATE = """You are a professional resume and portfolio parser.
-Extract structured information from the text below and return ONLY a valid JSON object.
-Do NOT include any explanation, markdown fences, or extra text — just raw JSON.
+_PROMPT_TEMPLATE = """You are an expert CV/Resume parser. Extract ALL information from this CV/Resume carefully and return ONLY a valid JSON object with no extra text, no markdown, no backticks, no explanation.
 
-Return this exact JSON structure (use null for missing fields, empty arrays for missing lists):
+Extract every field thoroughly — do NOT skip any projects, skills, education entries, or experience entries.
+
+CRITICAL EXTRACTION RULES:
+- full_name: look at the VERY TOP of the CV — it is almost always the first line in largest/boldest text, typically 2–4 words (e.g. "John Doe", "JOHN DOE"). NEVER return "not found", "N/A" — use "" if genuinely absent.
+- headline: look immediately below the name — a short professional title like "Software Engineer", "Full Stack Developer", "Final Year B.Tech Student". Infer from most recent job title or degree if not explicit. NEVER return a placeholder — use "" if absent.
+- bio: the professional summary or objective statement, 2–3 sentences.
+- email: exact email address as written.
+- phone: exact phone number as written, including country code (e.g. +91 9876543210).
+- location: full address or city/state/country (e.g. "Kalyani, West Bengal, India").
+- profile_picture: URL of the person's headshot/avatar if found in the text, else null.
+- skills: ALL technical and soft skills listed. Programming languages (Python, JavaScript, Java, C++…) go here, NEVER in languages.
+- languages: ONLY human spoken/written languages (English, Bengali, Hindi, Spanish, French…). NEVER put programming/tech languages here. Default proficiency to "Fluent" if not mentioned.
+- education: ALL education entries — institution, degree and subject/major, start date, end date, grade/GPA. Do NOT skip any.
+- experience: ALL work experience entries — company, role, start date, end date, description. Do NOT skip any.
+- projects: ALL projects listed — title, description, tech stack (comma-separated), GitHub URL, live URL. Extract EVERY project.
+- certifications: ALL certifications — name, issuer, year.
+- social_links: ALL social/portfolio URLs found — classify each as github, linkedin, twitter, instagram, youtube, website, or other.
+
+Return ONLY this exact JSON structure (use null for missing scalar fields, empty arrays [] for missing lists):
 
 {{
-  "full_name": "string — The person's complete full name. EXTRACTION RULES: (1) It is almost always the VERY FIRST non-empty line of the CV. (2) It is usually in ALL CAPS, Title Case, or bold. (3) It appears BEFORE any contact info like email or phone. (4) It is typically 2–4 words (e.g. 'John Doe', 'JOHN DOE', 'Maria Clara Santos'). (5) NEVER return 'Name not found', 'N/A', or any placeholder — return empty string '' if genuinely absent.",
-  "headline": "string — The person's professional title or tagline. EXTRACTION RULES: (1) Usually the line immediately below the name. (2) Short phrase like 'Software Engineer', 'Full Stack Developer', 'Final Year B.Tech Student', 'UI/UX Designer'. (3) If not explicit, infer from the most recent job title or the degree being pursued. (4) NEVER return 'Headline not found' — return empty string '' if genuinely absent.",
-  "bio": "string — 2-3 sentence professional summary",
-  "email": "string or null",
-  "phone": "string or null — extract any phone number exactly as written, including country code prefix (e.g. +91 9876543210)",
-  "location": "string — full address or city/region (e.g. B-3/45 Kalyani, Nadia, WB 741235)",
-  "profile_picture": "string or null — URL of the person's profile/avatar image if found in the text (e.g. from og:image, twitter:image, or any direct image URL that appears to be a headshot). Return null if not found.",
-  "skills": ["string", "..."],
+  "full_name": "",
+  "headline": "",
+  "bio": "",
+  "email": null,
+  "phone": null,
+  "location": "",
+  "profile_picture": null,
+  "skills": [],
   "languages": [
     {{
-      "name": "string — human spoken/written language only (e.g., English, Bengali, Hindi, Spanish, French, Arabic, Mandarin, Urdu, Tamil). NEVER put programming/tech languages here.",
-      "proficiency": "string — e.g. Native, Fluent, Intermediate, Basic. Default to Fluent if not mentioned."
+      "name": "human language name only",
+      "proficiency": "Native | Fluent | Intermediate | Basic"
     }}
   ],
   "experience": [
     {{
-      "company": "string",
-      "role": "string",
+      "company": "",
+      "role": "",
       "start_date": "YYYY-MM or null",
       "end_date": "YYYY-MM or null (null = present)",
-      "description": "string"
+      "description": ""
     }}
   ],
   "education": [
     {{
-      "school": "string — full institution name",
-      "degree": "string — degree and subject/major",
+      "school": "full institution name",
+      "degree": "degree and subject/major",
       "start_date": "YYYY-MM or null",
       "end_date": "YYYY-MM or null (null = currently enrolled)",
-      "grade": "string or null — GPA, CGPA, percentage, grade etc."
+      "grade": "GPA/CGPA/percentage or null"
     }}
   ],
   "projects": [
     {{
-      "title": "string",
-      "description": "string",
+      "title": "",
+      "description": "",
       "tech_stack": "comma-separated technologies",
-      "github_url": "string or null",
-      "live_url": "string or null"
+      "github_url": null,
+      "live_url": null
     }}
   ],
   "certifications": [
     {{
-      "name": "string — certification/course title",
-      "issuer": "string or null — issuing organization (e.g. Google, AWS, Coursera, Udemy)",
-      "year": "string or null — year issued or completed"
+      "name": "certification or course title",
+      "issuer": "issuing organisation or null",
+      "year": "year or null"
     }}
   ],
   "social_links": [
     {{
       "platform": "github | linkedin | twitter | instagram | youtube | website | other",
-      "url": "string"
+      "url": ""
     }}
   ]
 }}
 
-CRITICAL RULES:
-- Return ONLY the JSON — no explanation, no markdown, no backticks.
-- full_name: the FIRST LINE of the CV is almost always the name. Extract it.
-- headline: the line immediately after the name is almost always the title/role.
-- NEVER output 'not found', 'N/A', 'None', or any placeholder for full_name or headline — use empty string '' if truly missing.
-- Natural/spoken human languages (English, Bengali, Hindi, Spanish…) ALWAYS go in "languages", NEVER in "skills".
-- Programming languages (Python, JavaScript, Java, C++…) go in "skills".
+Return ONLY the JSON — no markdown, no backticks, no explanation, nothing else.
 
 Text to parse:
 {resume_text}
 """
 
 # Model preference order — first with available quota is used
+# Lighter models (flash-lite, 1.5-flash-8b) have higher free-tier rate limits
 _MODEL_CANDIDATES = [
+    "gemini-2.0-flash-lite",
     "gemini-2.0-flash",
+    "gemini-1.5-flash",
+    "gemini-1.5-flash-8b",
 ]
 
 # Spoken languages names to help differentiate
@@ -171,16 +185,56 @@ def differentiate_skills_and_languages(skills: list, languages: list):
             
     return new_skills, cleaned_languages
 
+import time
+
+def call_gemini_with_retry(model, content, max_retries=3):
+    for attempt in range(max_retries):
+        try:
+            response = model.generate_content(content)
+            return response
+        except Exception as e:
+            if '429' in str(e) or 'rate' in str(e).lower() or 'quota' in str(e).lower():
+                wait_time = (attempt + 1) * 15
+                print(f"[Rate Limit] Waiting {wait_time}s before retry {attempt + 1}/{max_retries}")
+                time.sleep(wait_time)
+                continue
+            raise e
+    raise Exception('Max retries exceeded. Please try again in a moment.')
+
 
 def parse_resume_with_ai(resume_text: str) -> dict:
     """
-    Send resume_text to Gemini and return a structured dict.
+    Send resume_text to Groq (llama-3.3-70b-versatile) or Gemini and return a structured dict.
     Raises RuntimeError on config or API errors.
     """
+    groq_api_key = getattr(settings, "GROQ_API_KEY", None) or os.getenv("GROQ_API_KEY")
+    if groq_api_key:
+        try:
+            from groq import Groq
+            groq_client = Groq(api_key=groq_api_key)
+            prompt = _PROMPT_TEMPLATE.format(resume_text=resume_text[:12000])
+
+            response = groq_client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.1,
+                response_format={"type": "json_object"}
+            )
+            raw = response.choices[0].message.content.strip()
+
+            raw = re.sub(r"^```(?:json)?\s*", "", raw)
+            raw = re.sub(r"\s*```$", "", raw)
+            raw = raw.strip()
+            data = json.loads(raw)
+            print(f"[ai_parser - Groq] ✅ Parsed — name={data.get('full_name')!r}  headline={data.get('headline')!r}")
+            return _sanitise(data)
+        except Exception as exc:
+            print(f"[ai_parser - Groq] Error during Groq parse, falling back to Gemini: {exc}")
+
     api_key = getattr(settings, "GEMINI_API_KEY", None) or os.environ.get("GEMINI_API_KEY")
     if not api_key:
         raise RuntimeError(
-            "GEMINI_API_KEY is not configured. "
+            "GEMINI_API_KEY or GROQ_API_KEY is not configured. "
             "Add it to backend/.env and restart the server."
         )
 
@@ -211,8 +265,10 @@ def parse_resume_with_ai(resume_text: str) -> dict:
             break
         except Exception as exc:
             err_str = str(exc)
-            # Rate limit on this model — try the next one (each has independent quota)
-            if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str:
+            if '429' in err_str or 'RESOURCE_EXHAUSTED' in err_str or 'rate' in err_str.lower() or 'quota' in err_str.lower():
+                wait_time = 3  # short wait — just enough to avoid hammering, won't cause browser timeout
+                print(f"[Rate Limit] Switching model after {wait_time}s wait...")
+                time.sleep(wait_time)
                 last_error = RuntimeError(
                     "Gemini API rate limit reached. Please wait a moment and try again."
                 )
@@ -220,8 +276,12 @@ def parse_resume_with_ai(resume_text: str) -> dict:
             last_error = exc
             continue
     else:
-        # All models exhausted — surface the last error
         raise last_error if last_error else RuntimeError("All Gemini models failed.")
+
+    try:
+        raw = raw
+    except Exception as exc:
+        raise RuntimeError(f"Gemini API call failed: {exc}") from exc
 
     # Strip markdown fences if the model wraps the JSON despite instructions
     raw = re.sub(r"^```(?:json)?\s*", "", raw)

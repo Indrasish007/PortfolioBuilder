@@ -22,12 +22,12 @@ export default function SplitLayout({ p, t, id, portfolioId }) {
   const lbl = (txt) => <SectionLabel text={txt} style={{ color:ac, opacity:1 }} />;
 
   return (
-    <div style={{ background:right, color:fg, fontFamily:"Inter,sans-serif", minHeight:"100%" }}>
+    <div style={{ background:right, color:fg, fontFamily:"var(--font-body, 'Inter,sans-serif')", minHeight:"100%" }}>
 
       {/* ── Split Hero ── */}
       <div style={{ display:"grid", gridTemplateColumns:"1fr", minHeight:"auto" }} className="sm:grid-cols-2-override">
         {/* Left panel — bio */}
-        <div style={{ background:left, padding:"60px 48px", display:"flex", flexDirection:"column", justifyContent:"center", borderRight:`1px solid rgba(255,255,255,0.06)` }}>
+        <div id="about" style={{ background:left, padding:"60px 48px", display:"flex", flexDirection:"column", justifyContent:"center", borderRight:`1px solid rgba(255,255,255,0.06)` }}>
           {u.avatar && (
             <img src={u.avatar} alt={`${u.name || "User"} profile picture`} loading="lazy" style={{ width:"min(240px, 70vw)", height:"auto", aspectRatio:"5/6", borderRadius:"16px", objectFit:"cover", marginBottom:24, border:`1px solid rgba(255,255,255,0.12)`, boxShadow:`0 10px 30px rgba(0,0,0,0.5)` }} />
           )}
@@ -100,8 +100,8 @@ export default function SplitLayout({ p, t, id, portfolioId }) {
                   <p style={{ fontSize:13, opacity:0.7, lineHeight:1.75, marginBottom:12 }}>{p.projects[0].description}</p>
                   <Tags items={p.projects[0].tech||[]} bg={`${ac}15`} fg={ac} />
                   <div style={{ display:"flex", gap:12, marginTop:14, opacity:0.6 }}>
-                    {p.projects[0].github && <a href={p.projects[0].github} style={{ color:fg, fontSize:12 }}>↗ Code</a>}
-                    {p.projects[0].live   && <a href={p.projects[0].live}   style={{ color:fg, fontSize:12 }}>↗ Live</a>}
+                    {p.projects[0].github && <a href={p.projects[0].github} target="_blank" rel="noreferrer" onClick={() => trackProjectClick(p.projects[0].id, 'github')} style={{ color:fg, fontSize:12 }}>↗ Code</a>}
+                    {p.projects[0].live   && <a href={p.projects[0].live}   target="_blank" rel="noreferrer" onClick={() => trackProjectClick(p.projects[0].id, 'live')} style={{ color:fg, fontSize:12 }}>↗ Live</a>}
                   </div>
                 </div>
               </div>

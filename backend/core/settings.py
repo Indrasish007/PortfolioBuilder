@@ -16,6 +16,8 @@ from datetime import timedelta
 from dotenv import load_dotenv
 
 load_dotenv()
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -251,8 +253,8 @@ ACCOUNT_LOGIN_METHODS = ['email']
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_SIGNUP_FIELDS = ['email*']
 
-# AI / Gemini
-GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
+# AI / Gemini API Key defined at the top of this file
+
 
 # Resend API
 import resend

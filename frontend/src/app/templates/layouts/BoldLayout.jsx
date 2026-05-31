@@ -16,7 +16,7 @@ export default function BoldLayout({ p, t, id, portfolioId }) {
   }[id] || "linear-gradient(135deg,#7c3aed,#22d3ee)";
   const heroSz = { bold:76, cyberpunk:68, space:64, retro:60, neon:64, quantum:60 }[id] || 60;
   const fw     = { bold:900, cyberpunk:900, retro:700 }[id] || 800;
-  const font   = (id === "retro" ? "'Courier New',monospace" : id === "cyberpunk" ? "Impact,ui-sans-serif" : "Inter,sans-serif");
+  const font   = (id === "retro" ? "'Courier New',monospace" : id === "cyberpunk" ? "Impact,ui-sans-serif" : "var(--font-body, 'Inter,sans-serif')");
   const hero   = heroGrad;
   const ac     = t.ac;
 
@@ -31,7 +31,7 @@ export default function BoldLayout({ p, t, id, portfolioId }) {
     <div style={{ background:t.bg, color:t.fg, fontFamily:font, minHeight:"100%" }}>
 
       {/* ── Full-bleed Hero ── */}
-      <div style={{ background:hero, minHeight:"60vh", display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"clamp(32px, 6vw, 60px) clamp(16px, 5vw, 56px)", position:"relative", overflow:"hidden" }}>
+      <div id="about" style={{ background:hero, minHeight:"60vh", display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"clamp(32px, 6vw, 60px) clamp(16px, 5vw, 56px)", position:"relative", overflow:"hidden" }}>
 
         {/* decorative overlays */}
         {id==="space" && (

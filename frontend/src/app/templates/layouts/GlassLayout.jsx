@@ -36,7 +36,7 @@ export default function GlassLayout({ p, t, id, portfolioId }) {
   );
 
   return (
-    <div style={{ background:t.bg, color:fg, fontFamily:"Inter,sans-serif", minHeight:"100%" }}>
+    <div style={{ background:t.bg, color:fg, fontFamily:"var(--font-body, 'Inter,sans-serif')", minHeight:"100%" }}>
 
       {/* ── Hero with glass card ── */}
       <div style={{ position:"relative", overflow:"hidden", padding:"clamp(32px, 6vw, 80px) clamp(16px, 5vw, 48px) clamp(24px, 5vw, 60px)" }}>
@@ -49,7 +49,7 @@ export default function GlassLayout({ p, t, id, portfolioId }) {
         )}
 
         <div style={{ position:"relative", maxWidth:720, margin:"0 auto" }}>
-          <div style={{ ...card, padding:"40px 24px", display:"flex", gap:32, flexWrap:"wrap", alignItems:"center" }}>
+          <div id="about" style={{ ...card, padding:"40px 24px", display:"flex", gap:32, flexWrap:"wrap", alignItems:"center" }}>
             <div style={{ flexShrink:0 }}>
               {u.avatar && (
                 <img src={u.avatar} alt={`${u.name || "User"} profile picture`} loading="lazy" style={{ width:"min(240px, 70vw)", height:"auto", aspectRatio:"5/6", borderRadius:"16px", objectFit:"cover",

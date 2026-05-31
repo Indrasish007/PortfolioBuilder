@@ -1,4 +1,5 @@
-import { TH } from "./layouts/shared.jsx";
+import { useEffect, useRef } from "react";
+import { TH, getLayoutFonts } from "./layouts/shared.jsx";
 import MinimalLayout   from "./layouts/MinimalLayout.jsx";
 import SidebarLayout   from "./layouts/SidebarLayout.jsx";
 import BoldLayout      from "./layouts/BoldLayout.jsx";
@@ -94,6 +95,60 @@ const TEMPLATE_PALETTE = {
 export default function LivePortfolio({ portfolio, template, themeName }) {
   if (!portfolio) return null;
 
+  const containerRef = useRef(null);
+  const typography = portfolio?.custom?.typography || "Inter + Space Grotesk";
+  const { body: bodyFont, heading: headingFont } = getLayoutFonts(typography);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const doc = containerRef.current.ownerDocument;
+    
+    // 1. Load Google Fonts
+    let fontFamilies = [];
+    if (typography === "Inter + Space Grotesk") {
+      fontFamilies = ["Inter:wght@300;400;500;600;700;800;900", "Space+Grotesk:wght@300;400;500;600;700"];
+    } else if (typography === "Geist") {
+      fontFamilies = ["Geist:wght@300;400;500;600;700;800;900"];
+    } else if (typography === "Söhne + Tiempos") {
+      fontFamilies = ["Instrument+Sans:wght@300;400;500;600;700", "Playfair+Display:ital,wght@0,400..900;1,400..900"];
+    } else if (typography === "JetBrains Mono") {
+      fontFamilies = ["JetBrains+Mono:wght@300;400;500;600;700;800"];
+    } else if (typography === "Syne + Lora") {
+      fontFamilies = ["Syne:wght@700;800", "Lora:ital,wght@0,400..700;1,400..700"];
+    } else if (typography === "Outfit + Plus Jakarta") {
+      fontFamilies = ["Outfit:wght@600;700;800", "Plus+Jakarta+Sans:wght@300;400;500;600;700"];
+    } else if (typography === "Playfair + Source Sans") {
+      fontFamilies = ["Playfair+Display:ital,wght@0,400..900;1,400..900", "Source+Sans+3:wght@300;400;500;600;700"];
+    } else if (typography === "Cinzel + Montserrat") {
+      fontFamilies = ["Cinzel:wght@600;700;800", "Montserrat:wght@300;400;500;600;700"];
+    }
+    
+    if (fontFamilies.length > 0) {
+      const fontKey = `font-link-${typography.replace(/[^a-zA-Z0-9]/g, "")}`;
+      if (!doc.getElementById(fontKey)) {
+        const link = doc.createElement("link");
+        link.id = fontKey;
+        link.rel = "stylesheet";
+        link.href = `https://fonts.googleapis.com/css2?family=${fontFamilies.join("&family=")}&display=swap`;
+        doc.head.appendChild(link);
+      }
+    }
+
+    // 2. Load global heading style override inside iframe/doc
+    const styleKey = "dynamic-typography-heading-style";
+    let styleEl = doc.getElementById(styleKey);
+    if (!styleEl) {
+      styleEl = doc.createElement("style");
+      styleEl.id = styleKey;
+      doc.head.appendChild(styleEl);
+    }
+    styleEl.textContent = `
+      h1, h2, h3, h4, h5, h6 {
+        font-family: var(--font-heading, inherit) !important;
+      }
+    `;
+  }, [typography]);
+
   // Build the colour token object: start from the template's native palette so
   // every template has sensible defaults, then overlay the user-selected TH theme
   // so the Theme picker always wins.  This means:
@@ -107,14 +162,33 @@ export default function LivePortfolio({ portfolio, template, themeName }) {
   const fam  = FAMILIES[template] || "minimal";
   const props = { p: portfolio, t, id: template, portfolioId: portfolio.id };
 
-  switch (fam) {
-    case "minimal":   return <MinimalLayout   {...props} />;
-    case "sidebar":   return <SidebarLayout   {...props} />;
-    case "bold":      return <BoldLayout      {...props} />;
-    case "glass":     return <GlassLayout     {...props} />;
-    case "split":     return <SplitLayout     {...props} />;
-    case "biz":       return <BizLayout       {...props} />;
-    case "brutalist": return <BrutalistLayout {...props} />;
-    default:          return <MinimalLayout   {...props} />;
-  }
+  const layoutContent = (() => {
+    switch (fam) {
+      case "minimal":   return <MinimalLayout   {...props} />;
+      case "sidebar":   return <SidebarLayout   {...props} />;
+      case "bold":      return <BoldLayout      {...props} />;
+      case "glass":     return <GlassLayout     {...props} />;
+      case "split":     return <SplitLayout     {...props} />;
+      case "biz":       return <BizLayout       {...props} />;
+      case "brutalist": return <BrutalistLayout {...props} />;
+      default:          return <MinimalLayout   {...props} />;
+    }
+  })();
+
+  return (
+    <div
+      ref={containerRef}
+      style={{
+        "--font-body": bodyFont,
+        "--font-heading": headingFont,
+        fontFamily: "var(--font-body)",
+        height: "100%",
+        minHeight: "100%",
+        display: "flex",
+        flexDirection: "column"
+      }}
+    >
+      {layoutContent}
+    </div>
+  );
 }

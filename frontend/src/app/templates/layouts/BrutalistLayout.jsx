@@ -10,7 +10,7 @@ export default function BrutalistLayout({ p, t, id, portfolioId }) {
   const ac     = t.ac;
   const fg     = t.fg;
   const border = `3px solid ${t.ac}`;
-  const font   = isMono ? "Inter,sans-serif" : "Impact,ui-sans-serif,sans-serif";
+  const font   = isMono ? "var(--font-body, 'Inter,sans-serif')" : "Impact,ui-sans-serif,sans-serif";
 
 
   const lbl = (txt) => (
@@ -147,7 +147,7 @@ export default function BrutalistLayout({ p, t, id, portfolioId }) {
       `}</style>
 
       {/* ── Hero ── */}
-      <div style={{ padding:isMono?"clamp(32px,6vw,60px) clamp(16px,5vw,48px)":"clamp(24px,4vw,48px)", borderBottom:border, position:"relative" }}>
+      <div id="about" style={{ padding:isMono?"clamp(32px,6vw,60px) clamp(16px,5vw,48px)":"clamp(24px,4vw,48px)", borderBottom:border, position:"relative" }}>
         {!isMono && <div className="brutalist-hero-accent" />}
         <div style={{ position:"relative", zIndex:1 }}>
           <div className="brutalist-hero-container">

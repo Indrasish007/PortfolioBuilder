@@ -10,8 +10,51 @@ import json
 import pypdf
 import requests
 
-def get_ai_response(prompt, system_instruction=None, json_mode=False, model="gemini-2.0-flash"):
-    # Try Gemini API Key first
+def call_gemini_with_retry(model, content, max_retries=3):
+    for attempt in range(max_retries):
+        try:
+            response = model.generate_content(content)
+            return response
+        except Exception as e:
+            if '429' in str(e) or 'rate' in str(e).lower() or 'quota' in str(e).lower():
+                wait_time = 3
+                print(f"[Rate Limit] Waiting {wait_time}s before retry {attempt + 1}/{max_retries}")
+                time.sleep(wait_time)
+                continue
+            raise e
+    raise Exception('Max retries exceeded. Please try again in a moment.')
+
+def get_ai_response(prompt, system_instruction=None, json_mode=False, model="llama-3.3-70b-versatile"):
+    # Try Groq API Key first
+    groq_key = os.getenv("GROQ_API_KEY")
+    if not groq_key:
+        from dotenv import load_dotenv
+        load_dotenv()
+        groq_key = os.getenv("GROQ_API_KEY")
+        
+    if groq_key and not groq_key.startswith("your_") and groq_key != "mock_key":
+        try:
+            from groq import Groq
+            client = Groq(api_key=groq_key)
+            messages = []
+            if system_instruction:
+                messages.append({"role": "system", "content": system_instruction})
+            messages.append({"role": "user", "content": prompt})
+            
+            args = {
+                "model": model if model.startswith("llama") or model.startswith("mixtral") or model.startswith("gemma") else "llama-3.3-70b-versatile",
+                "messages": messages,
+                "temperature": 0.7,
+            }
+            if json_mode:
+                args["response_format"] = {"type": "json_object"}
+                
+            response = client.chat.completions.create(**args)
+            return response.choices[0].message.content.strip()
+        except Exception as e:
+            print(f"Groq API call failed: {e}")
+
+    # Fallback to Gemini API Key
     gemini_key = os.getenv("GEMINI_API_KEY")
     if not gemini_key:
         from dotenv import load_dotenv
@@ -19,25 +62,34 @@ def get_ai_response(prompt, system_instruction=None, json_mode=False, model="gem
         gemini_key = os.getenv("GEMINI_API_KEY")
         
     if gemini_key and not gemini_key.startswith("your_") and gemini_key != "mock_key":
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={gemini_key}"
-        headers = {"Content-Type": "application/json"}
-        payload = {
-            "contents": [{"parts": [{"text": prompt}]}]
-        }
-        if system_instruction:
-            payload["systemInstruction"] = {
-                "parts": [{"text": system_instruction}]
-            }
-        if json_mode:
-            payload["generationConfig"] = {
-                "responseMimeType": "application/json"
-            }
         try:
-            response = requests.post(url, headers=headers, json=payload, timeout=30)
-            if response.status_code == 200:
-                data = response.json()
-                text = data['candidates'][0]['content']['parts'][0]['text'].strip()
-                return text
+            from google import genai
+            from google.genai import types
+
+            client = genai.Client(api_key=gemini_key)
+            contents_list = []
+            if system_instruction:
+                contents_list.append(types.Content(
+                    role="user",
+                    parts=[types.Part(text=system_instruction + "\n\n" + prompt)]
+                ))
+            else:
+                contents_list.append(prompt)
+
+            cfg = types.GenerateContentConfig(temperature=0.7, max_output_tokens=1500)
+            if json_mode:
+                cfg = types.GenerateContentConfig(
+                    temperature=0.7,
+                    max_output_tokens=1500,
+                    response_mime_type="application/json"
+                )
+
+            response = client.models.generate_content(
+                model=model,
+                contents=contents_list if system_instruction else prompt,
+                config=cfg,
+            )
+            return response.text.strip()
         except Exception as e:
             print(f"Gemini API call failed: {e}")
 
@@ -142,7 +194,10 @@ class AIRewriteAboutView(APIView):
 
     # Same priority order as ai_parser.py — first available quota wins
     _MODEL_CANDIDATES = [
+        "gemini-2.0-flash-lite",
         "gemini-2.0-flash",
+        "gemini-1.5-flash",
+        "gemini-1.5-flash-8b",
     ]
 
     def post(self, request):
@@ -161,6 +216,30 @@ class AIRewriteAboutView(APIView):
             + text.strip()
         )
 
+        groq_api_key = os.getenv("GROQ_API_KEY")
+        if not groq_api_key:
+            from dotenv import load_dotenv
+            load_dotenv()
+            groq_api_key = os.getenv("GROQ_API_KEY")
+
+        if groq_api_key and not groq_api_key.startswith("your_") and groq_api_key != "mock_key":
+            try:
+                from groq import Groq
+                client = Groq(api_key=groq_api_key)
+                response = client.chat.completions.create(
+                    model="llama-3.3-70b-versatile",
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0.7,
+                )
+                raw = response.choices[0].message.content.strip()
+                if raw:
+                    if raw.startswith('"') and raw.endswith('"'):
+                        raw = raw[1:-1]
+                    print(f"[AIRewriteAboutView] Success with Groq")
+                    return Response({"rewritten": raw})
+            except Exception as exc:
+                print(f"[AIRewriteAboutView] Groq failed, falling back: {exc}")
+
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
             from dotenv import load_dotenv
@@ -173,8 +252,6 @@ class AIRewriteAboutView(APIView):
                 from google.genai import types
 
                 client = genai.Client(api_key=api_key)
-                last_error = None
-
                 for model_name in self._MODEL_CANDIDATES:
                     try:
                         response = client.models.generate_content(
@@ -187,28 +264,24 @@ class AIRewriteAboutView(APIView):
                         )
                         raw = (response.text or "").strip()
                         if raw:
-                            # Strip surrounding quotes if the model added them
                             if raw.startswith('"') and raw.endswith('"'):
                                 raw = raw[1:-1]
                             print(f"[AIRewriteAboutView] Success with model: {model_name}")
                             return Response({"rewritten": raw})
                     except Exception as exc:
                         err_str = str(exc)
-                        if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str or "quota" in err_str.lower():
-                            print(f"[AIRewriteAboutView] Quota exhausted for {model_name}, trying next...")
-                            last_error = exc
+                        if '429' in err_str or 'RESOURCE_EXHAUSTED' in err_str or 'rate' in err_str.lower() or 'quota' in err_str.lower():
+                            print(f"[AIRewriteAboutView] Rate limit on {model_name}, trying next model...")
+                            time.sleep(3)
                             continue
                         print(f"[AIRewriteAboutView] Error with {model_name}: {exc}")
-                        last_error = exc
                         continue
-
-                print(f"[AIRewriteAboutView] All Gemini models exhausted. Last error: {last_error}")
 
             except ImportError:
                 print("[AIRewriteAboutView] google-genai not installed, falling back to requests.")
 
         # Fallback: raw HTTP requests (catches cases where google-genai isn't installed)
-        fallback_models = ["gemini-2.0-flash"]
+        fallback_models = ["gemini-2.0-flash-lite", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-flash-8b"]
         for model_name in fallback_models:
             ai_reply = get_ai_response(prompt, model=model_name)
             if ai_reply:
@@ -235,7 +308,10 @@ class AIRewriteProjectView(APIView):
     authentication_classes = []
 
     _MODEL_CANDIDATES = [
+        "gemini-2.0-flash-lite",
         "gemini-2.0-flash",
+        "gemini-1.5-flash",
+        "gemini-1.5-flash-8b",
     ]
 
     # ── GitHub helpers ────────────────────────────────────────────────────────
@@ -420,6 +496,34 @@ class AIRewriteProjectView(APIView):
 
         prompt = self._build_prompt(title, text, github_ctx)
 
+        # ── Groq call first ───────────────────────────────────────────────────
+        groq_api_key = os.getenv("GROQ_API_KEY")
+        if not groq_api_key:
+            from dotenv import load_dotenv
+            load_dotenv()
+            groq_api_key = os.getenv("GROQ_API_KEY")
+
+        if groq_api_key and not groq_api_key.startswith("your_") and groq_api_key != "mock_key":
+            try:
+                from groq import Groq
+                client = Groq(api_key=groq_api_key)
+                response = client.chat.completions.create(
+                    model="llama-3.3-70b-versatile",
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0.7,
+                )
+                raw = response.choices[0].message.content.strip()
+                if raw:
+                    if raw.startswith('"') and raw.endswith('"'):
+                        raw = raw[1:-1]
+                    print(f"[AIRewriteProjectView] Success with Groq")
+                    return Response({
+                        "rewritten": raw,
+                        "github_used": github_ctx is not None,
+                    })
+            except Exception as exc:
+                print(f"[AIRewriteProjectView] Groq failed, falling back: {exc}")
+
         # ── Gemini call ───────────────────────────────────────────────────────
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
@@ -433,8 +537,6 @@ class AIRewriteProjectView(APIView):
                 from google.genai import types
 
                 client = genai.Client(api_key=api_key)
-                last_error = None
-
                 for model_name in self._MODEL_CANDIDATES:
                     try:
                         response = client.models.generate_content(
@@ -456,21 +558,18 @@ class AIRewriteProjectView(APIView):
                             })
                     except Exception as exc:
                         err_str = str(exc)
-                        if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str or "quota" in err_str.lower():
-                            print(f"[AIRewriteProjectView] Quota exhausted for {model_name}, trying next...")
-                            last_error = exc
+                        if '429' in err_str or 'RESOURCE_EXHAUSTED' in err_str or 'rate' in err_str.lower() or 'quota' in err_str.lower():
+                            print(f"[AIRewriteProjectView] Rate limit on {model_name}, trying next model...")
+                            time.sleep(3)
                             continue
                         print(f"[AIRewriteProjectView] Error with {model_name}: {exc}")
-                        last_error = exc
                         continue
-
-                print(f"[AIRewriteProjectView] All Gemini models exhausted. Last error: {last_error}")
 
             except ImportError:
                 print("[AIRewriteProjectView] google-genai not installed, falling back to requests.")
 
         # Fallback: raw HTTP requests
-        fallback_models = ["gemini-2.0-flash"]
+        fallback_models = ["gemini-2.0-flash-lite", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-flash-8b"]
         for model_name in fallback_models:
             ai_reply = get_ai_response(prompt, model=model_name)
             if ai_reply:
