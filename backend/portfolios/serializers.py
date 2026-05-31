@@ -77,7 +77,7 @@ class ProfileSerializer(serializers.ModelSerializer):
             for field in url_fields:
                 if field in data and data[field]:
                     val = str(data[field]).strip()
-                    if val and not val.startswith(('http://', 'https://')):
+                    if val and not val.startswith(('http://', 'https://', 'data:')):
                         data[field] = f'https://{val}'
         return super().to_internal_value(data)
 

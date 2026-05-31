@@ -19,8 +19,14 @@ export const handleResumeDownload = (resumeLink, action, portfolioId = null) => 
   if (!resumeLink) return;
   try {
     let url = resumeLink;
-    if (resumeLink.startsWith("data:")) {
-      const parts = resumeLink.split(',');
+    if (url.startsWith("https://data:")) {
+      url = url.substring(8);
+    } else if (url.startsWith("http://data:")) {
+      url = url.substring(7);
+    }
+
+    if (url.startsWith("data:")) {
+      const parts = url.split(',');
       const meta = parts[0];
       const mimeType = meta.split(':')[1]?.split(';')[0] || 'application/pdf';
       const byteCharacters = atob(parts[1]);
