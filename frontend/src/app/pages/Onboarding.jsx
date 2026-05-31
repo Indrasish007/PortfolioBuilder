@@ -441,6 +441,20 @@ function StepReview({ reviewedData, setReviewedData, onContinue }) {
       { company: "", role: "", dates: "", description: "" },
     ]);
 
+  /* Education */
+  const updateEdu = (i, field, val) => {
+    const arr = [...(reviewedData.education || [])];
+    arr[i] = { ...arr[i], [field]: val };
+    update("education", arr);
+  };
+  const removeEdu = (i) =>
+    update("education", (reviewedData.education || []).filter((_, idx) => idx !== i));
+  const addEdu = () =>
+    update("education", [
+      ...(reviewedData.education || []),
+      { school: "", degree: "", period: "", isCurrent: false, startDate: "", endDate: "", grade: "" },
+    ]);
+
   /* Projects */
   const updateProj = (i, field, val) => {
     const arr = [...reviewedData.projects];
@@ -693,6 +707,66 @@ function StepReview({ reviewedData, setReviewedData, onContinue }) {
             className="w-full h-10 rounded-xl border border-dashed border-border/60 text-xs text-muted-foreground hover:text-foreground hover:border-brand/40 hover:bg-accent/20 transition flex items-center justify-center gap-1.5"
           >
             <Plus className="w-4 h-4" /> Add experience
+          </button>
+        </ReviewSection>
+
+        {/* ── Education ──────────────────────────────────────────────────── */}
+        <ReviewSection
+          title={`Education (${(reviewedData.education || []).length})`}
+          icon={FileText}
+          defaultOpen={(reviewedData.education || []).length > 0}
+        >
+          <AnimatePresence>
+            {(reviewedData.education || []).map((edu, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, height: 0 }}
+                className="border border-border/60 rounded-xl p-4 space-y-3 relative glass"
+              >
+                <button
+                  type="button"
+                  onClick={() => removeEdu(i)}
+                  className="absolute top-3 right-3 text-muted-foreground hover:text-destructive transition"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <Field
+                    label="School / Institution"
+                    value={edu.school}
+                    onChange={(v) => updateEdu(i, "school", v)}
+                    placeholder="University or College name"
+                  />
+                  <Field
+                    label="Degree / Course"
+                    value={edu.degree}
+                    onChange={(v) => updateEdu(i, "degree", v)}
+                    placeholder="B.S. in Computer Science"
+                  />
+                  <Field
+                    label="Dates / Period"
+                    value={edu.period}
+                    onChange={(v) => updateEdu(i, "period", v)}
+                    placeholder="2018 – 2022 or Present"
+                  />
+                  <Field
+                    label="Grade / GPA (Optional)"
+                    value={edu.grade || ""}
+                    onChange={(v) => updateEdu(i, "grade", v)}
+                    placeholder="3.8 / 4.0 or Grade A"
+                  />
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+          <button
+            type="button"
+            onClick={addEdu}
+            className="w-full h-10 rounded-xl border border-dashed border-border/60 text-xs text-muted-foreground hover:text-foreground hover:border-brand/40 hover:bg-accent/20 transition flex items-center justify-center gap-1.5"
+          >
+            <Plus className="w-4 h-4" /> Add education
           </button>
         </ReviewSection>
 

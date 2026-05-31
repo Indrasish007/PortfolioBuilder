@@ -204,7 +204,7 @@ def call_gemini_with_retry(model, content, max_retries=3):
 
 def parse_resume_with_ai(resume_text: str) -> dict:
     """
-    Send resume_text to Groq (llama-3.3-70b-versatile) or Gemini and return a structured dict.
+    Send resume_text to Groq (llama-3.3-70b-versatile) and return a structured dict.
     Raises RuntimeError on config or API errors.
     """
     groq_api_key = getattr(settings, "GROQ_API_KEY", None) or os.getenv("GROQ_API_KEY")
@@ -213,102 +213,36 @@ def parse_resume_with_ai(resume_text: str) -> dict:
         if groq_api_key.startswith("your_") or groq_api_key == "mock_key" or not groq_api_key:
             groq_api_key = None
 
-    if groq_api_key:
-        try:
-            print("[ai_parser] Attempting CV parse with Groq...")
-            from groq import Groq
-            groq_client = Groq(api_key=groq_api_key)
-            prompt = _PROMPT_TEMPLATE.format(resume_text=resume_text[:12000])
-
-            response = groq_client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.1,
-                response_format={"type": "json_object"}
-            )
-            raw = response.choices[0].message.content.strip()
-
-            raw = re.sub(r"^```(?:json)?\s*", "", raw)
-            raw = re.sub(r"\s*```$", "", raw)
-            raw = raw.strip()
-            data = json.loads(raw)
-            print(f"[ai_parser - Groq] ✅ Parsed — name={data.get('full_name')!r}  headline={data.get('headline')!r}")
-            return _sanitise(data)
-        except Exception as exc:
-            print(f"[ai_parser - Groq] Error during Groq parse, falling back to Gemini: {exc}")
-
-    api_key = getattr(settings, "GEMINI_API_KEY", None) or os.environ.get("GEMINI_API_KEY")
-    if api_key:
-        api_key = api_key.strip()
-        if api_key.startswith("your_") or api_key == "mock_key" or not api_key:
-            api_key = None
-
-    if not api_key:
+    if not groq_api_key:
         raise RuntimeError(
-            "GEMINI_API_KEY or GROQ_API_KEY is not configured or is a placeholder. "
-            "Please configure a valid API key in production environment variables."
+            "GROQ_API_KEY is not configured or is a placeholder. "
+            "Please configure a valid Groq API key in your production environment variables."
         )
 
-
     try:
-        from google import genai
-        from google.genai import types
-    except ImportError as exc:
-        raise RuntimeError(
-            "google-genai is not installed. Run: pip install google-genai"
-        ) from exc
+        print("[ai_parser] Attempting CV parse with Groq...")
+        from groq import Groq
+        groq_client = Groq(api_key=groq_api_key)
+        prompt = _PROMPT_TEMPLATE.format(resume_text=resume_text[:12000])
 
-    client = genai.Client(api_key=api_key)
-    prompt = _PROMPT_TEMPLATE.format(resume_text=resume_text[:12000])
+        response = groq_client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.1,
+            response_format={"type": "json_object"}
+        )
+        raw = response.choices[0].message.content.strip()
 
-    # Try each model candidate in order
-    last_error = None
-    for model_name in _MODEL_CANDIDATES:
-        try:
-            response = client.models.generate_content(
-                model=model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    temperature=0.1,
-                    max_output_tokens=4096,
-                ),
-            )
-            raw = response.text.strip()
-            break
-        except Exception as exc:
-            err_str = str(exc)
-            if '429' in err_str or 'RESOURCE_EXHAUSTED' in err_str or 'rate' in err_str.lower() or 'quota' in err_str.lower():
-                wait_time = 3  # short wait — just enough to avoid hammering, won't cause browser timeout
-                print(f"[Rate Limit] Switching model after {wait_time}s wait...")
-                time.sleep(wait_time)
-                last_error = RuntimeError(
-                    "Gemini API rate limit reached. Please wait a moment and try again."
-                )
-                continue
-            last_error = exc
-            continue
-    else:
-        raise last_error if last_error else RuntimeError("All Gemini models failed.")
-
-    try:
-        raw = raw
-    except Exception as exc:
-        raise RuntimeError(f"Gemini API call failed: {exc}") from exc
-
-    # Strip markdown fences if the model wraps the JSON despite instructions
-    raw = re.sub(r"^```(?:json)?\s*", "", raw)
-    raw = re.sub(r"\s*```$", "", raw)
-    raw = raw.strip()
-
-    try:
+        raw = re.sub(r"^```(?:json)?\s*", "", raw)
+        raw = re.sub(r"\s*```$", "", raw)
+        raw = raw.strip()
         data = json.loads(raw)
-    except json.JSONDecodeError as exc:
-        raise RuntimeError(
-            f"AI returned invalid JSON. Raw response:\n{raw[:500]}"
-        ) from exc
+        print(f"[ai_parser - Groq] ✅ Parsed — name={data.get('full_name')!r}  headline={data.get('headline')!r}")
+        return _sanitise(data)
+    except Exception as exc:
+        print(f"[ai_parser - Groq] Error during Groq parse: {exc}")
+        raise RuntimeError(f"Groq CV parsing failed: {str(exc)}") from exc
 
-    print(f"[ai_parser] ✅ Parsed — name={data.get('full_name')!r}  headline={data.get('headline')!r}")
-    return _sanitise(data)
 
 
 # ── Sanitisation helpers ──────────────────────────────────────────────────────
@@ -368,7 +302,25 @@ def _sanitise_lang(l) -> dict:
     return {"name": "", "proficiency": "Fluent"}
 
 
-def _sanitise_exp(e: dict) -> dict:
+def _sanitise_exp(e) -> dict:
+    if isinstance(e, str):
+        return {
+            "company":     "",
+            "role":        e.strip(),
+            "start_date":  "",
+            "end_date":    "",
+            "dates":       "",
+            "description": "",
+        }
+    if not isinstance(e, dict):
+        return {
+            "company":     "",
+            "role":        "",
+            "start_date":  "",
+            "end_date":    "",
+            "dates":       "",
+            "description": "",
+        }
     start = _str(e.get("start_date"))
     end = _str(e.get("end_date"))
     dates = _str(e.get("dates"))
@@ -385,7 +337,23 @@ def _sanitise_exp(e: dict) -> dict:
 
 
 
-def _sanitise_edu(e: dict) -> dict:
+def _sanitise_edu(e) -> dict:
+    if isinstance(e, str):
+        return {
+            "school":     e.strip(),
+            "degree":     "",
+            "start_date": "",
+            "end_date":   "",
+            "grade":      "",
+        }
+    if not isinstance(e, dict):
+        return {
+            "school":     "",
+            "degree":     "",
+            "start_date": "",
+            "end_date":   "",
+            "grade":      "",
+        }
     return {
         "school":     _str(e.get("school")),
         "degree":     _str(e.get("degree")),
@@ -395,7 +363,23 @@ def _sanitise_edu(e: dict) -> dict:
     }
 
 
-def _sanitise_proj(p: dict) -> dict:
+def _sanitise_proj(p) -> dict:
+    if isinstance(p, str):
+        return {
+            "title":       p.strip(),
+            "description": "",
+            "tech_stack":  "",
+            "github_url":  "",
+            "live_url":    "",
+        }
+    if not isinstance(p, dict):
+        return {
+            "title":       "",
+            "description": "",
+            "tech_stack":  "",
+            "github_url":  "",
+            "live_url":    "",
+        }
     return {
         "title":       _str(p.get("title")),
         "description": _str(p.get("description")),

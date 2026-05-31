@@ -420,6 +420,17 @@ export default function TemplateMarketplace() {
         if (r.location) updateField("user.location", r.location);
         if (r.skills?.length) updateField("skills", r.skills);
         if (r.languages?.length) updateField("languages", r.languages);
+        if (r.education?.length) {
+          updateField("education", r.education.map((e) => ({
+            school: e.school || "",
+            degree: e.degree || "",
+            period: e.period || "",
+            isCurrent: e.isCurrent || (e.period || "").toLowerCase().includes("present"),
+            startDate: e.startDate || e.start_date || "",
+            endDate: e.endDate || e.end_date || "",
+            grade: e.grade || "",
+          })));
+        }
         if (r.experience?.length) {
           updateField("experience", r.experience.map((e) => ({
             role: e.role || "",

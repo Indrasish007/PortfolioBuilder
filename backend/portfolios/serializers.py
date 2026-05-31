@@ -22,6 +22,16 @@ class ProjectSerializer(serializers.ModelSerializer):
         model = Project
         fields = ['id', 'title', 'description', 'tech', 'github', 'live', 'featured', 'image']
 
+    def to_internal_value(self, data):
+        if data:
+            data = dict(data)
+            for field in ['github', 'live']:
+                if field in data and data[field]:
+                    val = str(data[field]).strip()
+                    if val and not val.startswith(('http://', 'https://')):
+                        data[field] = f'https://{val}'
+        return super().to_internal_value(data)
+
 class CertificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Certification
@@ -59,6 +69,17 @@ class ProfileSerializer(serializers.ModelSerializer):
             'name', 'username', 'title', 'location', 'email', 'phone', 'avatar', 'bio',
             'github', 'twitter', 'linkedin', 'facebook', 'instagram', 'website', 'calendly', 'resume_link'
         ]
+
+    def to_internal_value(self, data):
+        if data:
+            data = dict(data)
+            url_fields = ['github', 'twitter', 'linkedin', 'facebook', 'instagram', 'website', 'calendly', 'resume_link']
+            for field in url_fields:
+                if field in data and data[field]:
+                    val = str(data[field]).strip()
+                    if val and not val.startswith(('http://', 'https://')):
+                        data[field] = f'https://{val}'
+        return super().to_internal_value(data)
 
 class PortfolioSerializer(serializers.ModelSerializer):
     skills = SkillSerializer(many=True, required=False)

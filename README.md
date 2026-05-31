@@ -28,7 +28,7 @@ PortfolioBuilder features a decoupled, modular template system. Users can switch
 ## 🌟 Core Features
 
 ### 🧙 1. AI-Powered Resume Parser & Onboarding
-Upload standard `.pdf` or `.docx` resumes. The backend utilizes **pdfplumber**, **mammoth**, and **Google GenAI** to extract contact details, professional summaries, work histories, projects, skills, certifications, and education, instantly building an structured DB model in the background.
+Upload standard `.pdf` or `.docx` resumes. The backend utilizes **pdfplumber**, **mammoth**, **Groq Cloud (Llama models)**, and **Google GenAI** to extract contact details, professional summaries, work histories, projects, skills, certifications, and education, instantly building a structured DB model in the background. A robust local heuristic parser acts as a failover fallback to ensure parsing success even without API keys.
 
 ### ✍️ 2. Deep AI Writing & Copywriting Assistant
 *   **Contextual Chat Assistant**: An interactive ChatGPT-like widget nested inside the builder dashboard that answers portfolio design questions or suggests copy modifications.
@@ -37,6 +37,7 @@ Upload standard `.pdf` or `.docx` resumes. The backend utilizes **pdfplumber**, 
 
 ### 📊 3. Advanced Geolocation & Engagement Analytics
 An interactive analytics dashboard built with **Recharts** tracks visitor interactions live:
+*   **Referral & Traffic Sources Chart**: Visualizes visitor traffic channels (e.g. LinkedIn, GitHub, Google, Direct/Search Engine, custom urls) using sleek modern diagrams.
 *   **Interactive Geolocation Tracker**: Logs country views by mapping visitor IPs to target geolocations.
 *   **Device & Session Analyzer**: Visualizes access ratios of Mobile vs. Tablet vs. Desktop.
 *   **Project Click Analytics**: Logs the exact count and timestamps of clicks on specific GitHub or Live links.
@@ -95,10 +96,11 @@ graph TD
 | **Backend** | [Django 6.0](https://www.djangoproject.com/) | Main high-performance MVC/API framework |
 | | [Django REST Framework](https://www.django-rest-framework.org/) | Clean Restful API design, views, and serialization |
 | | [dj-rest-auth](https://django-rest-auth.readthedocs.io/) & [simple-jwt](https://django-rest-framework-simplejwt.readthedocs.io/) | Stateless token-based JSON Web Token authorization |
-| **AI / Parsers** | [Google GenAI SDK](https://github.com/google/generative-ai-python) | Gemini-2.0 prompt and CV completions |
+| **AI / Parsers** | [Google GenAI SDK](https://github.com/google/generative-ai-python) & [Groq SDK](https://github.com/groq/groq-python) | Dual-engine AI completions with automatic Llama/Gemini failover |
 | | [pdfplumber](https://github.com/jasonmc/pdfplumber) & [mammoth](https://github.com/mwilliamson/python-mammoth) | Rich text extractors for PDF & DOCX resumes |
 | | [Playwright](https://playwright.dev/) | Headless browser for live portfolio snapshots & testing |
-| **Storage** | [Cloudinary](https://cloudinary.com/) | Automated media optimizations and cloud hosting for uploads |
+| **Storage & Email** | [Cloudinary](https://cloudinary.com/) | Automated media optimizations and cloud hosting for uploads |
+| | [Resend SDK](https://resend.com/) & SMTP | Transactional, scalable email delivery pipelines |
 | | [WhiteNoise](http://whitenoise.evans.io/) | Serving compiled front-end bundles and assets directly via WSGI |
 
 ---
@@ -186,6 +188,18 @@ Make sure you have the following installed on your machine:
     CLOUDINARY_API_KEY=your_cloudinary_api_key
     CLOUDINARY_API_SECRET=your_cloudinary_api_secret
     CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
+
+    # Optional AI & Email Keys
+    GROQ_API_KEY=your_groq_api_key
+    RESEND_API_KEY=your_resend_api_key
+
+    # Optional SMTP configuration (console default)
+    EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+    EMAIL_HOST=smtp.gmail.com
+    EMAIL_PORT=587
+    EMAIL_USE_TLS=True
+    EMAIL_HOST_USER=your_email_user@gmail.com
+    EMAIL_HOST_PASSWORD=your_email_app_password
     ```
 
 5.  **Run Migrations**:
@@ -249,9 +263,9 @@ To launch on Render:
 2. Go to **Render Dashboard** -> **Blueprints** -> **New Blueprint Instance**.
 3. Connect your repository. Render will automatically deploy:
    - The Django application as a web service.
-   - Run the automated `build.sh` script (installing packages, collecting static assets, running database migrations).
+   - Run the automated `build.sh` script (installing packages and collecting static assets). Database migrations are automatically executed in the start command (`python manage.py migrate`) before starting the Gunicorn WSGI server.
    - Configure a managed PostgreSQL database.
-4. Input your `GEMINI_API_KEY`, Cloudinary configurations, and set `DEBUG` to `False` in Render's environment settings.
+4. Input your `GEMINI_API_KEY`, `GROQ_API_KEY` (optional), `RESEND_API_KEY` (optional), SMTP variables, Cloudinary configurations, and set `DEBUG` to `False` in Render's environment settings.
 
 ### 2. Railway Deploy (`railway.json`)
 For quick, low-latency deployments:

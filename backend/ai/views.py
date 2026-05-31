@@ -120,8 +120,7 @@ def get_ai_response(prompt, system_instruction=None, json_mode=False, model="lla
     return None
 
 class AIAssistantView(APIView):
-    permission_classes = [AllowAny]
-    authentication_classes = []
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
         prompt = request.data.get('prompt', '')
@@ -150,8 +149,7 @@ class AIAssistantView(APIView):
         return Response({"reply": reply})
 
 class AIRewriteView(APIView):
-    permission_classes = [AllowAny]
-    authentication_classes = []
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
         text = request.data.get('text', '')
@@ -189,8 +187,7 @@ class AIRewriteAboutView(APIView):
     Uses the google-genai SDK with the same multi-model fallback chain as the
     resume parser, so a 429 on one model automatically tries the next one.
     """
-    permission_classes = [AllowAny]
-    authentication_classes = []
+    permission_classes = [IsAuthenticated]
 
     # Same priority order as ai_parser.py — first available quota wins
     _MODEL_CANDIDATES = [
@@ -304,8 +301,7 @@ class AIRewriteProjectView(APIView):
     metadata) via the public GitHub API to build a richer, more accurate prompt.
     Falls back to manual text if the GitHub fetch fails or no URL is given.
     """
-    permission_classes = [AllowAny]
-    authentication_classes = []
+    permission_classes = [IsAuthenticated]
 
     _MODEL_CANDIDATES = [
         "gemini-2.0-flash-lite",
@@ -585,8 +581,7 @@ class AIRewriteProjectView(APIView):
 
 
 class AICVParsingView(APIView):
-    permission_classes = [AllowAny]
-    authentication_classes = []
+    permission_classes = [IsAuthenticated]
     parser_classes = (MultiPartParser, FormParser)
 
     def post(self, request):
@@ -1251,7 +1246,7 @@ class ResumeParseView(APIView):
             parsed = parse_resume_with_ai(raw_text)
 
             # Ensure list fields are actually lists (belt-and-suspenders)
-            for list_field in ["skills", "languages", "experience", "projects", "social_links"]:
+            for list_field in ["skills", "languages", "experience", "education", "projects", "social_links"]:
                 if not isinstance(parsed.get(list_field), list):
                     parsed[list_field] = []
 
@@ -1293,6 +1288,23 @@ class ResumeParseView(APIView):
                     "description": e.get("description", ""),
                 })
 
+            # Map education fields cleanly
+            education = []
+            for edu in heuristic.get("education", []):
+                start = edu.get("startDate") or edu.get("start_date") or ""
+                end = edu.get("endDate") or edu.get("end_date") or ""
+                period = edu.get("period") or ""
+                if not period and start:
+                    period = f"{start} - {end or 'Present'}"
+                education.append({
+                    "school":     edu.get("school", ""),
+                    "degree":     edu.get("degree", ""),
+                    "start_date": start,
+                    "end_date":   end,
+                    "period":     period,
+                    "grade":      edu.get("grade") or "",
+                })
+
             # Map projects fields cleanly to match frontend expectations
             projects = []
             for p in heuristic.get("projects", []):
@@ -1317,6 +1329,7 @@ class ResumeParseView(APIView):
                 "skills":          heuristic.get("skills", []),
                 "languages":       heuristic.get("languages", []),
                 "experience":      experience,
+                "education":       education,
                 "projects":        projects,
                 "certifications":  [],
                 "social_links":    heuristic.get("social_links", []),

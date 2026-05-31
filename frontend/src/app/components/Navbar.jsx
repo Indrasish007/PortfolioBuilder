@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import Logo from "./Logo.jsx";
 import Button from "./Button.jsx";
 import ThemeToggle from "./ThemeToggle.jsx";
+import { useAuthStore } from "../store/authStore.js";
 
 export default function Navbar() {
   const location = useLocation();
@@ -14,6 +15,7 @@ export default function Navbar() {
   const [isAboutActive, setIsAboutActive] = useState(false);
   const [isShowcaseActive, setIsShowcaseActive] = useState(false);
   const [isContactActive, setIsContactActive] = useState(false);
+  const user = useAuthStore((s) => s.user);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -132,8 +134,14 @@ export default function Navbar() {
         </nav>
         <div className="hidden md:flex items-center gap-2">
           <ThemeToggle />
-          <Button as={Link} to="/login" variant="ghost" size="sm">Log in</Button>
-          <Button as={Link} to="/signup" size="sm">Get started</Button>
+          {user ? (
+            <Button as={Link} to="/dashboard" size="sm">Dashboard</Button>
+          ) : (
+            <>
+              <Button as={Link} to="/login" variant="ghost" size="sm">Log in</Button>
+              <Button as={Link} to="/signup" size="sm">Get started</Button>
+            </>
+          )}
         </div>
         <button onClick={() => setOpen((o) => !o)} className="md:hidden inline-flex w-9 h-9 items-center justify-center rounded-lg glass">
           {open ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
@@ -171,8 +179,14 @@ export default function Navbar() {
               Contact Us
             </a>
             <div className="flex gap-2 mt-2">
-              <Button as={Link} to="/login" variant="outline" size="sm" className="flex-1" onClick={() => setOpen(false)}>Log in</Button>
-              <Button as={Link} to="/signup" size="sm" className="flex-1" onClick={() => setOpen(false)}>Get started</Button>
+              {user ? (
+                <Button as={Link} to="/dashboard" size="sm" className="flex-1" onClick={() => setOpen(false)}>Dashboard</Button>
+              ) : (
+                <>
+                  <Button as={Link} to="/login" variant="outline" size="sm" className="flex-1" onClick={() => setOpen(false)}>Log in</Button>
+                  <Button as={Link} to="/signup" size="sm" className="flex-1" onClick={() => setOpen(false)}>Get started</Button>
+                </>
+              )}
               <ThemeToggle />
             </div>
           </div>

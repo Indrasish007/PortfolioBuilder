@@ -20,6 +20,7 @@ const DEFAULT_REVIEWED_DATA = {
   location: "",
   skills: [],
   experience: [],
+  education: [],
   projects: [],
   social_links: [],
   languages: [],

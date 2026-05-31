@@ -169,4 +169,43 @@ class CVParserTestCase(TestCase):
         self.assertEqual(clean_languages[2], {"name": "Spanish", "proficiency": "Conversational"})
         self.assertEqual(clean_languages[3], {"name": "French", "proficiency": "Fluent"})
 
+    def test_defensive_sanitizers(self):
+        from ai.services.ai_parser import _sanitise_edu, _sanitise_exp, _sanitise_proj
+        
+        # Test sanitise edu with non-dict/str values
+        self.assertEqual(_sanitise_edu("Harvard University"), {
+            "school": "Harvard University",
+            "degree": "",
+            "start_date": "",
+            "end_date": "",
+            "grade": "",
+        })
+        self.assertEqual(_sanitise_edu(None), {
+            "school": "",
+            "degree": "",
+            "start_date": "",
+            "end_date":   "",
+            "grade":      "",
+        })
+        
+        # Test sanitise exp with non-dict/str values
+        self.assertEqual(_sanitise_exp("Developer at Google"), {
+            "company": "",
+            "role": "Developer at Google",
+            "start_date": "",
+            "end_date": "",
+            "dates": "",
+            "description": "",
+        })
+
+        # Test sanitise proj with non-dict/str values
+        self.assertEqual(_sanitise_proj("Cool App"), {
+            "title": "Cool App",
+            "description": "",
+            "tech_stack": "",
+            "github_url": "",
+            "live_url": "",
+        })
+
+
 
