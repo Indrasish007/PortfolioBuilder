@@ -149,3 +149,15 @@ class PortfolioVisit(models.Model):
 
     def __str__(self):
         return f"{self.country_name} ({self.country_code}) - {self.visit_count} visits for Portfolio {self.portfolio.id}"
+
+
+class TrafficSource(models.Model):
+    portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE, related_name='traffic_sources')
+    source = models.CharField(max_length=50) # 'Direct', 'Search', 'Social', 'Referral', 'Email'
+    visit_count = models.IntegerField(default=1)
+
+    class Meta:
+        unique_together = ('portfolio', 'source')
+
+    def __str__(self):
+        return f"{self.source} - {self.visit_count} visits for Portfolio {self.portfolio.id}"

@@ -138,6 +138,49 @@ class PlainTextParser(BaseParser):
     def parse(self, stream, media_type=None, parser_context=None):
         return stream.read()
 
+
+def classify_traffic_source(referrer, utm_source):
+    utm_source = (utm_source or '').strip().lower()
+    referrer = (referrer or '').strip().lower()
+
+    if utm_source:
+        if utm_source in ('email', 'newsletter', 'mail'):
+            return 'Email'
+        if any(social in utm_source for social in ('linkedin', 'twitter', 'x', 'instagram', 'github', 'facebook', 'social', 'reddit')):
+            return 'Social'
+        if utm_source in ('search', 'google', 'bing', 'yahoo'):
+            return 'Search'
+
+    if not referrer:
+        return 'Direct'
+
+    social_domains = [
+        'linkedin.com', 'lnkd.in',
+        'twitter.com', 't.co', 'x.com',
+        'instagram.com',
+        'github.com',
+        'facebook.com', 'fb.me',
+        'youtube.com', 'youtu.be',
+        'reddit.com'
+    ]
+    if any(domain in referrer for domain in social_domains):
+        return 'Social'
+
+    email_domains = [
+        'mail.google.com', 'mail.yahoo.com', 'outlook.live.com', 'mail.live.com', 'protonmail.com'
+    ]
+    if any(domain in referrer for domain in email_domains):
+        return 'Email'
+
+    search_domains = [
+        'google.com', 'google.co.', 'bing.com', 'yahoo.com', 'duckduckgo.com', 'baidu.com', 'yandex.ru'
+    ]
+    if any(domain in referrer for domain in search_domains):
+        return 'Search'
+
+    return 'Referral'
+
+
 class AnalyticsView(APIView):
     permission_classes = [permissions.AllowAny]
     parser_classes = [JSONParser, FormParser, MultiPartParser, PlainTextParser]
@@ -217,6 +260,21 @@ class AnalyticsView(APIView):
                 PortfolioEvent.objects.create(portfolio=portfolio, event_type=event_type, visitor_id=visitor_id, device=device, country=country)
                 portfolio.views += 1
                 portfolio.save()
+
+                # Traffic source monitoring
+                referrer_val = data.get('referrer', '')
+                utm_source_val = data.get('utm_source', '')
+                source = classify_traffic_source(referrer_val, utm_source_val)
+                
+                from .models import TrafficSource
+                traffic_obj, created = TrafficSource.objects.get_or_create(
+                    portfolio=portfolio,
+                    source=source,
+                    defaults={'visit_count': 1}
+                )
+                if not created:
+                    traffic_obj.visit_count += 1
+                    traffic_obj.save(update_fields=['visit_count'])
 
         elif event_type == 'resume_download':
             PortfolioEvent.objects.create(portfolio=portfolio, event_type=event_type, visitor_id=visitor_id, device=device, country=country)

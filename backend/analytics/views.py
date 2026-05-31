@@ -434,3 +434,71 @@ class AIInsightsView(APIView):
         insights = generate_ai_insights(portfolio)
         
         return Response({'insights': insights})
+
+
+class TrafficSourcesView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        portfolio_id = request.query_params.get('portfolio_id')
+        if not portfolio_id:
+            return Response({'error': 'portfolio_id is required'}, status=400)
+
+        try:
+            portfolio = Portfolio.objects.get(id=portfolio_id, user=request.user)
+        except Portfolio.DoesNotExist:
+            return Response({'error': 'Portfolio not found or permission denied'}, status=404)
+
+        from portfolios.models import TrafficSource
+        sources = TrafficSource.objects.filter(portfolio=portfolio)
+        
+        total_count = sum(s.visit_count for s in sources)
+        
+        categories = ['Direct', 'Search', 'Social', 'Referral', 'Email']
+        source_map = {s.source: s.visit_count for s in sources}
+        
+        results = []
+        for cat in categories:
+            count = source_map.get(cat, 0)
+            percentage = round((count / total_count) * 100) if total_count > 0 else 0
+            results.append({
+                'source': cat,
+                'count': count,
+                'percentage': percentage
+            })
+            
+        return Response({'sources': results})
+
+
+class TrafficSourcesTotalView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        portfolios = Portfolio.objects.filter(user=user)
+        
+        from portfolios.models import TrafficSource
+        from django.db.models import Sum
+        
+        sources = (
+            TrafficSource.objects
+            .filter(portfolio__in=portfolios)
+            .values('source')
+            .annotate(total=Sum('visit_count'))
+        )
+        
+        source_map = {item['source']: item['total'] for item in sources}
+        total_count = sum(source_map.values())
+        
+        categories = ['Direct', 'Search', 'Social', 'Referral', 'Email']
+        results = []
+        for cat in categories:
+            count = source_map.get(cat, 0)
+            percentage = round((count / total_count) * 100) if total_count > 0 else 0
+            results.append({
+                'source': cat,
+                'count': count,
+                'percentage': percentage
+            })
+            
+        return Response({'sources': results})

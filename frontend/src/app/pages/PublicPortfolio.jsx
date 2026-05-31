@@ -149,7 +149,14 @@ export default function PublicPortfolio() {
       localStorage.setItem("visitorId", visitorId);
     }
 
-    api.post(`/portfolios/${p.id}/analytics/`, { event_type: 'view', visitor_id: visitorId }).catch(() => {});
+    const utm_source = new URLSearchParams(window.location.search).get('utm_source') || '';
+    const referrer = document.referrer || '';
+    api.post(`/portfolios/${p.id}/analytics/`, {
+      event_type: 'view',
+      visitor_id: visitorId,
+      referrer,
+      utm_source
+    }).catch(() => {});
   }, [p, isPreview]);
 
   // ── Real Geolocation Country Tracking ──────────────────────────────────────

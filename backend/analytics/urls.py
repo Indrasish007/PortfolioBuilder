@@ -1,8 +1,10 @@
 from django.urls import path
-from .views import AnalyticsView, ProjectClicksSummaryView, AIInsightsView
+from .views import AnalyticsView, ProjectClicksSummaryView, AIInsightsView, TrafficSourcesView, TrafficSourcesTotalView
 
 urlpatterns = [
     path('', AnalyticsView.as_view(), name='analytics_dashboard'),
     path('project-clicks-summary/', ProjectClicksSummaryView.as_view(), name='project_clicks_summary'),
     path('ai-insights/', AIInsightsView.as_view(), name='ai_insights'),
+    path('traffic-sources/total/', TrafficSourcesTotalView.as_view(), name='traffic_sources_total'),
+    path('traffic-sources/', TrafficSourcesView.as_view(), name='traffic_sources'),
 ]

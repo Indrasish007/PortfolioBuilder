@@ -14,6 +14,7 @@ import api from "../services/api.js";
 import FeaturedProjectSuggestion from "../components/FeaturedProjectSuggestion.jsx";
 import BackButton from "../components/BackButton.jsx";
 import AIInsights from "../components/AIInsights.jsx";
+import TrafficSourcesChart from "../components/TrafficSourcesChart.jsx";
 
 
 const COUNTRY_COLORS = [
@@ -374,6 +375,11 @@ function PortfolioAnalyticsCard({ portfolio, index }) {
             <AIInsights portfolioId={portfolio.id} />
           </div>
 
+          {/* ── Traffic Sources ── */}
+          <div className="pt-2">
+            <TrafficSourcesChart portfolioId={portfolio.id} />
+          </div>
+
           {/* Mini stat row */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 pt-4">
             {stats.map(s => (
@@ -724,6 +730,8 @@ export default function Analytics() {
 
         <div className="space-y-5">
           <ProjectClicksAnalyticsCard projects={projectClicks} />
+
+          <TrafficSourcesChart total={true} />
 
           {/* Stat cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
