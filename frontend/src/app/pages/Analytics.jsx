@@ -13,6 +13,7 @@ import { useState, useEffect, useCallback } from "react";
 import api from "../services/api.js";
 import FeaturedProjectSuggestion from "../components/FeaturedProjectSuggestion.jsx";
 import BackButton from "../components/BackButton.jsx";
+import AIInsights from "../components/AIInsights.jsx";
 
 
 const COUNTRY_COLORS = [
@@ -367,6 +368,11 @@ function PortfolioAnalyticsCard({ portfolio, index }) {
               />
             </div>
           )}
+
+          {/* ── AI Insights ── */}
+          <div className="pt-2">
+            <AIInsights portfolioId={portfolio.id} />
+          </div>
 
           {/* Mini stat row */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 pt-4">

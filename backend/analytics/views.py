@@ -412,3 +412,25 @@ class ProjectClicksSummaryView(APIView):
             'badge_count': badge_count,
             'total_projects': len(results),
         })
+
+
+class AIInsightsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        portfolio_id = request.query_params.get('portfolio_id')
+        if not portfolio_id:
+            return Response({'error': 'portfolio_id is required'}, status=400)
+            
+        try:
+            portfolio = Portfolio.objects.prefetch_related('projects', 'skills', 'user__profile').get(
+                id=portfolio_id,
+                user=request.user
+            )
+        except Portfolio.DoesNotExist:
+            return Response({'error': 'Portfolio not found or permission denied'}, status=404)
+            
+        from analytics.services.ai_insights import generate_ai_insights
+        insights = generate_ai_insights(portfolio)
+        
+        return Response({'insights': insights})
