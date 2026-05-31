@@ -209,7 +209,13 @@ def parse_resume_with_ai(resume_text: str) -> dict:
     """
     groq_api_key = getattr(settings, "GROQ_API_KEY", None) or os.getenv("GROQ_API_KEY")
     if groq_api_key:
+        groq_api_key = groq_api_key.strip()
+        if groq_api_key.startswith("your_") or groq_api_key == "mock_key" or not groq_api_key:
+            groq_api_key = None
+
+    if groq_api_key:
         try:
+            print("[ai_parser] Attempting CV parse with Groq...")
             from groq import Groq
             groq_client = Groq(api_key=groq_api_key)
             prompt = _PROMPT_TEMPLATE.format(resume_text=resume_text[:12000])
@@ -232,11 +238,17 @@ def parse_resume_with_ai(resume_text: str) -> dict:
             print(f"[ai_parser - Groq] Error during Groq parse, falling back to Gemini: {exc}")
 
     api_key = getattr(settings, "GEMINI_API_KEY", None) or os.environ.get("GEMINI_API_KEY")
+    if api_key:
+        api_key = api_key.strip()
+        if api_key.startswith("your_") or api_key == "mock_key" or not api_key:
+            api_key = None
+
     if not api_key:
         raise RuntimeError(
-            "GEMINI_API_KEY or GROQ_API_KEY is not configured. "
-            "Add it to backend/.env and restart the server."
+            "GEMINI_API_KEY or GROQ_API_KEY is not configured or is a placeholder. "
+            "Please configure a valid API key in production environment variables."
         )
+
 
     try:
         from google import genai
@@ -357,13 +369,20 @@ def _sanitise_lang(l) -> dict:
 
 
 def _sanitise_exp(e: dict) -> dict:
+    start = _str(e.get("start_date"))
+    end = _str(e.get("end_date"))
+    dates = _str(e.get("dates"))
+    if not dates and start:
+        dates = f"{start} - {end or 'Present'}"
     return {
         "company":     _str(e.get("company")),
         "role":        _str(e.get("role")),
-        "start_date":  _str(e.get("start_date")),
-        "end_date":    _str(e.get("end_date")),
+        "start_date":  start,
+        "end_date":    end,
+        "dates":       dates,
         "description": _str(e.get("description")),
     }
+
 
 
 def _sanitise_edu(e: dict) -> dict:

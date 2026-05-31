@@ -1259,51 +1259,76 @@ class ResumeParseView(APIView):
 
         except RuntimeError as e:
             err_msg = str(e)
+            print(f"[ResumeParseView] AI parser error (RuntimeError): {err_msg}")
+            import traceback
+            traceback.print_exc()
             if "rate limit" in err_msg.lower() or "quota" in err_msg.lower():
                 return Response({"error": err_msg}, status=429)
-            print(f"[ResumeParseView] AI parser error: {e}")
             # Fall through to heuristic
         except Exception as e:
-            print(f"[ResumeParseView] Unexpected AI error: {e}")
+            print(f"[ResumeParseView] Unexpected AI error ({type(e).__name__}): {e}")
+            import traceback
+            traceback.print_exc()
             # Fall through to heuristic
 
         # ── Heuristic fallback (when AI key is missing or all models fail) ────
-        print("[ResumeParseView] Falling back to heuristic parser.")
-        heuristic = AICVParsingView().fallback_parse_cv(raw_text)
+        try:
+            print("[ResumeParseView] Falling back to heuristic parser.")
+            heuristic = AICVParsingView().fallback_parse_cv(raw_text)
 
-        return Response({
-            "full_name":       "",
-            "headline":        "",
-            "profile_picture": "",
-            "bio":             heuristic.get("bio", ""),
-            "email":           heuristic.get("email", ""),
-            "phone":           heuristic.get("phone", ""),
-            "location":        "",
-            "skills":          heuristic.get("skills", []),
-            "languages":       heuristic.get("languages", []),
-            "experience": [
-                {
+            # Map experience fields cleanly to match the frontend expectations
+            experience = []
+            for e in heuristic.get("experience", []):
+                start = e.get("startDate") or ""
+                end = e.get("endDate") or ""
+                dates = e.get("period") or ""
+                if not dates and start:
+                    dates = f"{start} - {end or 'Present'}"
+                experience.append({
                     "company":     e.get("company", ""),
                     "role":        e.get("role", ""),
-                    "start_date":  e.get("startDate", ""),
-                    "end_date":    e.get("endDate", ""),
+                    "start_date":  start,
+                    "end_date":    end,
+                    "dates":       dates,
                     "description": e.get("description", ""),
-                }
-                for e in heuristic.get("experience", [])
-            ],
-            "projects": [
-                {
+                })
+
+            # Map projects fields cleanly to match frontend expectations
+            projects = []
+            for p in heuristic.get("projects", []):
+                tech_raw = p.get("tech") or []
+                tech_stack = ", ".join(tech_raw) if isinstance(tech_raw, list) else str(tech_raw)
+                projects.append({
                     "title":       p.get("title", ""),
                     "description": p.get("description", ""),
-                    "tech_stack":  ", ".join(p.get("tech", [])),
-                    "github_url":  p.get("github", ""),
-                    "live_url":    p.get("live", ""),
-                }
-                for p in heuristic.get("projects", [])
-            ],
-            "certifications": [],
-            "social_links":   heuristic.get("social_links", []),
-        })
+                    "tech_stack":  tech_stack,
+                    "github_url":  p.get("github") or p.get("github_url") or "",
+                    "live_url":    p.get("live") or p.get("live_url") or "",
+                })
+
+            return Response({
+                "full_name":       "",
+                "headline":        "",
+                "profile_picture": "",
+                "bio":             heuristic.get("bio", ""),
+                "email":           heuristic.get("email", ""),
+                "phone":           heuristic.get("phone", ""),
+                "location":        "",
+                "skills":          heuristic.get("skills", []),
+                "languages":       heuristic.get("languages", []),
+                "experience":      experience,
+                "projects":        projects,
+                "certifications":  [],
+                "social_links":    heuristic.get("social_links", []),
+            })
+        except Exception as fallback_err:
+            print(f"[ResumeParseView] Heuristic fallback parser also failed: {fallback_err}")
+            import traceback
+            traceback.print_exc()
+            return Response(
+                {"error": f"Failed to parse resume: {str(fallback_err)}"},
+                status=500
+            )
 
     def _extract_pdf(self, file_obj):
         """Extract text from PDF using pdfplumber (better layout preservation)."""
