@@ -25,8 +25,8 @@ export default function Signup() {
     setLoading(true);
     try {
       await signup(email, password, name);
-      toast({ title: "Account created! 🎉", description: "Let's set up your portfolio." });
-      navigate("/onboarding");
+      toast({ title: "Account created! 🎉", description: "Welcome to your dashboard." });
+      navigate("/dashboard");
     } catch (error) {
       if (error.response?.status === 400) {
         const data = error.response.data;

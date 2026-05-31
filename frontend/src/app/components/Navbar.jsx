@@ -135,7 +135,7 @@ export default function Navbar() {
         <div className="hidden md:flex items-center gap-2">
           <ThemeToggle />
           {user ? (
-            <Button as={Link} to="/dashboard" size="sm">Dashboard</Button>
+            location.pathname !== "/" && <Button as={Link} to="/dashboard" size="sm">Dashboard</Button>
           ) : (
             <>
               <Button as={Link} to="/login" variant="ghost" size="sm">Log in</Button>
@@ -180,7 +180,7 @@ export default function Navbar() {
             </a>
             <div className="flex gap-2 mt-2">
               {user ? (
-                <Button as={Link} to="/dashboard" size="sm" className="flex-1" onClick={() => setOpen(false)}>Dashboard</Button>
+                location.pathname !== "/" && <Button as={Link} to="/dashboard" size="sm" className="flex-1" onClick={() => setOpen(false)}>Dashboard</Button>
               ) : (
                 <>
                   <Button as={Link} to="/login" variant="outline" size="sm" className="flex-1" onClick={() => setOpen(false)}>Log in</Button>
