@@ -35,6 +35,12 @@ DEBUG = os.getenv('DEBUG', 'False') == 'True'
 _raw_hosts = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1')
 ALLOWED_HOSTS = [h.strip() for h in _raw_hosts.split(',') if h.strip()]
 
+# Automatically include Render external hostname if set
+render_host = os.getenv('RENDER_EXTERNAL_HOSTNAME')
+if render_host and render_host not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(render_host)
+
+
 
 # Application definition
 
@@ -174,7 +180,7 @@ AUTH_USER_MODEL = 'users.CustomUser'
 
 # In production set: CORS_ALLOWED_ORIGINS=https://your-frontend.vercel.app
 _cors_env = os.getenv('CORS_ALLOWED_ORIGINS', '')
-if _cors_env and _cors_env.strip() != '*':
+if _cors_env:
     CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors_env.split(',') if o.strip()]
     CORS_ALLOW_ALL_ORIGINS = False
 else:
@@ -182,6 +188,12 @@ else:
     CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOW_CREDENTIALS = True
+
+# Automatically allow Vercel previews and deployments
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://.*\.vercel\.app$",
+]
+
 
 # Explicitly allow Content-Type so that navigator.sendBeacon() JSON blobs
 # are not blocked by CORS preflight in production (Vercel/Railway).
@@ -260,5 +272,16 @@ ACCOUNT_SIGNUP_FIELDS = ['email*']
 import resend
 RESEND_API_KEY = os.environ.get('RESEND_API_KEY', '')
 resend.api_key = RESEND_API_KEY
+
+# Email Configuration
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'localhost')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', 25))
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'False') == 'True'
+EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'False') == 'True'
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'webmaster@localhost')
+
 
 
