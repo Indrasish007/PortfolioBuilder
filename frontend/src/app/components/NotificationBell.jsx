@@ -109,21 +109,17 @@ export default function NotificationBell() {
         )}
       </button>
 
-      {/* ── Dropdown panel — solid dark background, fully readable ── */}
+      {/* ── Dropdown panel — premium frosted glass matching user profile ── */}
       {open && (
         <div
           ref={dropdownRef}
           id="notification-bell-dropdown"
           role="dialog"
           aria-label="Project activity panel"
-          className="absolute right-0 mt-2 rounded-xl overflow-hidden notification-dropdown"
+          className="absolute right-0 mt-2 rounded-xl overflow-hidden notification-dropdown glass shadow-card"
           style={{
             width: "clamp(300px, 92vw, 360px)",
             zIndex: 1100,
-            background: "var(--card)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            boxShadow:
-              "0 8px 32px rgba(0,0,0,0.65), 0 24px 64px -12px rgba(0,0,0,0.45)",
             opacity: 1,
             animation: "dropdownIn 0.18s cubic-bezier(0.16,1,0.3,1) both",
           }}
@@ -132,8 +128,8 @@ export default function NotificationBell() {
           <div
             className="flex items-center justify-between px-4 py-3"
             style={{
-              background: "var(--card)",
-              borderBottom: "1px solid rgba(255,255,255,0.08)",
+              background: "transparent",
+              borderBottom: "1px solid var(--glass-border)",
             }}
           >
             <div className="flex items-center gap-2.5">
@@ -151,14 +147,14 @@ export default function NotificationBell() {
               <div>
                 <p
                   className="text-sm font-bold leading-tight"
-                  style={{ color: "#ffffff" }}
+                  style={{ color: "var(--foreground)" }}
                 >
                   Project Activity
                 </p>
                 {data && (
                   <p
                     className="text-[10px] leading-tight mt-0.5"
-                    style={{ color: "rgba(255,255,255,0.45)" }}
+                    style={{ color: "var(--muted-foreground)" }}
                   >
                     {data.total_projects} project
                     {data.total_projects !== 1 ? "s" : ""} across your
@@ -171,12 +167,12 @@ export default function NotificationBell() {
               onClick={() => setOpen(false)}
               aria-label="Close panel"
               className="w-6 h-6 flex items-center justify-center rounded-md transition-colors flex-shrink-0"
-              style={{ color: "rgba(255,255,255,0.45)" }}
+              style={{ color: "var(--muted-foreground)" }}
               onMouseEnter={(e) =>
-                (e.currentTarget.style.color = "rgba(255,255,255,0.9)")
+                (e.currentTarget.style.color = "var(--foreground)")
               }
               onMouseLeave={(e) =>
-                (e.currentTarget.style.color = "rgba(255,255,255,0.45)")
+                (e.currentTarget.style.color = "var(--muted-foreground)")
               }
             >
               <X className="w-3.5 h-3.5" />
@@ -186,7 +182,7 @@ export default function NotificationBell() {
           {/* Scrollable content */}
           <div
             className="overflow-y-auto"
-            style={{ maxHeight: "340px", background: "var(--card)" }}
+            style={{ maxHeight: "340px", background: "transparent" }}
           >
             {loading && <SkeletonList />}
 
@@ -214,8 +210,8 @@ export default function NotificationBell() {
           <div
             className="px-4 py-2.5 flex items-center justify-center"
             style={{
-              background: "var(--card)",
-              borderTop: "1px solid rgba(255,255,255,0.08)",
+              background: "transparent",
+              borderTop: "1px solid var(--glass-border)",
             }}
           >
             <Link
@@ -266,11 +262,11 @@ function ProjectRow({ project, maxClicks, isLast }) {
     <li
       className="px-4 py-3 group transition-colors"
       style={{
-        borderBottom: isLast ? "none" : "1px solid rgba(255,255,255,0.06)",
+        borderBottom: isLast ? "none" : "1px solid var(--glass-border)",
         cursor: "default",
       }}
       onMouseEnter={(e) =>
-        (e.currentTarget.style.background = "rgba(255,255,255,0.04)")
+        (e.currentTarget.style.background = "var(--accent)")
       }
       onMouseLeave={(e) =>
         (e.currentTarget.style.background = "transparent")
@@ -279,15 +275,14 @@ function ProjectRow({ project, maxClicks, isLast }) {
       <div className="flex items-start justify-between gap-2 mb-2">
         {/* Title + portfolio name */}
         <div className="flex-1 min-w-0">
-          {/* Project name — pure white, bold */}
           <p
             className="text-sm font-semibold truncate leading-tight"
-            style={{ color: "#ffffff" }}
+            style={{ color: "var(--foreground)" }}
           >
             {project.project_title}
           </p>
 
-          {/* Portfolio name — muted, clickable link (Fix 2) */}
+          {/* Portfolio name — muted, clickable link */}
           <p className="text-[11px] truncate mt-0.5 leading-tight flex items-center gap-1 flex-wrap">
             {project.portfolio_url ? (
               <a
@@ -297,15 +292,15 @@ function ProjectRow({ project, maxClicks, isLast }) {
                 onClick={(e) => e.stopPropagation()}
                 className="inline-flex items-center gap-0.5 transition-colors"
                 style={{
-                  color: "rgba(255,255,255,0.55)",
+                  color: "var(--muted-foreground)",
                   textDecoration: "none",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.color = "#ffffff";
+                  e.currentTarget.style.color = "var(--foreground)";
                   e.currentTarget.style.textDecoration = "underline";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.color = "rgba(255,255,255,0.55)";
+                  e.currentTarget.style.color = "var(--muted-foreground)";
                   e.currentTarget.style.textDecoration = "none";
                 }}
               >
@@ -316,12 +311,12 @@ function ProjectRow({ project, maxClicks, isLast }) {
                 />
               </a>
             ) : (
-              <span style={{ color: "rgba(255,255,255,0.55)" }}>
+              <span style={{ color: "var(--muted-foreground)" }}>
                 {project.portfolio_name}
               </span>
             )}
             {project.tech?.length > 0 && (
-              <span style={{ color: "rgba(255,255,255,0.28)" }}>
+              <span style={{ color: "var(--muted-foreground)", opacity: 0.65 }}>
                 · {project.tech.slice(0, 2).join(", ")}
               </span>
             )}
@@ -337,12 +332,12 @@ function ProjectRow({ project, maxClicks, isLast }) {
               rel="noopener noreferrer"
               title="GitHub"
               className="w-5 h-5 flex items-center justify-center rounded transition-all opacity-0 group-hover:opacity-100"
-              style={{ color: "rgba(255,255,255,0.55)" }}
+              style={{ color: "var(--muted-foreground)" }}
               onMouseEnter={(e) =>
-                (e.currentTarget.style.color = "#ffffff")
+                (e.currentTarget.style.color = "var(--foreground)")
               }
               onMouseLeave={(e) =>
-                (e.currentTarget.style.color = "rgba(255,255,255,0.55)")
+                (e.currentTarget.style.color = "var(--muted-foreground)")
               }
             >
               <Github className="w-3 h-3" />
@@ -355,26 +350,26 @@ function ProjectRow({ project, maxClicks, isLast }) {
               rel="noopener noreferrer"
               title="Live demo"
               className="w-5 h-5 flex items-center justify-center rounded transition-all opacity-0 group-hover:opacity-100"
-              style={{ color: "rgba(255,255,255,0.55)" }}
+              style={{ color: "var(--muted-foreground)" }}
               onMouseEnter={(e) =>
-                (e.currentTarget.style.color = "#ffffff")
+                (e.currentTarget.style.color = "var(--foreground)")
               }
               onMouseLeave={(e) =>
-                (e.currentTarget.style.color = "rgba(255,255,255,0.55)")
+                (e.currentTarget.style.color = "var(--muted-foreground)")
               }
             >
               <ExternalLink className="w-3 h-3" />
             </a>
           )}
 
-          {/* View count badge — solid, not transparent */}
+          {/* View count badge — brand accent for active, muted/translucent for zero */}
           <div
             className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold tabular-nums"
             style={{
               background: hasActivity
-                ? "rgba(167,139,250,0.2)"
-                : "rgba(255,255,255,0.07)",
-              color: hasActivity ? "#a78bfa" : "rgba(255,255,255,0.4)",
+                ? "color-mix(in oklch, var(--brand) 15%, transparent)"
+                : "color-mix(in oklch, var(--foreground) 7%, transparent)",
+              color: hasActivity ? "var(--brand)" : "var(--muted-foreground)",
             }}
           >
             {project.click_count}
@@ -391,7 +386,9 @@ function ProjectRow({ project, maxClicks, isLast }) {
       {/* Progress bar */}
       <div
         className="h-1 rounded-full overflow-hidden"
-        style={{ background: "rgba(255,255,255,0.08)" }}
+        style={{
+          background: "color-mix(in oklch, var(--foreground) 8%, transparent)",
+        }}
       >
         <div
           className="h-full rounded-full transition-all duration-700 ease-out"
@@ -399,7 +396,7 @@ function ProjectRow({ project, maxClicks, isLast }) {
             width: `${pct}%`,
             background: hasActivity
               ? "linear-gradient(90deg, var(--brand), var(--brand-2))"
-              : "rgba(255,255,255,0.18)",
+              : "color-mix(in oklch, var(--foreground) 18%, transparent)",
           }}
         />
       </div>
@@ -419,7 +416,7 @@ function SkeletonList() {
           className="px-4 py-3"
           style={{
             borderBottom:
-              i < 3 ? "1px solid rgba(255,255,255,0.06)" : "none",
+              i < 3 ? "1px solid var(--glass-border)" : "none",
           }}
         >
           <div className="flex items-start justify-between gap-2 mb-2.5">
@@ -428,14 +425,16 @@ function SkeletonList() {
                 className="h-3.5 rounded-md animate-pulse"
                 style={{
                   width: `${w}%`,
-                  background: "rgba(255,255,255,0.08)",
+                  background:
+                    "color-mix(in oklch, var(--foreground) 10%, transparent)",
                 }}
               />
               <div
                 className="h-2.5 rounded-md animate-pulse"
                 style={{
                   width: "40%",
-                  background: "rgba(255,255,255,0.05)",
+                  background:
+                    "color-mix(in oklch, var(--foreground) 7%, transparent)",
                   animationDelay: `${i * 80}ms`,
                 }}
               />
@@ -443,7 +442,8 @@ function SkeletonList() {
             <div
               className="w-12 h-5 rounded-md animate-pulse flex-shrink-0"
               style={{
-                background: "rgba(255,255,255,0.07)",
+                background:
+                  "color-mix(in oklch, var(--foreground) 8%, transparent)",
                 animationDelay: `${i * 60}ms`,
               }}
             />
@@ -451,7 +451,8 @@ function SkeletonList() {
           <div
             className="h-1 rounded-full animate-pulse"
             style={{
-              background: "rgba(255,255,255,0.07)",
+              background:
+                "color-mix(in oklch, var(--foreground) 8%, transparent)",
               animationDelay: `${i * 100}ms`,
             }}
           />
@@ -469,17 +470,19 @@ function EmptyState() {
     <div className="flex flex-col items-center justify-center gap-3 py-10 px-6 text-center">
       <div
         className="w-12 h-12 rounded-2xl flex items-center justify-center"
-        style={{ background: "rgba(167,139,250,0.12)" }}
+        style={{
+          background: "color-mix(in oklch, var(--brand) 12%, transparent)",
+        }}
       >
         <Folder className="w-5 h-5" style={{ color: "var(--brand)" }} />
       </div>
       <div>
-        <p className="text-sm font-semibold" style={{ color: "#ffffff" }}>
+        <p className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>
           No projects yet
         </p>
         <p
           className="text-xs mt-1 leading-relaxed"
-          style={{ color: "rgba(255,255,255,0.5)" }}
+          style={{ color: "var(--muted-foreground)" }}
         >
           Add projects to your portfolios to start tracking engagement.
         </p>
@@ -505,10 +508,10 @@ function ErrorState({ message, onRetry }) {
   return (
     <div className="flex flex-col items-center justify-center gap-2.5 py-8 px-6 text-center">
       <AlertCircle
-        className="w-8 h-8"
-        style={{ color: "#ef4444", opacity: 0.7 }}
+        className="w-8 h-8 opacity-70"
+        style={{ color: "var(--destructive)" }}
       />
-      <p className="text-sm" style={{ color: "rgba(255,255,255,0.5)" }}>
+      <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
         {message}
       </p>
       <button

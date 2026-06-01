@@ -517,6 +517,10 @@ export default function Analytics() {
 
   const totalCountryViews = data.countries.reduce((s, c) => s + c.visits, 0);
   const perPortfolio = data.per_portfolio || [];
+  const sortedCountries = data?.countries
+    ? [...data.countries].sort((a, b) => b.visits - a.visits)
+    : [];
+  const topCountry = sortedCountries[0] || null;
 
   return (
     <div className="space-y-6">
@@ -586,6 +590,154 @@ export default function Analytics() {
             </ResponsiveContainer>
           </div>
         </GlassCard>
+      </section>
+
+      {/* Global Countries Reach section with sidebar layout */}
+      <section id="global-countries-analytics-section" className="pt-4 border-t border-white/[0.04] space-y-6">
+        <SectionHeading
+          icon={Globe}
+          title="Global Audience Reach"
+          subtitle="Worldwide geographic distribution and interaction metrics"
+          accentColor="#34d399"
+        />
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main Visuals Column (Col span 2) */}
+          <div className="lg:col-span-2 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Total Worldwide Visits */}
+              <GlassCard className="p-5 flex flex-col justify-between relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl group-hover:bg-emerald-500/20 transition-all duration-500" />
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Total Global Traffic</span>
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-emerald-500/15">
+                      <Globe className="w-4 h-4 text-emerald-400" />
+                    </div>
+                  </div>
+                  <div className="text-3xl font-extrabold mt-3 tabular-nums text-emerald-400">
+                    {totalCountryViews.toLocaleString()}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-2">Visits originating outside local developer environments</p>
+                </div>
+              </GlassCard>
+
+              {/* Top Performing Country */}
+              {topCountry ? (
+                <GlassCard className="p-5 flex flex-col justify-between relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl group-hover:bg-indigo-500/20 transition-all duration-500" />
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Primary Market</span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400">Top Country</span>
+                    </div>
+                    <div className="flex items-center gap-3 mt-3">
+                      <span className="text-3xl leading-none">{getFlagEmoji(topCountry.country_code)}</span>
+                      <div>
+                        <div className="font-extrabold text-base leading-tight">{topCountry.country}</div>
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          {topCountry.visits.toLocaleString()} visits ({Math.round((topCountry.visits / (totalCountryViews || 1)) * 100)}% of total)
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </GlassCard>
+              ) : (
+                <GlassCard className="p-5 flex flex-col justify-between">
+                  <div>
+                    <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Primary Market</span>
+                    <div className="text-xs font-semibold text-muted-foreground mt-4">No countries recorded yet</div>
+                  </div>
+                </GlassCard>
+              )}
+            </div>
+
+            {/* Distribution Visualizer Card */}
+            <GlassCard className="p-5">
+              <h4 className="font-bold text-xs uppercase tracking-wider text-muted-foreground mb-4">Traffic Density by Country</h4>
+              {sortedCountries.length > 0 ? (
+                <div className="space-y-4">
+                  {sortedCountries.slice(0, 3).map((c, i) => {
+                    const pct = Math.round((c.visits / (totalCountryViews || 1)) * 100);
+                    const barColor = COUNTRY_COLORS[i % COUNTRY_COLORS.length];
+                    return (
+                      <div key={c.country} className="space-y-1.5">
+                        <div className="flex justify-between items-center text-xs">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm">{getFlagEmoji(c.country_code)}</span>
+                            <span className="font-semibold">{c.country}</span>
+                            <span className="text-[10px] text-muted-foreground">({c.country_code})</span>
+                          </div>
+                          <div className="flex items-center gap-2 font-mono">
+                            <span className="font-bold" style={{ color: barColor }}>{c.visits} visits</span>
+                            <span className="text-muted-foreground">|</span>
+                            <span className="font-bold">{pct}%</span>
+                          </div>
+                        </div>
+                        <div className="h-2 bg-white/[0.04] rounded-full overflow-hidden border border-white/[0.02]">
+                          <div
+                            className="h-full rounded-full transition-all duration-1000 ease-out"
+                            style={{
+                              width: `${pct}%`,
+                              background: `linear-gradient(90deg, ${barColor}, color-mix(in oklch, ${barColor} 60%, white))`,
+                              boxShadow: `0 0 8px ${barColor}30`
+                            }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {sortedCountries.length > 3 && (
+                    <p className="text-[10px] text-muted-foreground italic text-center pt-2">
+                      + {sortedCountries.length - 3} other countries active (details in sidebar list)
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center text-xs text-muted-foreground py-12">
+                  🌍 Share your link to start gathering visitor locations!
+                </div>
+              )}
+            </GlassCard>
+          </div>
+
+          {/* Sidebar Column (Col span 1) */}
+          <div className="lg:col-span-1">
+            <GlassCard className="p-5 flex flex-col h-full max-h-[380px] lg:max-h-[440px] overflow-hidden">
+              <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/[0.06] flex-shrink-0">
+                <h3 className="font-bold text-xs uppercase tracking-wider text-muted-foreground">Country List</h3>
+                <Badge variant="glass" className="border-emerald-500/30 text-emerald-400">
+                  {sortedCountries.length} active
+                </Badge>
+              </div>
+
+              {/* Scrollable list of countries */}
+              <div className="overflow-y-auto flex-1 space-y-3 pr-1 no-scrollbar">
+                {sortedCountries.length > 0 ? (
+                  sortedCountries.map((c) => {
+                    const pct = Math.round((c.visits / (totalCountryViews || 1)) * 100);
+                    return (
+                      <div key={c.country} className="flex items-center justify-between gap-3 text-xs p-2 rounded-lg hover:bg-white/[0.02] transition">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span className="text-lg flex-shrink-0 leading-none">{getFlagEmoji(c.country_code)}</span>
+                          <span className="font-semibold truncate">{c.country}</span>
+                        </div>
+                        <div className="flex items-center gap-3 flex-shrink-0 font-mono">
+                          <span className="font-bold">{c.visits}</span>
+                          <span className="text-muted-foreground text-[10px] w-8 text-right font-semibold">({pct}%)</span>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="text-center text-xs text-muted-foreground py-16">
+                    No country data
+                  </div>
+                )}
+              </div>
+            </GlassCard>
+          </div>
+        </div>
       </section>
 
       <section id="per-portfolio-analytics-section" className="pt-4 border-t border-white/[0.04]">
