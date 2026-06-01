@@ -624,13 +624,13 @@ export default function Settings() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+            className="fixed top-[var(--header-height)] bottom-0 left-0 right-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
             onClick={() => !deleting && setDeleteModal(false)}
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0, y: -20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: -20 }}
               transition={{ duration: 0.18 }}
               onClick={(e) => e.stopPropagation()}
               className="glass rounded-2xl p-6 max-w-md w-full border border-red-500/30 shadow-2xl"

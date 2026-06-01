@@ -64,7 +64,8 @@ export default function PublicPortfolio() {
   useEffect(() => {
     if (!p || isPreview) return;
 
-    const trackKey = `tracked_view_${p.id}`;
+    const utm_source = new URLSearchParams(window.location.search).get('utm_source') || '';
+    const trackKey = `tracked_view_${p.id}_${utm_source || 'direct'}`;
     if (sessionStorage.getItem(trackKey)) return;
     sessionStorage.setItem(trackKey, '1');
 
@@ -74,7 +75,6 @@ export default function PublicPortfolio() {
       localStorage.setItem("visitorId", visitorId);
     }
 
-    const utm_source = new URLSearchParams(window.location.search).get('utm_source') || '';
     const referrer = document.referrer || '';
     api.post(`/portfolios/${p.id}/analytics/`, {
       event_type: 'view',

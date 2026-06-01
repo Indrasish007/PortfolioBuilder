@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Eye, MousePointerClick, Download, Plus, ExternalLink, ArrowUp, Sparkles, Globe, Trash2, Loader2, Search, CheckSquare, Square, X, Clock } from "lucide-react";
+import { Eye, MousePointerClick, Download, Plus, ExternalLink, ArrowUp, Sparkles, Globe, Trash2, Loader2, Search, CheckSquare, Square, X, Clock, Share2 } from "lucide-react";
 import GlassCard from "../components/GlassCard.jsx";
 import Button from "../components/Button.jsx";
 import Badge from "../components/Badge.jsx";
@@ -8,6 +8,7 @@ import { useState, useEffect, useRef } from "react";
 import api from "../services/api.js";
 import { useAuthStore } from "../store/authStore.js";
 import { useToast } from "../context/ToasterContext.jsx";
+import ShareModal from "../components/ShareModal.jsx";
 
 /** Returns a human-readable relative time string, e.g. "2h ago" */
 function relativeTime(dateStr) {
@@ -39,6 +40,9 @@ export default function Dashboard() {
   const [origin, setOrigin] = useState("");
 
   const [statsData, setStatsData] = useState({ total_views: 0, unique_visitors: 0, resume_downloads: 0 });
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [sharePortfolioUrl, setSharePortfolioUrl] = useState("");
+  const [sharePortfolioName, setSharePortfolioName] = useState("");
 
   useEffect(() => {
     setLastPortfolioId(Number(localStorage.getItem("lastEditedPortfolioId") || 0));
@@ -362,33 +366,34 @@ export default function Dashboard() {
                       </div>
 
                       {p.status === "Published" && (
-                        <div className="mt-3 ml-0 sm:ml-7 md:ml-14 p-2 px-3 rounded-lg bg-emerald-500/5 border border-emerald-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                          <div className="flex items-center gap-2 text-xs min-w-0 w-full sm:w-auto">
-                            <Globe className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                            <span className="text-muted-foreground font-medium shrink-0">Live:</span>
-                            <a
-                              href={p.slug ? `/p/${p.slug}` : `/p/${p.id}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-brand hover:underline font-mono truncate break-all block flex-1"
+                        <div className="mt-3 ml-0 sm:ml-7 md:ml-14 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/10">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div className="flex items-center gap-2 text-xs min-w-0 w-full sm:w-auto">
+                              <Globe className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                              <span className="text-muted-foreground font-medium shrink-0">Live:</span>
+                              <a
+                                href={p.slug ? `/p/${p.slug}` : `/p/${p.id}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-brand hover:underline font-mono truncate break-all block flex-1 font-semibold"
+                              >
+                                {origin}{p.slug ? `/p/${p.slug}` : `/p/${p.id}`}
+                              </a>
+                            </div>
+                            <Button
+                              variant="glass"
+                              size="sm"
+                              onClick={() => {
+                                const liveUrl = `${origin}${p.slug ? `/p/${p.slug}` : `/p/${p.id}`}`;
+                                setSharePortfolioUrl(liveUrl);
+                                setSharePortfolioName(p.name);
+                                setShareModalOpen(true);
+                              }}
+                              className="w-full sm:w-auto shrink-0 flex items-center justify-center gap-1.5 font-bold"
                             >
-                              {origin}{p.slug ? `/p/${p.slug}` : `/p/${p.id}`}
-                            </a>
+                              <Share2 className="w-3.5 h-3.5" /> Share Portfolio
+                            </Button>
                           </div>
-                          <button
-                            onClick={() => {
-                              const liveUrl = `${origin}${p.slug ? `/p/${p.slug}` : `/p/${p.id}`}`;
-                              navigator.clipboard.writeText(liveUrl);
-                              toast({
-                                title: "Copied live link!",
-                                description: "The live URL has been copied to your clipboard.",
-                                type: "success"
-                              });
-                            }}
-                            className="text-[11px] px-3 py-1.5 rounded bg-brand/10 hover:bg-brand/20 text-brand font-semibold transition w-full sm:w-auto text-center shrink-0"
-                          >
-                            Copy Link
-                          </button>
                         </div>
                       )}
                     </div>
@@ -407,13 +412,13 @@ export default function Dashboard() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+            className="fixed top-[var(--header-height)] bottom-0 left-0 right-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
             onClick={() => setDeleteConfirm(null)}
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0, y: -20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: -20 }}
               transition={{ duration: 0.18 }}
               onClick={(e) => e.stopPropagation()}
               className="glass rounded-2xl p-6 max-w-sm w-full mx-4 border border-border shadow-xl"
@@ -443,6 +448,12 @@ export default function Dashboard() {
           </motion.div>
         )}
       </AnimatePresence>
+      <ShareModal
+        isOpen={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        portfolioUrl={sharePortfolioUrl}
+        portfolioName={sharePortfolioName}
+      />
     </div>
   );
 }

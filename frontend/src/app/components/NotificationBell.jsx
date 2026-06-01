@@ -119,7 +119,7 @@ export default function NotificationBell() {
           className="absolute right-0 mt-2 rounded-xl overflow-hidden notification-dropdown"
           style={{
             width: "clamp(300px, 92vw, 360px)",
-            zIndex: 60,
+            zIndex: 1100,
             background: "var(--card)",
             border: "1px solid rgba(255,255,255,0.1)",
             boxShadow:

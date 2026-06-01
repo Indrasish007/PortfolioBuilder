@@ -74,26 +74,46 @@ class TrafficSourceTestCase(TestCase):
         self.client = APIClient()
 
     def test_classify_traffic_source(self):
+        # Direct
         self.assertEqual(classify_traffic_source(None, None), "Direct")
         self.assertEqual(classify_traffic_source("", ""), "Direct")
         
         # UTM Sources
         self.assertEqual(classify_traffic_source("", "email"), "Email")
         self.assertEqual(classify_traffic_source("", "newsletter"), "Email")
-        self.assertEqual(classify_traffic_source("", "linkedin"), "Social")
-        self.assertEqual(classify_traffic_source("", "google"), "Search")
+        self.assertEqual(classify_traffic_source("", "linkedin"), "LinkedIn")
+        self.assertEqual(classify_traffic_source("", "github"), "GitHub")
+        self.assertEqual(classify_traffic_source("", "whatsapp"), "WhatsApp")
+        self.assertEqual(classify_traffic_source("", "reddit"), "Reddit")
+        self.assertEqual(classify_traffic_source("", "google"), "Google")
+        self.assertEqual(classify_traffic_source("", "bing"), "Bing")
+        self.assertEqual(classify_traffic_source("", "x"), "X/Twitter")
+        self.assertEqual(classify_traffic_source("", "share"), "Share")
+        self.assertEqual(classify_traffic_source("", "qrcode"), "QR Code")
+        self.assertEqual(classify_traffic_source("", "native_share"), "Native Share")
         
         # Referrer domains
-        self.assertEqual(classify_traffic_source("https://t.co/xyz", ""), "Social")
-        self.assertEqual(classify_traffic_source("https://www.linkedin.com/feed", ""), "Social")
-        self.assertEqual(classify_traffic_source("https://www.google.com/search", ""), "Search")
+        self.assertEqual(classify_traffic_source("https://t.co/xyz", ""), "X/Twitter")
+        self.assertEqual(classify_traffic_source("https://x.com/feed", ""), "X/Twitter")
+        self.assertEqual(classify_traffic_source("https://twitter.com/feed", ""), "X/Twitter")
+        self.assertEqual(classify_traffic_source("https://www.linkedin.com/feed", ""), "LinkedIn")
+        self.assertEqual(classify_traffic_source("https://github.com/profile", ""), "GitHub")
+        self.assertEqual(classify_traffic_source("https://web.whatsapp.com/", ""), "WhatsApp")
+        self.assertEqual(classify_traffic_source("https://t.me/channel", ""), "Telegram")
+        self.assertEqual(classify_traffic_source("https://reddit.com/r/python", ""), "Reddit")
+        self.assertEqual(classify_traffic_source("https://discord.gg/invite", ""), "Discord")
+        
+        self.assertEqual(classify_traffic_source("https://www.google.com/search", ""), "Google")
+        self.assertEqual(classify_traffic_source("https://bing.com/search", ""), "Bing")
+        self.assertEqual(classify_traffic_source("https://duckduckgo.com/", ""), "DuckDuckGo")
+        
         self.assertEqual(classify_traffic_source("https://mail.google.com/", ""), "Email")
         self.assertEqual(classify_traffic_source("https://someblog.com/post", ""), "Referral")
 
     def test_traffic_sources_view_authenticated(self):
         # Create mock data
         TrafficSource.objects.create(portfolio=self.portfolio, source="Direct", visit_count=5)
-        TrafficSource.objects.create(portfolio=self.portfolio, source="Social", visit_count=5)
+        TrafficSource.objects.create(portfolio=self.portfolio, source="LinkedIn", visit_count=5)
         
         # Authenticated
         refresh = RefreshToken.for_user(self.user)
@@ -108,15 +128,15 @@ class TrafficSourceTestCase(TestCase):
         self.assertEqual(direct["count"], 5)
         self.assertEqual(direct["percentage"], 50)
         
-        social = next(s for s in sources if s["source"] == "Social")
-        self.assertEqual(social["count"], 5)
-        self.assertEqual(social["percentage"], 50)
+        linkedin = next(s for s in sources if s["source"] == "LinkedIn")
+        self.assertEqual(linkedin["count"], 5)
+        self.assertEqual(linkedin["percentage"], 50)
 
     def test_traffic_sources_total_view(self):
         # Create second portfolio and mock data
         p2 = Portfolio.objects.create(user=self.user, name="Portfolio 2")
-        TrafficSource.objects.create(portfolio=self.portfolio, source="Social", visit_count=3)
-        TrafficSource.objects.create(portfolio=p2, source="Social", visit_count=7)
+        TrafficSource.objects.create(portfolio=self.portfolio, source="LinkedIn", visit_count=3)
+        TrafficSource.objects.create(portfolio=p2, source="LinkedIn", visit_count=7)
         
         refresh = RefreshToken.for_user(self.user)
         token = str(refresh.access_token)
@@ -126,6 +146,6 @@ class TrafficSourceTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         
         sources = response.json()["sources"]
-        social = next(s for s in sources if s["source"] == "Social")
-        self.assertEqual(social["count"], 10)
-        self.assertEqual(social["percentage"], 100)
+        linkedin = next(s for s in sources if s["source"] == "LinkedIn")
+        self.assertEqual(linkedin["count"], 10)
+        self.assertEqual(linkedin["percentage"], 100)

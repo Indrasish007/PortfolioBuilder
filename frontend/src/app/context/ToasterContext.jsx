@@ -17,7 +17,7 @@ export function ToasterProvider({ children }) {
   return (
     <ToasterContext.Provider value={{ toast }}>
       {children}
-      <div className="pointer-events-none fixed top-4 right-4 z-[100] flex flex-col gap-2 w-[min(92vw,360px)]">
+      <div className="pointer-events-none fixed top-[calc(var(--header-height)+1rem)] right-4 z-[9999] flex flex-col gap-2 w-[min(92vw,360px)]">
         <AnimatePresence>
           {toasts.map((t) => (
             <motion.div

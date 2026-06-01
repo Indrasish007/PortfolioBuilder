@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { motion, Reorder, AnimatePresence } from "framer-motion";
-import { Undo2, Redo2, RotateCcw, Save, Eye, EyeOff, Smartphone, Tablet, Monitor, Plus, GripVertical, Image as ImageIcon, Sparkles, Trash2, Github, Globe, Linkedin, Twitter, Facebook, Instagram, Type, Palette, Settings2, CheckCircle2, Loader2, ChevronDown, ChevronUp, ArrowUp, ArrowDown, FileText, X, Calendar, ExternalLink, Check, AlertTriangle, RefreshCw } from "lucide-react";
+import { Undo2, Redo2, RotateCcw, Save, Eye, EyeOff, Smartphone, Tablet, Monitor, Plus, GripVertical, Image as ImageIcon, Sparkles, Trash2, Github, Globe, Linkedin, Twitter, Facebook, Instagram, Type, Palette, Settings2, CheckCircle2, Loader2, ChevronDown, ChevronUp, ArrowUp, ArrowDown, FileText, X, Calendar, ExternalLink, Check, AlertTriangle, RefreshCw, Share2 } from "lucide-react";
 import { useNavigate, useParams, useSearchParams, useLocation } from "react-router-dom";
 import GlassCard from "../components/GlassCard.jsx";
 import Button from "../components/Button.jsx";
@@ -16,6 +16,7 @@ import api from "../services/api.js";
 import SEOSettingsPanel from "../../components/settings/SEOSettingsPanel.jsx";
 import SEOScoreWidget from "../../components/settings/SEOScoreWidget.jsx";
 import SocialShareChart from "../../components/analytics/SocialShareChart.jsx";
+import ShareModal from "../components/ShareModal.jsx";
 
 function FramePreview({ children, className, style }) {
   const [contentRef, setContentRef] = useState(null);
@@ -87,6 +88,7 @@ export default function PortfolioEditor() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [saveModalOpen, setSaveModalOpen] = useState(false);
   const [publishModalOpen, setPublishModalOpen] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const authUser = useAuthStore((s) => s.user) || {};
   const [portfolioName, setPortfolioName] = useState("");
@@ -343,12 +345,12 @@ export default function PortfolioEditor() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          className="fixed top-[var(--header-height)] bottom-0 left-0 right-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm"
         >
           <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
+            initial={{ scale: 0.95, opacity: 0, y: -20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.95, opacity: 0, y: -20 }}
             transition={{ duration: 0.18 }}
             className="glass rounded-2xl p-6 max-w-sm w-full mx-4 border border-border shadow-xl"
           >
@@ -376,12 +378,12 @@ export default function PortfolioEditor() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          className="fixed top-[var(--header-height)] bottom-0 left-0 right-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm"
         >
           <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
+            initial={{ scale: 0.95, opacity: 0, y: -20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.95, opacity: 0, y: -20 }}
             transition={{ duration: 0.18 }}
             className="glass rounded-2xl p-6 max-w-md w-full mx-4 border border-border shadow-xl"
           >
@@ -397,32 +399,28 @@ export default function PortfolioEditor() {
                   </p>
                 </div>
 
-                <div className="p-3.5 rounded-xl bg-accent/20 border border-border/80 flex items-center justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[10px] uppercase font-bold text-muted-foreground/75 tracking-wider mb-0.5">Deployment Domain</div>
-                    <a
-                      href={`/p/${portfolio.slug}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-brand hover:underline font-mono text-sm font-semibold truncate block"
+                <div className="p-3.5 rounded-xl bg-accent/20 border border-border/80">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[10px] uppercase font-bold text-muted-foreground/75 tracking-wider mb-0.5">Deployment Domain</div>
+                      <a
+                        href={`/p/${portfolio.slug}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-brand hover:underline font-mono text-sm font-semibold truncate block"
+                      >
+                        {window.location.origin}/p/{portfolio.slug}
+                      </a>
+                    </div>
+                    <Button
+                      variant="glass"
+                      size="sm"
+                      onClick={() => setShareModalOpen(true)}
+                      className="font-bold flex items-center gap-1.5 shrink-0"
                     >
-                      {window.location.origin}/p/{portfolio.slug}
-                    </a>
+                      <Share2 className="w-3.5 h-3.5" /> Share Portfolio
+                    </Button>
                   </div>
-                  <button
-                    onClick={() => {
-                      const liveUrl = `${window.location.origin}/p/${portfolio.slug}`;
-                      navigator.clipboard.writeText(liveUrl);
-                      toast({
-                        title: "Link copied!",
-                        description: "Deployed portfolio link has been copied to your clipboard.",
-                        type: "success"
-                      });
-                    }}
-                    className="text-xs px-3 py-1.5 rounded-lg bg-brand/10 hover:bg-brand/20 text-brand font-semibold transition"
-                  >
-                    Copy
-                  </button>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 mt-4">
@@ -516,6 +514,13 @@ export default function PortfolioEditor() {
         </motion.div>
       )}
     </AnimatePresence>
+
+    <ShareModal
+      isOpen={shareModalOpen}
+      onClose={() => setShareModalOpen(false)}
+      portfolioUrl={`/p/${portfolio.slug}`}
+      portfolioName={portfolio.name || "My Portfolio"}
+    />
 
 
 

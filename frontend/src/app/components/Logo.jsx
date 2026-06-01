@@ -48,23 +48,23 @@ export default function Logo({ className = "", to = "/" }) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 backdrop-blur-md p-4"
+              className="fixed top-[var(--header-height)] bottom-0 left-0 right-0 z-[100] flex items-center justify-center bg-black/75 backdrop-blur-md p-4"
               onClick={() => setLogoPopupOpen(false)}
             >
               <motion.div
-                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                initial={{ scale: 0.95, opacity: 0, y: -20 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                exit={{ scale: 0.95, opacity: 0, y: -20 }}
                 transition={{ type: "spring", damping: 25, stiffness: 350 }}
                 onClick={(e) => e.stopPropagation()}
                 className="glass rounded-3xl p-8 max-w-lg w-full border border-border/50 shadow-glow relative bg-background/90 text-center space-y-6"
               >
                 <button
                   onClick={() => setLogoPopupOpen(false)}
-                  className="absolute top-4 right-4 p-2 rounded-xl glass text-muted-foreground hover:text-foreground transition cursor-pointer"
+                  className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-zinc-200/60 dark:hover:bg-white/[0.06] transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 cursor-pointer"
                   aria-label="Close popup"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-5 h-5" />
                 </button>
 
                 <div className="bg-white p-6 rounded-2xl border border-border/20 shadow-card flex items-center justify-center">

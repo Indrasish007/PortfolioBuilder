@@ -450,22 +450,21 @@ class TrafficSourcesView(APIView):
             return Response({'error': 'Portfolio not found or permission denied'}, status=404)
 
         from portfolios.models import TrafficSource
-        sources = TrafficSource.objects.filter(portfolio=portfolio).exclude(source='Referral')
+        sources = TrafficSource.objects.filter(portfolio=portfolio)
         
         total_count = sum(s.visit_count for s in sources)
         
-        categories = ['Direct', 'Search', 'Social', 'Email']
-        source_map = {s.source: s.visit_count for s in sources}
-        
         results = []
-        for cat in categories:
-            count = source_map.get(cat, 0)
-            percentage = round((count / total_count) * 100) if total_count > 0 else 0
+        for s in sources:
+            percentage = round((s.visit_count / total_count) * 100, 1) if total_count > 0 else 0.0
             results.append({
-                'source': cat,
-                'count': count,
+                'source': s.source,
+                'count': s.visit_count,
+                'visits': s.visit_count,
                 'percentage': percentage
             })
+            
+        results.sort(key=lambda x: x['visits'], reverse=True)
             
         return Response({'sources': results})
 
@@ -483,7 +482,6 @@ class TrafficSourcesTotalView(APIView):
         sources = (
             TrafficSource.objects
             .filter(portfolio__in=portfolios)
-            .exclude(source='Referral')
             .values('source')
             .annotate(total=Sum('visit_count'))
         )
@@ -491,16 +489,17 @@ class TrafficSourcesTotalView(APIView):
         source_map = {item['source']: item['total'] for item in sources}
         total_count = sum(source_map.values())
         
-        categories = ['Direct', 'Search', 'Social', 'Email']
         results = []
-        for cat in categories:
-            count = source_map.get(cat, 0)
-            percentage = round((count / total_count) * 100) if total_count > 0 else 0
+        for source_name, count in source_map.items():
+            percentage = round((count / total_count) * 100, 1) if total_count > 0 else 0.0
             results.append({
-                'source': cat,
+                'source': source_name,
                 'count': count,
+                'visits': count,
                 'percentage': percentage
             })
+            
+        results.sort(key=lambda x: x['visits'], reverse=True)
             
         return Response({'sources': results})
 

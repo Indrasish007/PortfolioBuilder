@@ -174,42 +174,121 @@ def classify_traffic_source(referrer, utm_source):
     utm_source = (utm_source or '').strip().lower()
     referrer = (referrer or '').strip().lower()
 
+    # 1. UTM Source Classification
     if utm_source:
+        if utm_source == 'share':
+            return 'Share'
+        if utm_source == 'qrcode':
+            return 'QR Code'
+        if utm_source == 'native_share':
+            return 'Native Share'
+
+        # Social Platforms
+        if 'linkedin' in utm_source:
+            return 'LinkedIn'
+        if 'github' in utm_source:
+            return 'GitHub'
+        if 'whatsapp' in utm_source:
+            return 'WhatsApp'
+        if 'facebook' in utm_source or utm_source == 'fb':
+            return 'Facebook'
+        if 'instagram' in utm_source or utm_source == 'ig':
+            return 'Instagram'
+        if 'twitter' in utm_source or utm_source == 'x.com' or utm_source == 'x':
+            return 'X/Twitter'
+        if 'reddit' in utm_source:
+            return 'Reddit'
+        if 'youtube' in utm_source:
+            return 'YouTube'
+        if 'telegram' in utm_source:
+            return 'Telegram'
+        if 'discord' in utm_source:
+            return 'Discord'
+        if 'medium' in utm_source:
+            return 'Medium'
+        if 'quora' in utm_source:
+            return 'Quora'
+        if 'hackernews' in utm_source or 'hacker-news' in utm_source:
+            return 'Hacker News'
+        if 'stackoverflow' in utm_source or 'stack-overflow' in utm_source:
+            return 'Stack Overflow'
+
+        # Search Engines
+        if 'google' in utm_source:
+            return 'Google'
+        if 'bing' in utm_source:
+            return 'Bing'
+        if 'yahoo' in utm_source:
+            return 'Yahoo'
+        if 'duckduckgo' in utm_source:
+            return 'DuckDuckGo'
+        if 'baidu' in utm_source:
+            return 'Baidu'
+        if 'yandex' in utm_source:
+            return 'Yandex'
+
+        # Email
         if utm_source in ('email', 'newsletter', 'mail'):
             return 'Email'
-        if any(social in utm_source for social in ('linkedin', 'twitter', 'x', 'instagram', 'github', 'facebook', 'social', 'reddit')):
-            return 'Social'
-        if utm_source in ('search', 'google', 'bing', 'yahoo'):
-            return 'Search'
 
+    # 2. Referrer Classification
     if not referrer:
         return 'Direct'
 
-    social_domains = [
-        'linkedin.com', 'lnkd.in',
-        'twitter.com', 't.co', 'x.com',
-        'instagram.com',
-        'github.com',
-        'facebook.com', 'fb.me',
-        'youtube.com', 'youtu.be',
-        'reddit.com'
-    ]
-    if any(domain in referrer for domain in social_domains):
-        return 'Social'
+    # Social Platforms
+    if 'linkedin.com' in referrer or 'lnkd.in' in referrer:
+        return 'LinkedIn'
+    if 'github.com' in referrer:
+        return 'GitHub'
+    if any(domain in referrer for domain in ('wa.me', 'web.whatsapp.com', 'api.whatsapp.com')):
+        return 'WhatsApp'
+    if 'facebook.com' in referrer or 'fb.me' in referrer:
+        return 'Facebook'
+    if 'instagram.com' in referrer:
+        return 'Instagram'
+    if any(domain in referrer for domain in ('twitter.com', 'x.com')) or '/t.co' in referrer or referrer == 't.co':
+        return 'X/Twitter'
+    if 'reddit.com' in referrer:
+        return 'Reddit'
+    if 'youtube.com' in referrer or 'youtu.be' in referrer:
+        return 'YouTube'
+    if 'telegram.org' in referrer or 't.me' in referrer:
+        return 'Telegram'
+    if 'discord.com' in referrer or 'discord.gg' in referrer:
+        return 'Discord'
+    if 'medium.com' in referrer:
+        return 'Medium'
+    if 'quora.com' in referrer:
+        return 'Quora'
+    if 'news.ycombinator.com' in referrer:
+        return 'Hacker News'
+    if 'stackoverflow.com' in referrer:
+        return 'Stack Overflow'
 
+    # Email
     email_domains = [
-        'mail.google.com', 'mail.yahoo.com', 'outlook.live.com', 'mail.live.com', 'protonmail.com'
+        'mail.google.com', 'outlook.live.com', 'mail.yahoo.com', 'protonmail.com'
     ]
     if any(domain in referrer for domain in email_domains):
         return 'Email'
 
-    search_domains = [
-        'google.com', 'google.co.', 'bing.com', 'yahoo.com', 'duckduckgo.com', 'baidu.com', 'yandex.ru'
-    ]
-    if any(domain in referrer for domain in search_domains):
-        return 'Search'
+    # Search Engines
+    if 'google.com' in referrer or 'google.co.' in referrer:
+        return 'Google'
+    if 'bing.com' in referrer:
+        return 'Bing'
+    if 'yahoo.com' in referrer:
+        return 'Yahoo'
+    if 'duckduckgo.com' in referrer:
+        return 'DuckDuckGo'
+    if 'baidu.com' in referrer:
+        return 'Baidu'
+    if 'yandex.ru' in referrer or 'yandex.com' in referrer:
+        return 'Yandex'
 
     return 'Referral'
+
+
 
 
 class AnalyticsView(APIView):
@@ -276,27 +355,24 @@ class AnalyticsView(APIView):
         
         if event_type == 'view':
             import datetime as dt
-            from django.utils import timezone as tz
-            # Dedup: if this visitor already recorded a view on this portfolio
-            # within the last 5 minutes, treat it as a duplicate and skip it.
-            # This handles React StrictMode double-fire and browser refresh storms.
-            cutoff = tz.now() - dt.timedelta(minutes=5)
-            already_recorded = PortfolioEvent.objects.filter(
-                portfolio=portfolio,
-                event_type='view',
-                visitor_id=visitor_id,
-                created_at__gte=cutoff
-            ).exists()
+            # Traffic source monitoring
+            referrer_val = data.get('referrer', '')
+            utm_source_val = data.get('utm_source', '')
+            source = classify_traffic_source(referrer_val, utm_source_val)
+
+            from django.core.cache import cache
+            # Deduplicate using a source-specific cache key to allow different sources in the 5-min window
+            cache_key = f"view_recorded_{portfolio.id}_{visitor_id}_{source}"
+            already_recorded = cache.get(cache_key) is not None
+
             if not already_recorded:
+                # Set cache to prevent duplicate views for this source in the next 5 minutes
+                cache.set(cache_key, True, 300)
+
                 PortfolioEvent.objects.create(portfolio=portfolio, event_type=event_type, visitor_id=visitor_id, device=device, country=country)
                 portfolio.views += 1
                 portfolio.save()
 
-                # Traffic source monitoring
-                referrer_val = data.get('referrer', '')
-                utm_source_val = data.get('utm_source', '')
-                source = classify_traffic_source(referrer_val, utm_source_val)
-                
                 from .models import TrafficSource
                 traffic_obj, created = TrafficSource.objects.get_or_create(
                     portfolio=portfolio,

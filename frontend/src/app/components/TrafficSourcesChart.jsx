@@ -1,14 +1,36 @@
 import { useState, useEffect } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
-import { BarChart3, RefreshCw, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { BarChart3, RefreshCw, AlertCircle } from "lucide-react";
 import api from "../services/api.js";
 import GlassCard from "./GlassCard.jsx";
 
 const SOURCE_COLORS = {
-  Direct: "#22d3ee",   // Teal
-  Search: "#8b5cf6",   // Violet
-  Social: "#3b82f6",   // Electric Blue
-  Email: "#f472b6"     // Pink/Rose
+  Direct: "#22d3ee",           // Teal
+  LinkedIn: "#0077b5",         // LinkedIn Blue
+  GitHub: "#4f46e5",           // Indigo/Purple
+  WhatsApp: "#22c55e",         // WhatsApp Green
+  Facebook: "#1877f2",         // Facebook Blue
+  Instagram: "#ec4899",         // Instagram Pink/Magenta
+  "X/Twitter": "#38bdf8",       // X/Twitter Light Blue
+  Reddit: "#ff4500",           // Reddit Orange
+  YouTube: "#ff0000",          // YouTube Red
+  Telegram: "#0088cc",         // Telegram Blue
+  Discord: "#5865f2",          // Discord Purple
+  Medium: "#00ab6c",           // Medium Green
+  Quora: "#b92b27",            // Quora Red
+  "Hacker News": "#ff6600",     // Hacker News Orange
+  "Stack Overflow": "#f48024",  // Stack Overflow Orange
+  Google: "#8b5cf6",           // Google Purple/Indigo
+  Bing: "#0d9488",             // Bing Teal-green
+  Yahoo: "#6001d2",            // Yahoo Purple
+  DuckDuckGo: "#de5833",       // DuckDuckGo Orange
+  Baidu: "#2129b8",            // Baidu Blue
+  Yandex: "#ffcc00",           // Yandex Yellow
+  Email: "#f472b6",            // Email Pink/Rose
+  Referral: "#94a3b8",          // Referral Slate Gray
+  Share: "#3b82f6",             // Share Blue
+  "QR Code": "#a855f7",         // QR Code Purple
+  "Native Share": "#10b981"     // Native Share Emerald
 };
 
 const CustomTooltip = ({ active, payload }) => {
@@ -30,59 +52,9 @@ const CustomTooltip = ({ active, payload }) => {
   return null;
 };
 
-const getSocialBreakdown = (totalCount) => {
-  const sites = [
-    { name: "LinkedIn", weight: 40, color: "#0a66c2" },
-    { name: "GitHub", weight: 25, color: "#171515" },
-    { name: "WhatsApp", weight: 15, color: "#25d366" },
-    { name: "Twitter / X", weight: 12, color: "#14171a" },
-    { name: "Instagram", weight: 5, color: "#c13584" },
-    { name: "Facebook", weight: 3, color: "#1877f2" },
-  ];
-
-  if (totalCount <= 0) {
-    return sites.map(site => ({
-      name: site.name,
-      count: 0,
-      percentage: 0,
-      color: site.color
-    }));
-  }
-  
-  let counts = sites.map(() => 0);
-  let remaining = totalCount;
-
-  // First pass: allocate floor
-  sites.forEach((site, idx) => {
-    const exact = (site.weight / 100) * totalCount;
-    counts[idx] = Math.floor(exact);
-    remaining -= counts[idx];
-  });
-
-  // Second pass: distribute remaining units to those with largest decimal parts
-  if (remaining > 0) {
-    const decimals = sites.map((site, idx) => {
-      const exact = (site.weight / 100) * totalCount;
-      return { idx, dec: exact - Math.floor(exact) };
-    });
-    decimals.sort((a, b) => b.dec - a.dec);
-    for (let i = 0; i < remaining; i++) {
-      counts[decimals[i].idx] += 1;
-    }
-  }
-
-  return sites.map((site, idx) => ({
-    name: site.name,
-    count: counts[idx],
-    percentage: totalCount > 0 ? Math.round((counts[idx] / totalCount) * 100) : 0,
-    color: site.color
-  }));
-};
-
 export default function TrafficSourcesChart({ portfolioId, total }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [socialExpanded, setSocialExpanded] = useState(false);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -196,60 +168,31 @@ export default function TrafficSourcesChart({ portfolioId, total }) {
           </div>
         </div>
 
-        {/* Legend container */}
-        <div className="flex-1 w-full space-y-1.5">
+        {/* Legend container (scrollable list of real sources) */}
+        <div className="flex-1 w-full space-y-1.5 max-h-[170px] overflow-y-auto pr-1">
           {data.map((item) => {
             const color = SOURCE_COLORS[item.source] || "#94a3b8";
-            const isSocial = item.source === "Social";
             
             return (
-              <div key={item.source} className="space-y-1.5">
-                <div 
-                  onClick={() => isSocial && setSocialExpanded(!socialExpanded)}
-                  className={`flex items-center justify-between text-xs py-1.5 px-2.5 rounded-lg border border-white/[0.02] bg-white/[0.01] hover:bg-white/[0.03] transition duration-150 ${isSocial ? "cursor-pointer select-none" : ""}`}
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="w-2 h-2 rounded-full flex-shrink-0 animate-pulse" style={{ backgroundColor: color, boxShadow: `0 0 6px ${color}60` }} />
-                    <span className="font-semibold text-white truncate">{item.source}</span>
-                    {isSocial && (
-                      <span className="text-muted-foreground flex-shrink-0">
-                        {socialExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-3 flex-shrink-0 text-right font-medium">
-                    <span className="text-muted-foreground text-[10px] tabular-nums">
-                      {item.count} {item.count === 1 ? "visit" : "visits"}
-                    </span>
-                    <span className="text-white tabular-nums w-8 text-right font-bold text-[11px]" style={{ color }}>
-                      {item.percentage}%
-                    </span>
-                  </div>
+              <div 
+                key={item.source} 
+                className="flex items-center justify-between text-xs py-1.5 px-2.5 rounded-lg border border-white/[0.02] bg-white/[0.01] hover:bg-white/[0.03] transition duration-150"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <div 
+                    className="w-2.5 h-2.5 rounded-full flex-shrink-0 animate-pulse" 
+                    style={{ backgroundColor: color, boxShadow: `0 0 6px ${color}60` }} 
+                  />
+                  <span className="font-semibold text-white truncate">{item.source}</span>
                 </div>
-
-                {isSocial && socialExpanded && (
-                  <div className="pl-5 border-l border-white/[0.06] ml-3.5 space-y-1.5 mt-1.5 animate-[fadeIn_0.2s_ease-out]">
-                    {getSocialBreakdown(item.count).map((subItem) => (
-                      <div 
-                        key={subItem.name}
-                        className="flex items-center justify-between text-[11px] py-1.5 px-2.5 rounded-lg bg-white/[0.005] border border-white/[0.01] hover:bg-white/[0.02] transition"
-                      >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: subItem.color }} />
-                          <span className="font-semibold text-muted-foreground truncate">{subItem.name}</span>
-                        </div>
-                        <div className="flex items-center gap-3 flex-shrink-0 text-right font-medium">
-                          <span className="text-muted-foreground text-[9px] tabular-nums">
-                            {subItem.count} {subItem.count === 1 ? "visit" : "visits"}
-                          </span>
-                          <span className="text-muted-foreground tabular-nums w-7 text-right font-bold text-[10px]" style={{ color: subItem.color }}>
-                            {subItem.percentage}%
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <div className="flex items-center gap-3 flex-shrink-0 text-right font-medium">
+                  <span className="text-muted-foreground text-[10px] tabular-nums">
+                    {item.count} {item.count === 1 ? "visit" : "visits"}
+                  </span>
+                  <span className="text-white tabular-nums w-12 text-right font-bold text-[11px]" style={{ color }}>
+                    {item.percentage}%
+                  </span>
+                </div>
               </div>
             );
           })}

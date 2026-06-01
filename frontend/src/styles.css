@@ -5,6 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  --spacing-header: var(--header-height);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -39,6 +40,7 @@
 }
 
 :root {
+  --header-height: 4rem;
   --radius: 0.875rem;
   /* Light theme */
   --background: oklch(0.99 0.005 270);
