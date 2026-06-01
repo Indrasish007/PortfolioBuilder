@@ -13,6 +13,9 @@ import LivePortfolio from "../templates/LivePortfolio.jsx";
 import { useToast } from "../context/ToasterContext.jsx";
 import { useAuthStore } from "../store/authStore.js";
 import api from "../services/api.js";
+import SEOSettingsPanel from "../../components/settings/SEOSettingsPanel.jsx";
+import SEOScoreWidget from "../../components/settings/SEOScoreWidget.jsx";
+import SocialShareChart from "../../components/analytics/SocialShareChart.jsx";
 
 function FramePreview({ children, className, style }) {
   const [contentRef, setContentRef] = useState(null);
@@ -845,20 +848,60 @@ export default function PortfolioEditor() {
           )}
 
           {tab === "settings" && (
-            <GlassCard>
-              <div className="space-y-3">
-                <Field label="Portfolio Name" value={portfolio?.name || ""} onChange={(v) => updateField("name", v)} />
-                <Field label="Username / Slug" value={user.username || ""} onChange={(v) => updateField("user.username", v)} hint={`Your URL: /u/${user.username || "your-username"}`} />
-                <Field label="SEO description" multiline value={user.bio || ""} onChange={(v) => updateField("user.bio", v)} />
-                <div className="flex items-center justify-between rounded-lg glass p-3">
-                  <div>
-                    <div className="text-sm font-medium">Public</div>
-                    <div className="text-xs text-muted-foreground">Toggle to publish or unpublish.</div>
+            <div className="space-y-4">
+              <GlassCard>
+                <div className="space-y-3">
+                  <Field label="Portfolio Name" value={portfolio?.name || ""} onChange={(v) => updateField("name", v)} />
+                  <Field label="Username / Slug" value={user.username || ""} onChange={(v) => updateField("user.username", v)} hint={`Your URL: /u/${user.username || "your-username"}`} />
+                  <Field label="SEO description" multiline value={user.bio || ""} onChange={(v) => updateField("user.bio", v)} />
+                  <div className="flex items-center justify-between rounded-lg glass p-3">
+                    <div>
+                      <div className="text-sm font-medium">Public</div>
+                      <div className="text-xs text-muted-foreground">Toggle to publish or unpublish.</div>
+                    </div>
+                    <input type="checkbox" defaultChecked className="accent-[var(--brand)] scale-125" />
                   </div>
-                  <input type="checkbox" defaultChecked className="accent-[var(--brand)] scale-125" />
                 </div>
-              </div>
-            </GlassCard>
+              </GlassCard>
+
+              <SEOScoreWidget
+                seo={portfolio?.seo}
+                onFix={(fixAction) => {
+                  if (fixAction.tab) {
+                    setTab(fixAction.tab);
+                  }
+                  if (fixAction.section) {
+                    setActiveSection(fixAction.section);
+                    // Scroll to sections
+                    setTimeout(() => {
+                      const el = document.getElementById(`section-${fixAction.section}`);
+                      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+                    }, 100);
+                  }
+                  if (fixAction.scrollTarget) {
+                    setTimeout(() => {
+                      const el = document.getElementById(fixAction.scrollTarget);
+                      if (el) {
+                        el.scrollIntoView({ behavior: "smooth", block: "center" });
+                        el.focus?.();
+                      }
+                    }, 100);
+                  }
+                  if (fixAction.action === "publish") {
+                    handlePublishClick();
+                  }
+                }}
+              />
+
+              <SEOSettingsPanel
+                portfolio={portfolio}
+                onRefresh={() => fetchPortfolio(portfolio.id)}
+              />
+
+              {portfolio?.id && (
+                <SocialShareChart portfolioId={portfolio.id} />
+              )}
+            </div>
           )}
         </div>
       </div>

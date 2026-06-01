@@ -10,7 +10,7 @@ function SEOManager() {
   const location = useLocation();
 
   useEffect(() => {
-    const isPublicRoute = location.pathname.startsWith("/p/");
+    const isPublicRoute = location.pathname.startsWith("/p/") || location.pathname.startsWith("/u/");
     if (!isPublicRoute) {
       // Reset title based on page
       let title = "PortfolioBuilder — Build stunning portfolios with AI";
@@ -93,6 +93,7 @@ export default function App() {
 
               {/* Standalone - no Navbar/Footer wrapper */}
               <Route path="/p/:idOrSlug" element={<PublicPortfolio />} />
+              <Route path="/u/:username" element={<PublicPortfolio />} />
 
               <Route element={<AuthLayout />}>
                 <Route path="/login" element={<Login />} />

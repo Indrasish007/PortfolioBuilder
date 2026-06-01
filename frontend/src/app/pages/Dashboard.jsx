@@ -35,9 +35,15 @@ export default function Dashboard() {
   const fileInputRef = useRef(null);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const lastPortfolioId = Number(localStorage.getItem("lastEditedPortfolioId") || 0);
+  const [lastPortfolioId, setLastPortfolioId] = useState(0);
+  const [origin, setOrigin] = useState("");
 
   const [statsData, setStatsData] = useState({ total_views: 0, unique_visitors: 0, resume_downloads: 0 });
+
+  useEffect(() => {
+    setLastPortfolioId(Number(localStorage.getItem("lastEditedPortfolioId") || 0));
+    setOrigin(window.location.origin);
+  }, []);
 
   useEffect(() => {
     async function load() {
@@ -366,12 +372,12 @@ export default function Dashboard() {
                               rel="noreferrer"
                               className="text-brand hover:underline font-mono truncate break-all block flex-1"
                             >
-                              {window.location.origin}{p.slug ? `/p/${p.slug}` : `/p/${p.id}`}
+                              {origin}{p.slug ? `/p/${p.slug}` : `/p/${p.id}`}
                             </a>
                           </div>
                           <button
                             onClick={() => {
-                              const liveUrl = `${window.location.origin}${p.slug ? `/p/${p.slug}` : `/p/${p.id}`}`;
+                              const liveUrl = `${origin}${p.slug ? `/p/${p.slug}` : `/p/${p.id}`}`;
                               navigator.clipboard.writeText(liveUrl);
                               toast({
                                 title: "Copied live link!",

@@ -31,3 +31,36 @@ class CountryStat(models.Model):
 class Suggestion(models.Model):
     analytics = models.ForeignKey(Analytics, on_delete=models.CASCADE, related_name='suggestions')
     text = models.TextField()
+
+
+class SocialShareEvent(models.Model):
+    PLATFORM_CHOICES = [
+        ('linkedin', 'LinkedIn'),
+        ('twitter', 'Twitter/X'),
+        ('whatsapp', 'WhatsApp'),
+        ('facebook', 'Facebook'),
+        ('discord', 'Discord'),
+        ('direct', 'Direct Link'),
+        ('other', 'Other'),
+    ]
+
+    portfolio = models.ForeignKey(
+        Portfolio,
+        on_delete=models.CASCADE,
+        related_name='share_events'
+    )
+    platform = models.CharField(max_length=20, choices=PLATFORM_CHOICES, default='other')
+    clicked_at = models.DateTimeField(auto_now_add=True)
+    referrer = models.URLField(max_length=500, blank=True, null=True)  # raw HTTP referrer header
+    user_agent = models.TextField(blank=True, null=True)  # for bot filtering
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['portfolio', 'clicked_at']),
+            models.Index(fields=['platform']),
+        ]
+
+    def __str__(self):
+        return f"{self.platform} click for portfolio {self.portfolio_id}"
+
+

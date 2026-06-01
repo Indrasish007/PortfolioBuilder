@@ -8,6 +8,7 @@ from django.utils.text import slugify
 import re
 from .models import Portfolio, PortfolioEvent, ProjectClick, PortfolioVisit
 from .serializers import PortfolioSerializer
+from .services.seo import generate_seo_payload
 
 class PortfolioViewSet(viewsets.ModelViewSet):
     serializer_class = PortfolioSerializer
@@ -33,6 +34,15 @@ class PortfolioViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         instance = serializer.save()
+        # Trigger search engine pinging if published
+        if instance.status == 'Published':
+            try:
+                from .services.sitemap import ping_search_engines
+                from .services.seo import generate_canonical_url
+                ping_search_engines(generate_canonical_url(instance))
+            except Exception:
+                pass
+
         # Record which portfolio was last edited on the user's profile (cross-device)
         try:
             profile, _ = instance.user.profile.__class__.objects.get_or_create(user=instance.user)
@@ -51,6 +61,13 @@ class PublicPortfolioView(generics.RetrieveAPIView):
         pk = self.kwargs.get('pk')
         return generics.get_object_or_404(Portfolio, pk=pk)
 
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        data = serializer.data
+        data['seo'] = generate_seo_payload(instance)
+        return Response(data)
+
 class PublicPortfolioBySlugView(generics.RetrieveAPIView):
     """Fetch a published portfolio by its human-readable slug."""
     serializer_class = PortfolioSerializer
@@ -59,6 +76,13 @@ class PublicPortfolioBySlugView(generics.RetrieveAPIView):
     def get_object(self):
         slug = self.kwargs.get('slug')
         return generics.get_object_or_404(Portfolio, slug=slug, status='Published')
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        data = serializer.data
+        data['seo'] = generate_seo_payload(instance)
+        return Response(data)
 
 class PublicPortfolioByDomainView(generics.RetrieveAPIView):
     """Fetch a published portfolio by its mapped domain or hostname."""
@@ -91,6 +115,13 @@ class PublicPortfolioByDomainView(generics.RetrieveAPIView):
             raise Http404("Portfolio not found for this domain.")
             
         return portfolio
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        data = serializer.data
+        data['seo'] = generate_seo_payload(instance)
+        return Response(data)
 
 class PublishPortfolioView(APIView):
     """POST /portfolios/{id}/publish/ — marks portfolio Published and generates a slug."""
@@ -489,3 +520,231 @@ class TrackVisitView(APIView):
             visit.save(update_fields=['visit_count'])
 
         return Response({'status': 'ok', 'visit_count': visit.visit_count})
+
+
+from django.http import HttpResponse, Http404
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+from django.conf import settings
+from .services.sitemap import (
+    generate_sitemap_data,
+    generate_image_sitemap_entries,
+    generate_sitemap_index_entries
+)
+
+class RobotsTxtView(APIView):
+    """
+    GET /robots.txt
+    Returns Content-Type: text/plain
+    Public endpoint, no authentication required.
+    Serves custom robots.txt dynamically based on the incoming request Host header.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, *args, **kwargs):
+        raw_host = request.get_host()
+        hostname = raw_host.split(':')[0]
+        
+        main_domain = getattr(settings, 'MAIN_DOMAIN', 'portfoliobuilder.com')
+        is_main_or_dev = (hostname == main_domain or hostname in ['localhost', '127.0.0.1', 'testserver'])
+
+        if not is_main_or_dev:
+            # Custom domain specific Robots.txt
+            try:
+                portfolio = Portfolio.objects.get(domain=hostname, status='Published')
+                content = (
+                    "User-agent: *\n"
+                    "Allow: /\n\n"
+                    f"Sitemap: https://{hostname}/sitemap.xml\n"
+                )
+                return HttpResponse(content, content_type="text/plain")
+            except Portfolio.DoesNotExist:
+                content = (
+                    "User-agent: *\n"
+                    "Disallow: /\n"
+                )
+                return HttpResponse(content, content_type="text/plain")
+
+        # Main platform domain Robots.txt
+        content = (
+            "User-agent: *\n"
+            "Allow: /p/\n"
+            "Allow: /u/\n"
+            "Disallow: /admin/\n"
+            "Disallow: /api/\n"
+            "Disallow: /dashboard/\n\n"
+            f"Sitemap: {settings.SITE_BASE_URL}/sitemap.xml\n"
+        )
+        return HttpResponse(content, content_type="text/plain")
+
+
+class SitemapXMLView(APIView):
+    """
+    GET /sitemap.xml
+    Returns Content-Type: application/xml
+    Public endpoint, no authentication.
+    Cached for 24 hours. Serves index sitemap or custom domain-mapped flat sitemap.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    @method_decorator(cache_page(60 * 60 * 24))
+    def get(self, request, *args, **kwargs):
+        raw_host = request.get_host()
+        hostname = raw_host.split(':')[0]
+        
+        main_domain = getattr(settings, 'MAIN_DOMAIN', 'portfoliobuilder.com')
+        is_main_or_dev = (hostname == main_domain or hostname in ['localhost', '127.0.0.1', 'testserver'])
+
+        if not is_main_or_dev:
+            # Custom domain: serve single-entry sitemap for custom domain root
+            try:
+                portfolio = Portfolio.objects.get(domain=hostname, status='Published')
+                lastmod = portfolio.updated_at.strftime('%Y-%m-%d') if portfolio.updated_at else ""
+                xml_lines = [
+                    '<?xml version="1.0" encoding="UTF-8"?>',
+                    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+                    '  <url>',
+                    f'    <loc>https://{hostname}/</loc>',
+                ]
+                if lastmod:
+                    xml_lines.append(f'    <lastmod>{lastmod}</lastmod>')
+                xml_lines.extend([
+                    '    <changefreq>weekly</changefreq>',
+                    '    <priority>1.0</priority>',
+                    '  </url>',
+                    '</urlset>'
+                ])
+                xml_content = "\n".join(xml_lines)
+                return HttpResponse(xml_content, content_type="application/xml")
+            except Portfolio.DoesNotExist:
+                raise Http404("Sitemap not found for this custom domain.")
+
+        # Main domain: serve sitemap index
+        entries = generate_sitemap_index_entries()
+        xml_lines = [
+            '<?xml version="1.0" encoding="UTF-8"?>',
+            '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+        ]
+        for entry in entries:
+            xml_lines.append("  <sitemap>")
+            xml_lines.append(f"    <loc>{entry['loc']}</loc>")
+            if entry['lastmod']:
+                xml_lines.append(f"    <lastmod>{entry['lastmod']}</lastmod>")
+            xml_lines.append("  </sitemap>")
+        xml_lines.append('</sitemapindex>')
+        
+        xml_content = "\n".join(xml_lines)
+        return HttpResponse(xml_content, content_type="application/xml")
+
+
+class PortfolioSitemapXMLView(APIView):
+    """
+    GET /sitemap-portfolios.xml
+    Returns Content-Type: application/xml
+    Public endpoint, cached for 24 hours.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    @method_decorator(cache_page(60 * 60 * 24))
+    def get(self, request, *args, **kwargs):
+        entries = generate_sitemap_data()
+        
+        xml_lines = [
+            '<?xml version="1.0" encoding="UTF-8"?>',
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+        ]
+        for entry in entries:
+            xml_lines.append("  <url>")
+            xml_lines.append(f"    <loc>{entry['loc']}</loc>")
+            if entry['lastmod']:
+                xml_lines.append(f"    <lastmod>{entry['lastmod']}</lastmod>")
+            xml_lines.append(f"    <changefreq>{entry['changefreq']}</changefreq>")
+            xml_lines.append(f"    <priority>{entry['priority']}</priority>")
+            xml_lines.append("  </url>")
+        xml_lines.append('</urlset>')
+        
+        xml_content = "\n".join(xml_lines)
+        return HttpResponse(xml_content, content_type="application/xml")
+
+
+class ImageSitemapXMLView(APIView):
+    """
+    GET /sitemap-images.xml
+    Returns Content-Type: application/xml
+    Public endpoint, cached for 24 hours.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    @method_decorator(cache_page(60 * 60 * 24))
+    def get(self, request, *args, **kwargs):
+        entries = generate_image_sitemap_entries()
+        
+        xml_lines = [
+            '<?xml version="1.0" encoding="UTF-8"?>',
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"',
+            '        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">'
+        ]
+        for entry in entries:
+            xml_lines.append("  <url>")
+            xml_lines.append(f"    <loc>{entry['loc']}</loc>")
+            xml_lines.append("    <image:image>")
+            xml_lines.append(f"      <image:loc>{entry['image_loc']}</image:loc>")
+            if entry.get('image_title'):
+                xml_lines.append(f"      <image:title>{entry['image_title']}</image:title>")
+            if entry.get('image_caption'):
+                xml_lines.append(f"      <image:caption>{entry['image_caption']}</image:caption>")
+            xml_lines.append("    </image:image>")
+            xml_lines.append("  </url>")
+        xml_lines.append('</urlset>')
+        
+        xml_content = "\n".join(xml_lines)
+        return HttpResponse(xml_content, content_type="application/xml")
+
+
+from portfolios.services.og_image import generate_dynamic_og_image
+from django.core.cache import cache
+
+class DynamicOGImageView(APIView):
+    """
+    GET /api/portfolios/public/<id>/og/
+    Generates a brand-curated high-fidelity SVG Open Graph preview image.
+    Public view, AllowAny.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, pk, *args, **kwargs):
+        cache_key = f"og_image_{pk}"
+        cached_svg = cache.get(cache_key)
+        if cached_svg:
+            return HttpResponse(cached_svg, content_type="image/svg+xml")
+
+        portfolio = generics.get_object_or_404(Portfolio, pk=pk, status='Published')
+        svg_content = generate_dynamic_og_image(portfolio)
+        
+        # Cache for 10 minutes (600 seconds)
+        cache.set(cache_key, svg_content, 600)
+        return HttpResponse(svg_content, content_type="image/svg+xml")
+
+
+class DynamicOGImageBySlugView(APIView):
+    """
+    GET /api/portfolios/public/slug/<slug>/og/
+    Generates a brand-curated high-fidelity SVG Open Graph preview image by slug.
+    Public view, AllowAny.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, slug, *args, **kwargs):
+        portfolio = generics.get_object_or_404(Portfolio, slug=slug, status='Published')
+        
+        cache_key = f"og_image_{portfolio.id}"
+        cached_svg = cache.get(cache_key)
+        if cached_svg:
+            return HttpResponse(cached_svg, content_type="image/svg+xml")
+
+        svg_content = generate_dynamic_og_image(portfolio)
+        
+        # Cache for 10 minutes (600 seconds)
+        cache.set(cache_key, svg_content, 600)
+        return HttpResponse(svg_content, content_type="image/svg+xml")
+

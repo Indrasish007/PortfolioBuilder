@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import Portfolio, Skill, Experience, Education, Project, Certification, Testimonial, Blog
 from users.models import CustomUser, Profile
+from .services.seo import generate_seo_payload
 
 class SkillSerializer(serializers.ModelSerializer):
     class Meta:
@@ -101,22 +102,49 @@ class PortfolioSerializer(serializers.ModelSerializer):
             'skills', 'experience', 'education', 'projects', 'certifications', 'testimonials', 'blogs',
             'sections', 'custom', 'gallery', 'videos', 'music', 'services', 'languages', 'volunteer',
             'awards', 'references', 'faqs', 'avatar',
+            'custom_seo_title', 'custom_seo_description', 'custom_og_image',
         ]
 
     def to_representation(self, instance):
-        """Inject portfolio.avatar into user.avatar so the frontend always
-        reads the portfolio-specific DP, not the shared profile avatar.
-        If no avatar has been uploaded for this portfolio, user.avatar is
-        explicitly set to None — no fallback to the shared profile avatar."""
         ret = super().to_representation(instance)
-        # Only use the avatar that was explicitly uploaded for this portfolio.
-        # Never fall back to the shared profile avatar; doing so would cause
-        # a DP from one portfolio (or from onboarding) to bleed into every
-        # other portfolio where the user never uploaded an image.
-        portfolio_avatar = instance.avatar or None
         if ret.get('user') is None:
             ret['user'] = {}
-        ret['user']['avatar'] = portfolio_avatar  # None when no DP uploaded
+        
+        # Override the values inside the nested 'user' dict with the portfolio-specific fields
+        # if they are set on the Portfolio instance, otherwise fall back to the shared Profile values.
+        profile = instance.user.profile if (instance.user and hasattr(instance.user, 'profile')) else None
+        
+        ret['user']['name'] = instance.profile_name or (profile.name if profile else "")
+        ret['user']['title'] = instance.profile_title or (profile.title if profile else "")
+        ret['user']['location'] = instance.profile_location or (profile.location if profile else "")
+        ret['user']['bio'] = instance.profile_bio or (profile.bio if profile else "")
+        ret['user']['email'] = instance.profile_email or (profile.email if profile else "")
+        ret['user']['phone'] = instance.profile_phone or (profile.phone if profile else "")
+        ret['user']['avatar'] = instance.avatar or None
+        ret['user']['resume_link'] = instance.profile_resume_link or (profile.resume_link if profile else "")
+        
+        ret['user']['github'] = instance.profile_github or (profile.github if profile else "")
+        ret['user']['twitter'] = instance.profile_twitter or (profile.twitter if profile else "")
+        ret['user']['linkedin'] = instance.profile_linkedin or (profile.linkedin if profile else "")
+        ret['user']['facebook'] = instance.profile_facebook or (profile.facebook if profile else "")
+        ret['user']['instagram'] = instance.profile_instagram or (profile.instagram if profile else "")
+        ret['user']['website'] = instance.profile_website or (profile.website if profile else "")
+        ret['user']['calendly'] = instance.profile_calendly or (profile.calendly if profile else "")
+
+        # Inject dynamic SEO payload
+        ret['seo'] = generate_seo_payload(instance)
+
+        # Owner-only guard check: pop settings override fields if request context user is not the owner
+        request = self.context.get('request', None)
+        is_owner = False
+        if request and request.user and request.user.is_authenticated:
+            is_owner = (request.user == instance.user)
+
+        if not is_owner:
+            ret.pop('custom_seo_title', None)
+            ret.pop('custom_seo_description', None)
+            ret.pop('custom_og_image', None)
+
         return ret
 
     def create(self, validated_data):
@@ -143,20 +171,49 @@ class PortfolioSerializer(serializers.ModelSerializer):
 
         portfolio = Portfolio.objects.create(user=portfolio_user, **validated_data)
 
-        # Update profile fields if a profile dict was sent by the client.
-        # Strip out 'avatar' before writing to Profile — avatar is now
-        # per-portfolio and stored on the Portfolio row, not the Profile.
+        # Update portfolio profile fields if a profile dict was sent by the client.
         if user_data and isinstance(user_data, dict):
             profile_data = user_data.get('profile', user_data)
             if 'avatar' in profile_data:
-                avatar_value = profile_data.pop('avatar', None)  # intercept avatar
-                portfolio.avatar = avatar_value
-                portfolio.save(update_fields=['avatar'])
+                portfolio.avatar = profile_data.pop('avatar', None)
+            
+            portfolio.profile_name = profile_data.get('name')
+            portfolio.profile_title = profile_data.get('title')
+            portfolio.profile_location = profile_data.get('location')
+            portfolio.profile_bio = profile_data.get('bio')
+            portfolio.profile_email = profile_data.get('email')
+            portfolio.profile_phone = profile_data.get('phone')
+            portfolio.profile_resume_link = profile_data.get('resume_link')
+            
+            portfolio.profile_github = profile_data.get('github')
+            portfolio.profile_twitter = profile_data.get('twitter')
+            portfolio.profile_linkedin = profile_data.get('linkedin')
+            portfolio.profile_facebook = profile_data.get('facebook')
+            portfolio.profile_instagram = profile_data.get('instagram')
+            portfolio.profile_website = profile_data.get('website')
+            portfolio.profile_calendly = profile_data.get('calendly')
+            portfolio.save()
+        else:
+            # Pre-populate defaults from shared Profile so new portfolios are not blank
             try:
-                profile = portfolio_user.profile if portfolio_user else portfolio.user.profile
-                for attr, value in profile_data.items():
-                    setattr(profile, attr, value)
-                profile.save()
+                profile = portfolio_user.profile if portfolio_user else None
+                if profile:
+                    portfolio.profile_name = profile.name
+                    portfolio.profile_title = profile.title
+                    portfolio.profile_location = profile.location
+                    portfolio.profile_bio = profile.bio
+                    portfolio.profile_email = profile.email
+                    portfolio.profile_phone = profile.phone
+                    portfolio.avatar = profile.avatar
+                    portfolio.profile_resume_link = profile.resume_link
+                    portfolio.profile_github = profile.github
+                    portfolio.profile_twitter = profile.twitter
+                    portfolio.profile_linkedin = profile.linkedin
+                    portfolio.profile_facebook = profile.facebook
+                    portfolio.profile_instagram = profile.instagram
+                    portfolio.profile_website = profile.website
+                    portfolio.profile_calendly = profile.calendly
+                    portfolio.save()
             except Exception:
                 pass
         
@@ -178,33 +235,34 @@ class PortfolioSerializer(serializers.ModelSerializer):
         return portfolio
 
     def update(self, instance, validated_data):
-        # Discard any top-level 'avatar' the client sent.  After the first save
-        # the store keeps portfolio.avatar in its state and re-sends it on every
-        # subsequent save — but it's stale.  The authoritative source is always
-        # user.avatar (the field the editor writes to).  Without this pop the
-        # stale value would win and the newly-uploaded image would be discarded.
+        # Discard any top-level 'avatar' the client sent.
         validated_data.pop('avatar', None)
 
-        avatar_value = None  # will be set below from user.avatar if provided
         avatar_provided = False
+        avatar_value = None
         user_data = validated_data.pop('user', None)
         if user_data and isinstance(user_data, dict):
             profile_data = user_data.get('profile', user_data)
-            # Intercept avatar — it lives on Portfolio, not Profile
             if 'avatar' in profile_data:
                 avatar_provided = True
                 avatar_value = profile_data.pop('avatar', None)
-            try:
-                profile = instance.user.profile
-                changed_fields = []
-                for attr, value in profile_data.items():
-                    if hasattr(profile, attr):
-                        setattr(profile, attr, value)
-                        changed_fields.append(attr)
-                if changed_fields:
-                    profile.save(update_fields=changed_fields)
-            except Exception:
-                pass
+            
+            # Update the portfolio's specific profile override fields
+            if 'name' in profile_data: instance.profile_name = profile_data['name']
+            if 'title' in profile_data: instance.profile_title = profile_data['title']
+            if 'location' in profile_data: instance.profile_location = profile_data['location']
+            if 'bio' in profile_data: instance.profile_bio = profile_data['bio']
+            if 'email' in profile_data: instance.profile_email = profile_data['email']
+            if 'phone' in profile_data: instance.profile_phone = profile_data['phone']
+            if 'resume_link' in profile_data: instance.profile_resume_link = profile_data['resume_link']
+            
+            if 'github' in profile_data: instance.profile_github = profile_data['github']
+            if 'twitter' in profile_data: instance.profile_twitter = profile_data['twitter']
+            if 'linkedin' in profile_data: instance.profile_linkedin = profile_data['linkedin']
+            if 'facebook' in profile_data: instance.profile_facebook = profile_data['facebook']
+            if 'instagram' in profile_data: instance.profile_instagram = profile_data['instagram']
+            if 'website' in profile_data: instance.profile_website = profile_data['website']
+            if 'calendly' in profile_data: instance.profile_calendly = profile_data['calendly']
 
         # Track which flat fields actually changed to minimise the UPDATE statement
         flat_field_map = {
@@ -214,23 +272,32 @@ class PortfolioSerializer(serializers.ModelSerializer):
             'videos': 'videos', 'music': 'music', 'services': 'services',
             'languages': 'languages', 'volunteer': 'volunteer', 'awards': 'awards',
             'references': 'references', 'faqs': 'faqs',
+            'avatar': 'avatar', 'profile_name': 'profile_name', 'profile_title': 'profile_title',
+            'profile_location': 'profile_location', 'profile_bio': 'profile_bio',
+            'profile_email': 'profile_email', 'profile_phone': 'profile_phone',
+            'profile_resume_link': 'profile_resume_link', 'profile_github': 'profile_github',
+            'profile_twitter': 'profile_twitter', 'profile_linkedin': 'profile_linkedin',
+            'profile_facebook': 'profile_facebook', 'profile_instagram': 'profile_instagram',
+            'profile_website': 'profile_website', 'profile_calendly': 'profile_calendly'
         }
         changed_flat = []
         for vd_key, field_name in flat_field_map.items():
             if vd_key in validated_data:
                 setattr(instance, field_name, validated_data[vd_key])
                 changed_flat.append(field_name)
+            elif vd_key in ['avatar', 'profile_name', 'profile_title', 'profile_location', 'profile_bio',
+                            'profile_email', 'profile_phone', 'profile_resume_link', 'profile_github',
+                            'profile_twitter', 'profile_linkedin', 'profile_facebook', 'profile_instagram',
+                            'profile_website', 'profile_calendly']:
+                changed_flat.append(field_name)
 
-        # Always persist the avatar that came through user.avatar if it was provided.
-        # It is saved as part of the same UPDATE if other fields changed too,
-        # otherwise in its own minimal UPDATE so it's never silently skipped.
         if avatar_provided:
             instance.avatar = avatar_value
             if 'avatar' not in changed_flat:
                 changed_flat.append('avatar')
 
         if changed_flat:
-            instance.save(update_fields=changed_flat)
+            instance.save(update_fields=list(set(changed_flat)))
 
         # Optimised nested update: bulk delete + bulk_create in two queries per relation
         def update_nested(model, related_name, data):

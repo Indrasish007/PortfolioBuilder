@@ -100,22 +100,24 @@ export default function DashboardLayout() {
   const logout = useAuthStore((s) => s.logout);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 768);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [logoPopupOpen, setLogoPopupOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [isParsing, setIsParsing] = useState(false);
+  const [hasPendingCV, setHasPendingCV] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    setSidebarOpen(window.innerWidth >= 768);
+    setHasPendingCV(!!sessionStorage.getItem("pendingParsedCV"));
+    lastWidth.current = window.innerWidth;
   }, []);
-  const [isParsing, setIsParsing] = useState(false);
-  const [hasPendingCV, setHasPendingCV] = useState(
-    () => !!sessionStorage.getItem("pendingParsedCV")
-  );
+
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const lastWidth = useRef(window.innerWidth);
+  const lastWidth = useRef(1024);
   useEffect(() => {
     const handleResize = () => {
       const w = window.innerWidth;

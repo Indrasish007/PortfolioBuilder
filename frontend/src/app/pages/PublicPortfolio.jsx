@@ -3,6 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import api from "../services/api.js";
 import LivePortfolio from "../templates/LivePortfolio.jsx";
+import { usePortfolioSEO } from "../../hooks/usePortfolioSEO";
 
 // Derive the analytics beacon URL from the api instance's baseURL —
 // single source of truth, avoids the Vercel bug where a separate
@@ -14,7 +15,8 @@ function getAnalyticsUrl(portfolioId) {
 }
 
 export default function PublicPortfolio() {
-  const { idOrSlug } = useParams();
+  const { idOrSlug, username } = useParams();
+  const identifier = username || idOrSlug;
   const [searchParams] = useSearchParams();
   const [p, setP] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -22,12 +24,13 @@ export default function PublicPortfolio() {
   const hasTrackedGeo = useRef(false);
 
   useEffect(() => {
+    if (!identifier) return;
     async function fetchPortfolio() {
       try {
-        const isNumeric = /^\d+$/.test(idOrSlug);
+        const isNumeric = /^\d+$/.test(identifier);
         const res = isNumeric
-          ? await api.get(`/portfolios/public/${idOrSlug}/`)
-          : await api.get(`/portfolios/public/slug/${idOrSlug}/`);
+          ? await api.get(`/portfolios/public/${identifier}/`)
+          : await api.get(`/portfolios/public/slug/${identifier}/`);
         setP(res.data);
       } catch (err) {
         console.error("Failed to load portfolio:", err);
@@ -36,101 +39,23 @@ export default function PublicPortfolio() {
       }
     }
     fetchPortfolio();
-  }, [idOrSlug]);
+  }, [identifier]);
 
+  usePortfolioSEO(p?.seo ?? null);
+
+  // Manage robots index/noindex based on status and preview mode
   useEffect(() => {
     if (!p) return;
-
-    const u = p.user || {};
-    const name = u.name || "Portfolio Owner";
-    const titleText = u.title || "Developer";
-    const bioText = u.bio || "";
-    const skillsList = p.skills || [];
-    const skillsText = skillsList.map(s => typeof s === 'object' ? s.name : s).join(", ");
-    
-    // 1. Title
-    const pageTitle = `${name} | ${titleText} – PortfolioBuilder`;
-    document.title = pageTitle;
-
-    // Helper to get or create element
-    const getOrCreateMeta = (attrName, attrValue, nameVal, isProperty = false) => {
-      const selector = isProperty ? `meta[property="${nameVal}"]` : `meta[name="${nameVal}"]`;
-      let element = document.querySelector(selector);
-      if (!element) {
-        element = document.createElement("meta");
-        if (isProperty) {
-          element.setAttribute("property", nameVal);
-        } else {
-          element.setAttribute("name", nameVal);
-        }
-        document.head.appendChild(element);
-      }
-      element.setAttribute("content", attrValue);
-      return element;
-    };
-
-    // 2. Standard Meta Tags
-    const metaDescription = bioText.substring(0, 155) || `Portfolio of ${name}, a ${titleText}.`;
-    getOrCreateMeta("name", metaDescription, "description");
-    getOrCreateMeta("name", skillsText || `${titleText}, portfolio`, "keywords");
-    getOrCreateMeta("name", name, "author");
-    
     const isPublic = p.status === "Published" && !isPreview;
-    getOrCreateMeta("name", isPublic ? "index, follow" : "noindex, nofollow", "robots");
-
-    // 3. Open Graph Tags
-    const canonicalUrl = `${window.location.origin}/p/${p.slug || p.id}`;
-    const avatarUrl = u.avatar || "";
-    getOrCreateMeta("property", `${name} | ${titleText}`, "og:title", true);
-    getOrCreateMeta("property", metaDescription, "og:description", true);
-    getOrCreateMeta("property", avatarUrl, "og:image", true);
-    getOrCreateMeta("property", canonicalUrl, "og:url", true);
-    getOrCreateMeta("property", "website", "og:type", true);
-    getOrCreateMeta("property", "PortfolioBuilder", "og:site_name", true);
-
-    // 4. Twitter Card Tags
-    getOrCreateMeta("name", "summary_large_image", "twitter:card");
-    getOrCreateMeta("name", `${name} | ${titleText}`, "twitter:title");
-    getOrCreateMeta("name", `Check out my portfolio built with PortfolioBuilder.`, "twitter:description");
-    getOrCreateMeta("name", avatarUrl, "twitter:image");
-
-    // 5. Canonical Link
-    let canonicalLink = document.querySelector('link[rel="canonical"]');
-    if (!canonicalLink) {
-      canonicalLink = document.createElement("link");
-      canonicalLink.setAttribute("rel", "canonical");
-      document.head.appendChild(canonicalLink);
+    const robotsContent = isPublic ? "index, follow" : "noindex, nofollow";
+    
+    let el = document.querySelector('meta[name="robots"]');
+    if (!el) {
+      el = document.createElement('meta');
+      el.setAttribute('name', 'robots');
+      document.head.appendChild(el);
     }
-    canonicalLink.setAttribute("href", canonicalUrl);
-
-    // 6. JSON-LD Structured Data
-    let jsonLdScript = document.getElementById("portfolio-jsonld");
-    if (!jsonLdScript) {
-      jsonLdScript = document.createElement("script");
-      jsonLdScript.id = "portfolio-jsonld";
-      jsonLdScript.setAttribute("type", "application/ld+json");
-      document.head.appendChild(jsonLdScript);
-    }
-
-    const socials = [];
-    if (u.linkedin) socials.push(u.linkedin);
-    if (u.github) socials.push(u.github);
-    if (u.twitter) socials.push(u.twitter);
-    if (u.facebook) socials.push(u.facebook);
-    if (u.instagram) socials.push(u.instagram);
-
-    const schema = {
-      "@context": "https://schema.org",
-      "@type": "Person",
-      "name": name,
-      "url": canonicalUrl,
-      "image": avatarUrl,
-      "jobTitle": titleText,
-      "description": bioText.substring(0, 300),
-      "sameAs": socials,
-      "knowsAbout": skillsList.map(s => typeof s === 'object' ? s.name : s)
-    };
-    jsonLdScript.textContent = JSON.stringify(schema, null, 2);
+    el.setAttribute('content', robotsContent);
   }, [p, isPreview]);
 
   // ── View tracking ──────────────────────────────────────────────────────────

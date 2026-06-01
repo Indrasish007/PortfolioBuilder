@@ -4,7 +4,7 @@ from .views import (
     PortfolioViewSet, PublicPortfolioView, PublicPortfolioBySlugView,
     PublicPortfolioByDomainView, PublishPortfolioView, UnpublishPortfolioView,
     AnalyticsView, DashboardStatsView, PublicPortfolioListView, ProjectSetFeaturedView,
-    TrackProjectClickView, TrackVisitView
+    TrackProjectClickView, TrackVisitView, DynamicOGImageView, DynamicOGImageBySlugView
 )
 
 router = DefaultRouter()
@@ -14,7 +14,9 @@ urlpatterns = [
     # Public access — by id, slug or domain
     path('public/list/', PublicPortfolioListView.as_view(), name='public_portfolios_list'),
     path('public/<int:pk>/', PublicPortfolioView.as_view(), name='public_portfolio'),
+    path('public/<int:pk>/og/', DynamicOGImageView.as_view(), name='portfolio_og_image'),
     path('public/slug/<slug:slug>/', PublicPortfolioBySlugView.as_view(), name='public_portfolio_slug'),
+    path('public/slug/<slug:slug>/og/', DynamicOGImageBySlugView.as_view(), name='portfolio_og_image_slug'),
     path('public/domain/<path:domain>/', PublicPortfolioByDomainView.as_view(), name='public_portfolio_domain'),
     # Publish / unpublish actions (authenticated)
     path('<int:pk>/publish/', PublishPortfolioView.as_view(), name='publish_portfolio'),

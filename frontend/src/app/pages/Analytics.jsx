@@ -6,6 +6,7 @@ import {
   Eye, Users, Download, Globe,
   TrendingUp, RefreshCw, LayoutGrid, ChevronDown, ChevronUp,
   ExternalLink, BookOpen, Clock, CheckCircle2, Trophy, Github,
+  FileText, Send, Zap, Settings
 } from "lucide-react";
 import GlassCard from "../components/GlassCard.jsx";
 import Badge from "../components/Badge.jsx";
@@ -16,13 +17,7 @@ import BackButton from "../components/BackButton.jsx";
 import AIInsights from "../components/AIInsights.jsx";
 import TrafficSourcesChart from "../components/TrafficSourcesChart.jsx";
 
-
 const COUNTRY_COLORS = [
-  "#a78bfa", "#22d3ee", "#f472b6", "#34d399",
-  "#fb923c", "#60a5fa", "#e879f9", "#facc15",
-];
-
-const PORTFOLIO_ACCENT_COLORS = [
   "#a78bfa", "#22d3ee", "#f472b6", "#34d399",
   "#fb923c", "#60a5fa", "#e879f9", "#facc15",
 ];
@@ -40,9 +35,6 @@ const getFlagEmoji = (countryCode) => {
   }
 };
 
-/* ────────────────────────────────────────────────────────── */
-/* Format seconds → Xh Xm Xs                                  */
-/* ────────────────────────────────────────────────────────── */
 function formatViewTime(totalSeconds) {
   if (!totalSeconds || totalSeconds < 1) return "0s";
   const h = Math.floor(totalSeconds / 3600);
@@ -55,9 +47,6 @@ function formatViewTime(totalSeconds) {
   return parts.join(" ");
 }
 
-/* ────────────────────────────────────────────────────────── */
-/* Section heading component                                  */
-/* ────────────────────────────────────────────────────────── */
 function SectionHeading({ icon: Icon, title, subtitle, accentColor = "#a78bfa" }) {
   return (
     <div className="flex items-center gap-3 mb-4">
@@ -81,9 +70,6 @@ function SectionHeading({ icon: Icon, title, subtitle, accentColor = "#a78bfa" }
   );
 }
 
-/* ────────────────────────────────────────────────────── */
-/* Portfolio Score ring + suggestions                        */
-/* ────────────────────────────────────────────────────── */
 const SCORE_COLORS = {
   Weak:      "#f87171",
   Average:   "#fbbf24",
@@ -111,12 +97,10 @@ function PortfolioScorePanel({ scoreData, accent }) {
   const glow  = SCORE_GLOWS[label]  || "rgba(167,139,250,0.3)";
   const bg    = SCORE_BG[label]     || "rgba(167,139,250,0.08)";
 
-  // SVG ring params
   const R = 48;
   const STROKE = 7;
   const CIRC = 2 * Math.PI * R;
 
-  // Animate the ring on mount
   const [animScore, setAnimScore] = useState(0);
   useEffect(() => {
     const raf = requestAnimationFrame(() => {
@@ -129,14 +113,12 @@ function PortfolioScorePanel({ scoreData, accent }) {
   const perfect = score >= 100;
 
   const earned = scoreData.breakdown.filter(item => item.done);
-  const missing = scoreData.breakdown.filter(item => !item.done);
 
   return (
     <div
       className="rounded-2xl p-4 border"
       style={{ background: bg, borderColor: `${color}30` }}
     >
-      {/* Header */}
       <div className="flex items-center gap-2 mb-4">
         <div
           className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
@@ -149,9 +131,7 @@ function PortfolioScorePanel({ scoreData, accent }) {
         </span>
       </div>
 
-      {/* Ring + label row */}
       <div className="flex items-center gap-5 mb-5">
-        {/* SVG Ring */}
         <div className="relative flex-shrink-0">
           <svg width={112} height={112} className="-rotate-90">
             <circle cx={56} cy={56} r={R} fill="none" stroke={`${color}18`} strokeWidth={STROKE} />
@@ -177,7 +157,6 @@ function PortfolioScorePanel({ scoreData, accent }) {
           </div>
         </div>
 
-        {/* Label + totals */}
         <div className="flex-1 min-w-0">
           <span
             className="text-sm font-bold px-3 py-1.5 rounded-full inline-block mb-2"
@@ -196,79 +175,19 @@ function PortfolioScorePanel({ scoreData, accent }) {
         </div>
       </div>
 
-      {/* Perfect message */}
-      {perfect && (
-        <div
-          className="flex items-center gap-2 rounded-xl px-4 py-3 mb-4"
-          style={{ background: `${color}12`, border: `1px solid ${color}30` }}
-        >
-          <span className="text-lg">🎉</span>
-          <div>
-            <div className="text-sm font-bold" style={{ color }}>Perfect Score!</div>
-            <div className="text-xs text-muted-foreground mt-0.5">Your portfolio is complete!</div>
+      {suggestions && suggestions.length > 0 && (
+        <div className="border-t border-white/[0.04] pt-4 space-y-2">
+          <div className="text-xs text-muted-foreground font-bold uppercase tracking-wider">
+            Recommendations
           </div>
-        </div>
-      )}
-
-      {/* ── Points Earned ── */}
-      {earned.length > 0 && (
-        <div className="mb-4">
-          <div
-            className="text-[10px] font-bold uppercase tracking-wider mb-2 flex items-center gap-1.5"
-            style={{ color }}
-          >
-            <CheckCircle2 className="w-3 h-3" />
-            Points Earned
-          </div>
-          <div className="space-y-1.5">
-            {earned.map(item => (
-              <div
-                key={item.key}
-                className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs"
-                style={{ background: `${color}0d`, border: `1px solid ${color}25` }}
-              >
-                <span className="text-sm leading-none flex-shrink-0">{item.emoji}</span>
-                <span className="flex-1 font-medium leading-snug" style={{ color: "var(--foreground)" }}>
-                  {item.label}
-                </span>
-                <span
-                  className="font-bold tabular-nums flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded-full"
-                  style={{ background: `${color}25`, color }}
-                >
-                  +{item.earned}
-                </span>
-                <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" style={{ color }} />
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ── How to Reach 100 ── */}
-      {!perfect && missing.length > 0 && (
-        <div>
-          <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
-            How to reach 100
-          </div>
-          <div className="space-y-1.5">
-            {missing.map(item => (
-              <div
-                key={item.key}
-                className="flex items-start gap-2 rounded-lg px-3 py-2 text-xs"
-                style={{ background: "rgba(255,255,255,0.03)", border: "1px solid var(--border)" }}
-              >
-                <span className="text-sm leading-none mt-0.5 flex-shrink-0 opacity-50">{item.emoji}</span>
-                <span className="flex-1 text-muted-foreground leading-snug">
-                  {/* use the tip from suggestions for this key */}
-                  {scoreData.suggestions.find(s => s.emoji === item.emoji && s.pts === item.max)?.text
-                    || item.label}
-                </span>
-                <span
-                  className="font-bold tabular-nums flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded-full text-muted-foreground"
-                  style={{ background: "rgba(255,255,255,0.06)" }}
-                >
-                  +{item.max}
-                </span>
+          <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+            {suggestions.map((s, idx) => (
+              <div key={idx} className="flex gap-2.5 text-xs text-foreground/80 leading-relaxed">
+                <span className="text-sm">{s.emoji || "💡"}</span>
+                <div>
+                  <span className="text-[10px] text-indigo-400 font-bold mr-1.5">+{s.pts} pts</span>
+                  {s.text}
+                </div>
               </div>
             ))}
           </div>
@@ -278,250 +197,156 @@ function PortfolioScorePanel({ scoreData, accent }) {
   );
 }
 
-/* ────────────────────────────────────────────────────────── */
-/* Per-portfolio card                                         */
-/* ────────────────────────────────────────────────────────── */
 function PortfolioAnalyticsCard({ portfolio, index }) {
-  const [expanded, setExpanded] = useState(index === 0);
-  const accent = PORTFOLIO_ACCENT_COLORS[index % PORTFOLIO_ACCENT_COLORS.length];
-  const totalCountryViews = (portfolio.countries || []).reduce((s, c) => s + c.visits, 0);
-  const hasChartData = portfolio.views_chart && portfolio.views_chart.some(d => d.views > 0);
+  const [open, setOpen] = useState(false);
+  const accent = COUNTRY_COLORS[index % COUNTRY_COLORS.length];
 
-  const stats = [
-    { l: "Total views", v: (portfolio.views || 0).toLocaleString(), icon: Eye },
-    { l: "Visitors (14d)", v: (portfolio.visitors || 0).toLocaleString(), icon: Users },
-    { l: "Downloads (14d)", v: (portfolio.downloads || 0).toLocaleString(), icon: Download },
-    { l: "Countries", v: (portfolio.countries || []).filter(c => c.visits > 0).length.toString(), icon: Globe },
-    { l: "Total view time", v: formatViewTime(portfolio.total_view_time_seconds || 0), icon: Clock },
-  ];
-
-  const avgViewTime = portfolio.visit_count > 0
-    ? Math.round((portfolio.total_view_time_seconds || 0) / portfolio.visit_count)
-    : 0;
+  const totalTime = formatViewTime(portfolio.total_view_time_seconds || 0);
 
   return (
-    <GlassCard
-      className="overflow-hidden"
-      style={{ borderColor: `color-mix(in oklch, ${accent} 22%, transparent)` }}
-    >
-      {/* Card header — always visible */}
-      <button
-        id={`portfolio-analytics-toggle-${portfolio.id}`}
-        onClick={() => setExpanded(v => !v)}
-        className="w-full flex items-center gap-3 p-5 text-left hover:bg-white/[0.03] transition"
+    <GlassCard className="overflow-hidden border border-white/[0.05]">
+      <div
+        onClick={() => setOpen(!open)}
+        className="p-5 flex items-center justify-between gap-4 cursor-pointer hover:bg-white/[0.02] transition"
       >
-        {/* Accent dot */}
-        <div
-          className="w-3 h-3 rounded-full flex-shrink-0"
-          style={{ background: accent, boxShadow: `0 0 8px ${accent}80` }}
-        />
-
-        {/* Name + status */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-semibold text-sm truncate">{portfolio.name}</span>
-            <span
-              className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-              style={{
-                background: portfolio.status === "Published"
-                  ? "color-mix(in oklch, #34d399 18%, transparent)"
-                  : "color-mix(in oklch, #fb923c 18%, transparent)",
-                color: portfolio.status === "Published" ? "#34d399" : "#fb923c",
-              }}
-            >
-              {portfolio.status}
-            </span>
-          </div>
-          <div className="text-xs text-muted-foreground mt-0.5">
-            {(portfolio.views || 0).toLocaleString()} total views · {(portfolio.visitors || 0).toLocaleString()} visitors (14d)
-            {portfolio.total_view_time_seconds > 0 && (
-              <> · <Clock className="w-3 h-3 inline mx-0.5 opacity-70" />{formatViewTime(portfolio.total_view_time_seconds)} viewed</>
-            )}
-          </div>
-        </div>
-
-        {/* Quick stat pills */}
-        <div className="hidden sm:flex items-center gap-2">
-          <span
-            className="text-xs font-semibold px-2 py-0.5 rounded-lg"
-            style={{ background: `color-mix(in oklch, ${accent} 14%, transparent)`, color: accent }}
+        <div className="flex items-center gap-3.5 min-w-0">
+          <div
+            className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 text-lg"
+            style={{ background: `color-mix(in oklch, ${accent} 15%, transparent)` }}
           >
-            <Eye className="w-3 h-3 inline mr-1" />{(portfolio.views || 0).toLocaleString()} views
-          </span>
+            📂
+          </div>
+          <div className="min-w-0">
+            <h3 className="font-bold text-sm truncate">{portfolio.name}</h3>
+            <p className="text-[10px] text-muted-foreground mt-1 truncate">
+              slug: <span className="font-semibold text-foreground/90">{portfolio.slug}</span> &nbsp;·&nbsp; status:{" "}
+              <span className={`font-semibold ${portfolio.status === "Published" ? "text-emerald-400" : "text-amber-400"}`}>
+                {portfolio.status}
+              </span>
+            </p>
+          </div>
         </div>
 
-        {/* Chevron */}
-        <div className="text-muted-foreground flex-shrink-0">
-          {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        <div className="flex items-center gap-6 flex-shrink-0">
+          <div className="hidden sm:block text-center">
+            <span className="text-[10px] text-muted-foreground block">views</span>
+            <span className="font-bold tabular-nums text-sm">{portfolio.views}</span>
+          </div>
+          <div className="hidden sm:block text-center">
+            <span className="text-[10px] text-muted-foreground block">visitors</span>
+            <span className="font-bold tabular-nums text-sm">{portfolio.visitors}</span>
+          </div>
+          <div className="hidden sm:block text-center">
+            <span className="text-[10px] text-muted-foreground block">downloads</span>
+            <span className="font-bold tabular-nums text-sm">{portfolio.downloads}</span>
+          </div>
+          {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </div>
-      </button>
+      </div>
 
-      {/* Expanded content */}
-      {expanded && (
-        <div className="px-5 pb-5 space-y-5 border-t border-border/40">
-
-          {/* ── Portfolio Score ── */}
-          {portfolio.portfolio_score && (
-            <div className="pt-4">
-              <PortfolioScorePanel
-                scoreData={portfolio.portfolio_score}
-                accent={accent}
-              />
-            </div>
-          )}
-
-          {/* ── AI Insights ── */}
-          <div className="pt-2">
-            <AIInsights portfolioId={portfolio.id} />
-          </div>
-
-          {/* ── Traffic Sources ── */}
-          <div className="pt-2">
-            <TrafficSourcesChart portfolioId={portfolio.id} />
-          </div>
-
-          {/* Mini stat row */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 pt-4">
-            {stats.map(s => (
-              <div
-                key={s.l}
-                className="rounded-xl p-3"
-                style={{ background: `color-mix(in oklch, ${accent} 6%, var(--card))` }}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-[10px] text-muted-foreground uppercase tracking-wide">{s.l}</span>
-                  <s.icon className="w-3 h-3" style={{ color: accent }} />
-                </div>
-                <div className="text-lg font-bold">{s.v}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Average view time (if data exists) */}
-          {portfolio.visit_count > 0 && (
-            <div
-              className="flex items-center flex-wrap gap-3 rounded-xl px-4 py-3"
-              style={{ background: `color-mix(in oklch, ${accent} 6%, var(--card))` }}
-            >
-              <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                style={{ background: `color-mix(in oklch, ${accent} 18%, transparent)` }}
-              >
-                <Clock className="w-4 h-4" style={{ color: accent }} />
-              </div>
-              <div className="flex-1">
-                <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Avg. view time per visit</div>
-                <div className="text-sm font-bold mt-0.5">{formatViewTime(avgViewTime)}</div>
-              </div>
-              <div className="text-right">
-                <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Total time</div>
-                <div className="text-sm font-bold mt-0.5" style={{ color: accent }}>{formatViewTime(portfolio.total_view_time_seconds || 0)}</div>
-              </div>
-              <div className="text-right">
-                <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Sessions</div>
-                <div className="text-sm font-bold mt-0.5">{(portfolio.visit_count || 0).toLocaleString()}</div>
-              </div>
-            </div>
-          )}
-
-          {/* Views chart */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Views over 14 days</span>
-              {hasChartData
-                ? <Badge variant="glass">Live</Badge>
-                : <span className="text-xs text-muted-foreground">No data yet</span>
-              }
-            </div>
-            <div className="h-40">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={portfolio.views_chart}>
-                  <defs>
-                    <linearGradient id={`pg${portfolio.id}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={accent} stopOpacity={0.55} />
-                      <stop offset="100%" stopColor={accent} stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                  <XAxis dataKey="day" stroke="var(--muted-foreground)" tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} interval={2} />
-                  <YAxis stroke="var(--muted-foreground)" tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} allowDecimals={false} />
-                  <Tooltip
-                    contentStyle={{
-                      background: "var(--card)",
-                      border: "1px solid var(--border)",
-                      borderRadius: 10,
-                      color: "var(--foreground)",
-                    }}
-                    labelStyle={{ color: "var(--foreground)" }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="views"
-                    stroke={accent}
-                    strokeWidth={2}
-                    fill={`url(#pg${portfolio.id})`}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* Countries mini list */}
-          <div>
-            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Top Countries</div>
-            {(!portfolio.countries || portfolio.countries.length === 0) ? (
-              <p className="text-xs text-muted-foreground italic">No visits tracked yet. Share your portfolio!</p>
-            ) : (
-              <div className="space-y-1">
-                {portfolio.countries.filter(c => c.visits > 0).slice(0, 5).map((c) => (
-                  <div key={c.country} className="flex items-center justify-between text-xs py-1.5 border-b border-white/[0.02]">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-base leading-none flex-shrink-0">{getFlagEmoji(c.country_code)}</span>
-                      <span className="font-semibold truncate">{c.country}</span>
-                    </div>
-                    <span className="text-muted-foreground text-xs font-medium flex-shrink-0 tabular-nums">
-                      — {c.visits} {c.visits === 1 ? "visit" : "visits"}
-                    </span>
+      {open && (
+        <div className="p-5 border-t border-white/[0.04] space-y-6 bg-black/[0.1]">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <div className="space-y-4">
+              <PortfolioScorePanel scoreData={portfolio.portfolio_score} accent={accent} />
+              
+              <GlassCard className="p-4 space-y-3">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Session Statistics</h4>
+                <div className="grid grid-cols-2 gap-4 text-center">
+                  <div className="p-3 bg-white/[0.01] border border-white/[0.04] rounded-xl">
+                    <span className="text-[10px] text-muted-foreground block">Total sessions</span>
+                    <span className="text-lg font-bold tabular-nums">{portfolio.visit_count || 0}</span>
                   </div>
-                ))}
-              </div>
-            )}
+                  <div className="p-3 bg-white/[0.01] border border-white/[0.04] rounded-xl">
+                    <span className="text-[10px] text-muted-foreground block">Total view time</span>
+                    <span className="text-lg font-bold tabular-nums">{totalTime}</span>
+                  </div>
+                </div>
+              </GlassCard>
+            </div>
+
+            <div className="space-y-4">
+              <AIInsights portfolioId={portfolio.id} />
+              <TrafficSourcesChart portfolioId={portfolio.id} />
+            </div>
           </div>
 
-          {/* Portfolio link */}
-          {portfolio.status === "Published" && (
-            <div>
-              <a
-                href={`/p/${portfolio.slug}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-border/60 bg-card/30 hover:bg-accent/30 transition"
-                style={{ color: accent }}
-              >
-                <ExternalLink className="w-3 h-3" />
-                View live portfolio
-              </a>
-            </div>
-          )}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <GlassCard className="p-5">
+              <h4 className="font-bold text-sm mb-3">Visitors over time</h4>
+              <div className="h-60">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={portfolio.views_chart}>
+                    <defs>
+                      <linearGradient id={`grad-${portfolio.id}`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={accent} stopOpacity={0.4} />
+                        <stop offset="100%" stopColor={accent} stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <XAxis dataKey="day" stroke="var(--muted-foreground)" tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} />
+                    <YAxis stroke="var(--muted-foreground)" tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} allowDecimals={false} />
+                    <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 12 }} />
+                    <Area type="monotone" dataKey="views" stroke={accent} strokeWidth={2} fill={`url(#grad-${portfolio.id})`} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </GlassCard>
+
+            <GlassCard className="p-5">
+              <h4 className="font-bold text-sm mb-4">Audience by Country</h4>
+              {portfolio.countries && portfolio.countries.length > 0 ? (
+                <div className="space-y-3.5 max-h-60 overflow-y-auto pr-1">
+                  {portfolio.countries.map((c, i) => {
+                    const countryTotal = portfolio.countries.reduce((s, x) => s + x.visits, 0);
+                    const pct = Math.round((c.visits / countryTotal) * 100);
+                    return (
+                      <div key={c.country} className="space-y-1.5">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-semibold flex items-center gap-2">
+                            <span>{getFlagEmoji(c.country_code)}</span>
+                            {c.country}
+                          </span>
+                          <span className="text-muted-foreground">{c.visits} visits ({pct}%)</span>
+                        </div>
+                        <div className="h-1 bg-white/[0.04] rounded-full overflow-hidden">
+                          <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center text-xs text-muted-foreground py-12">
+                  🌍 Share your link to start gathering visitor geo locations!
+                </div>
+              )}
+            </GlassCard>
+          </div>
+
+          <div className="flex justify-end pt-2">
+            <a
+              href={`/u/${portfolio.slug || portfolio.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-4 py-2 border border-white/[0.06] hover:bg-white/[0.04] text-xs font-bold rounded-xl text-indigo-400 hover:text-indigo-300 transition"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              View live portfolio
+            </a>
+          </div>
         </div>
       )}
     </GlassCard>
   );
 }
 
-/* ────────────────────────────────────────────────────────── */
-/* Project Clicks Analytics Card                              */
-/* ────────────────────────────────────────────────────────── */
 function ProjectClicksAnalyticsCard({ projects }) {
   const [showAll, setShowAll] = useState(false);
-  if (!projects || projects.length === 0) {
-    return null;
-  }
+  if (!projects || projects.length === 0) return null;
 
-  // Find max click count to calculate progress bar percentages
   const maxClicks = Math.max(...projects.map(p => p.click_count), 0);
   const totalClicks = projects.reduce((sum, p) => sum + p.click_count, 0);
-
   const displayedProjects = showAll ? projects : projects.slice(0, 5);
 
   return (
@@ -560,7 +385,6 @@ function ProjectClicksAnalyticsCard({ projects }) {
                     {proj.project_title}
                   </span>
 
-                  {/* Project Links (GitHub / Live) */}
                   <div className="flex items-center gap-1 flex-shrink-0">
                     {proj.github && (
                       <a
@@ -586,7 +410,6 @@ function ProjectClicksAnalyticsCard({ projects }) {
                     )}
                   </div>
 
-                  {/* Clickable Portfolio Link Badge */}
                   <a
                     href={proj.portfolio_url}
                     target="_blank"
@@ -606,7 +429,6 @@ function ProjectClicksAnalyticsCard({ projects }) {
                 </div>
               </div>
 
-              {/* Progress bar */}
               <div className="h-2 rounded-full bg-white/[0.04] overflow-hidden border border-white/[0.02]">
                 <div
                   className="h-full rounded-full transition-all duration-1000 ease-out"
@@ -644,9 +466,6 @@ function ProjectClicksAnalyticsCard({ projects }) {
   );
 }
 
-/* ────────────────────────────────────────────────────────── */
-/* Main Analytics page                                        */
-/* ────────────────────────────────────────────────────────── */
 export default function Analytics() {
   const [data, setData] = useState(null);
   const [projectClicks, setProjectClicks] = useState([]);
@@ -663,7 +482,9 @@ export default function Analytics() {
         api.get(`/analytics/?t=${Date.now()}`),
         api.get(`/analytics/project-clicks-summary/`)
       ]);
-      setData(analyticsRes.data);
+      
+      const resData = analyticsRes.data;
+      setData(resData);
       setProjectClicks(projectClicksRes.data.projects || []);
       setLastUpdated(new Date());
     } catch (error) {
@@ -674,16 +495,19 @@ export default function Analytics() {
     }
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[40vh]">
       <div className="text-center space-y-3">
-        <div className="w-10 h-10 rounded-full border-2 border-brand border-t-transparent animate-spin mx-auto" />
-        <p className="text-sm text-muted-foreground">Loading analytics…</p>
+        <div className="w-10 h-10 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin mx-auto" />
+        <p className="text-sm text-muted-foreground">Loading analytics dashboard…</p>
       </div>
     </div>
   );
+
   if (!data) return (
     <div className="p-8 text-center space-y-4 max-w-md mx-auto">
       <BackButton />
@@ -695,178 +519,76 @@ export default function Analytics() {
   const perPortfolio = data.per_portfolio || [];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <BackButton />
-      {/* Featured project suggestions */}
+
       <FeaturedProjectSuggestion variant="analytics" />
 
-      {/* Page header */}
-      <div className="flex items-end justify-between flex-wrap gap-3">
+      {/* Dynamic Header */}
+      <div className="flex items-end justify-between flex-wrap gap-4 border-b border-white/[0.06] pb-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold">Analytics</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">Insights from your last 14 days.</p>
+          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">Portfolio Visitor Analytics</h1>
+          <p className="text-muted-foreground text-xs md:text-sm mt-1">Real-time visitor tracking, device statistics, geographical engagement, and project click insights.</p>
         </div>
-        <button
-          id="analytics-refresh-btn"
-          onClick={() => fetchData(true)}
-          disabled={refreshing}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border border-border/60 bg-card/40 hover:bg-accent/40 transition disabled:opacity-50"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
-          {lastUpdated ? `Updated ${lastUpdated.toLocaleTimeString()}` : "Refresh"}
-        </button>
       </div>
 
-      {/* ══════════════════════════════════════════════════════ */}
-      {/* SECTION 1 — Total Analytics                          */}
-      {/* ══════════════════════════════════════════════════════ */}
-      <section id="total-analytics-section">
-        <SectionHeading
-          icon={TrendingUp}
-          title="Total Analytics"
-          subtitle="Combined metrics across all your portfolios"
-          accentColor="#a78bfa"
-        />
+      {/* Tab Contents: Traffic & Conversions */}
+      <section className="space-y-6">
+        <SectionHeading icon={TrendingUp} title="Traffic & Conversions" subtitle="Direct, unique, and download conversion paths across all pages" />
+        
+        <ProjectClicksAnalyticsCard projects={projectClicks} />
+        
+        <TrafficSourcesChart total={true} />
 
-        <div className="space-y-5">
-          <ProjectClicksAnalyticsCard projects={projectClicks} />
-
-          <TrafficSourcesChart total={true} />
-
-          {/* Stat cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            {[
-              { l: "Total views", v: (data.total_views || 0).toLocaleString(), i: Eye, color: "#a78bfa" },
-              { l: "Unique visitors", v: (data.total_visitors || 0).toLocaleString(), i: Users, color: "#22d3ee" },
-              { l: "Resume downloads", v: (data.downloads || 0).toLocaleString(), i: Download, color: "#f472b6" },
-              { l: "Countries reached", v: data.countries.filter(c => c.visits > 0).length.toString(), i: Globe, color: "#34d399" },
-              { l: "Total view time", v: formatViewTime(data.total_view_time_seconds || 0), i: Clock, color: "#fb923c" },
-            ].map((s) => (
-              <GlassCard key={s.l} className="p-5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">{s.l}</span>
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: `color-mix(in oklch, ${s.color} 18%, transparent)` }}>
-                    <s.i className="w-3.5 h-3.5" style={{ color: s.color }} />
-                  </div>
-                </div>
-                <div className="text-2xl font-bold mt-2">{s.v}</div>
-                <div className="text-xs text-emerald-400 flex items-center gap-1 mt-1">
-                  <TrendingUp className="w-3 h-3" /> Live
-                </div>
-              </GlassCard>
-            ))}
-          </div>
-
-          {/* Views over time — combined */}
-          <GlassCard className="p-5">
-            <div className="flex items-center justify-between mb-4">
-              <div className="font-semibold">Views over time</div>
-              <Badge variant="glass">Last 14 days</Badge>
-            </div>
-            <div className="h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={data.views}>
-                  <defs>
-                    <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#a78bfa" stopOpacity={0.6} />
-                      <stop offset="100%" stopColor="#a78bfa" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                  <XAxis dataKey="day" stroke="var(--muted-foreground)" tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} />
-                  <YAxis stroke="var(--muted-foreground)" tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} allowDecimals={false} />
-                  <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 12, color: "var(--foreground)" }} labelStyle={{ color: "var(--foreground)" }} />
-                  <Area type="monotone" dataKey="views" stroke="#a78bfa" strokeWidth={2} fill="url(#g1)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </GlassCard>
-
-          {/* Visitors by Country — combined */}
-          <GlassCard className="p-5">
-            <div className="flex items-center justify-between mb-5">
-              <div>
-                <div className="font-semibold">Visitors by country</div>
-                <div className="text-xs text-muted-foreground mt-0.5">Total visits per country · last 14 days</div>
-              </div>
-              <Badge variant="glass">
-                {totalCountryViews > 0 ? `${totalCountryViews} total visits` : "No data yet"}
-              </Badge>
-            </div>
-
-            {totalCountryViews === 0 ? (
-              <div className="flex flex-col items-center justify-center py-10 gap-3">
-                <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl"
-                  style={{ background: "color-mix(in oklch, var(--brand) 12%, transparent)" }}>
-                  🌍
-                </div>
-                <div className="text-center">
-                  <div className="font-semibold text-sm">No visitors yet</div>
-                  <div className="text-xs text-muted-foreground mt-1 max-w-xs">
-                    Country data will appear here once someone views your published portfolio.
-                    Share your portfolio link to start collecting data.
-                  </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          {[
+            { l: "Total Views", v: (data.total_views || 0).toLocaleString(), i: Eye, color: "#a78bfa" },
+            { l: "Unique Visitors", v: (data.total_visitors || 0).toLocaleString(), i: Users, color: "#22d3ee" },
+            { l: "Resume Downloads", v: (data.downloads || 0).toLocaleString(), i: Download, color: "#f472b6" },
+            { l: "Countries Reached", v: data.countries.filter(c => c.visits > 0).length.toString(), i: Globe, color: "#34d399" },
+            { l: "Total View Time", v: formatViewTime(data.total_view_time_seconds || 0), i: Clock, color: "#fb923c" },
+          ].map((s) => (
+            <GlassCard key={s.l} className="p-5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">{s.l}</span>
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: `color-mix(in oklch, ${s.color} 18%, transparent)` }}>
+                  <s.i className="w-3.5 h-3.5" style={{ color: s.color }} />
                 </div>
               </div>
-            ) : (
-              <div className="space-y-4">
-                {data.countries.filter(c => c.visits > 0).map((c, i) => {
-                  const pct = Math.round((c.visits / totalCountryViews) * 100);
-                  const color = COUNTRY_COLORS[i % COUNTRY_COLORS.length];
-                  const isTop = i === 0;
-                  return (
-                    <div
-                      key={c.country}
-                      className={`${isTop ? "p-3 rounded-xl border" : ""}`}
-                      style={isTop ? {
-                        background: `color-mix(in oklch, ${color} 8%, var(--card))`,
-                        borderColor: `color-mix(in oklch, ${color} 25%, transparent)`,
-                      } : {}}
-                    >
-                      <div className="flex items-center gap-3 mb-2">
-                        <span className="text-xl leading-none w-7 text-center flex-shrink-0">{getFlagEmoji(c.country_code)}</span>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-sm font-semibold truncate">{c.country}</span>
-                            <div className="flex items-center gap-2 flex-shrink-0">
-                              {isTop && (
-                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                                  style={{ background: `color-mix(in oklch, ${color} 20%, transparent)`, color }}>
-                                  #1
-                                </span>
-                              )}
-                              <span className="text-xs text-muted-foreground tabular-nums">
-                                {c.visits} {c.visits === 1 ? "visit" : "visits"}
-                              </span>
-                              <span className="text-xs font-semibold tabular-nums w-9 text-right" style={{ color }}>
-                                {pct}%
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="h-1.5 rounded-full overflow-hidden ml-10"
-                        style={{ background: `color-mix(in oklch, ${color} 15%, transparent)` }}>
-                        <div className="h-full rounded-full"
-                          style={{
-                            width: `${pct}%`,
-                            background: color,
-                            transition: "width 0.8s cubic-bezier(.4,0,.2,1)",
-                          }} />
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="text-2xl font-bold mt-2">{s.v}</div>
+              <div className="text-xs text-emerald-400 flex items-center gap-1 mt-1">
+                <TrendingUp className="w-3 h-3" /> Live
               </div>
-            )}
-          </GlassCard>
+            </GlassCard>
+          ))}
         </div>
+
+        <GlassCard className="p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="font-semibold">Views over time</div>
+            <Badge variant="glass">Last 14 days</Badge>
+          </div>
+          <div className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={data.views}>
+                <defs>
+                  <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#a78bfa" stopOpacity={0.6} />
+                    <stop offset="100%" stopColor="#a78bfa" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                <XAxis dataKey="day" stroke="var(--muted-foreground)" tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} />
+                <YAxis stroke="var(--muted-foreground)" tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} allowDecimals={false} />
+                <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 12, color: "var(--foreground)" }} labelStyle={{ color: "var(--foreground)" }} />
+                <Area type="monotone" dataKey="views" stroke="#a78bfa" strokeWidth={2} fill="url(#g1)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </GlassCard>
       </section>
 
-      {/* ══════════════════════════════════════════════════════ */}
-      {/* SECTION 2 — Analytics One by One (per portfolio)     */}
-      {/* ══════════════════════════════════════════════════════ */}
-      <section id="per-portfolio-analytics-section">
+      <section id="per-portfolio-analytics-section" className="pt-4 border-t border-white/[0.04]">
         <SectionHeading
           icon={BookOpen}
           title="Analytics One by One"

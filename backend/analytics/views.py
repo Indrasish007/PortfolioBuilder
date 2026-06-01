@@ -114,14 +114,14 @@ def _score_portfolio(p) -> dict:
 
     checks = {
         "avatar":        bool(p.avatar or (profile and profile.avatar)),
-        "bio":           bool(profile and profile.bio and len((profile.bio or "").strip()) >= 50),
+        "bio":           bool(p.developer_bio and len((p.developer_bio or "").strip()) >= 50),
         "skills_3":      n_skills >= 3,
         "project_1":     n_projects >= 1,
         "projects_3":    n_projects >= 3,
         "project_image": any(proj.image for proj in projects),
         "project_live":  any(proj.live for proj in projects),
-        "email":         bool(profile and (profile.email or "").strip()),
-        "social":        bool(profile and ((profile.linkedin or "").strip() or (profile.github or "").strip())),
+        "email":         bool((p.developer_email or "").strip()),
+        "social":        bool((p.developer_linkedin or "").strip() or (p.developer_github or "").strip()),
         "theme":         p.theme not in ("", "Midnight", None),
         "viewed":        p.views >= 1,
     }
@@ -503,3 +503,71 @@ class TrafficSourcesTotalView(APIView):
             })
             
         return Response({'sources': results})
+
+
+from rest_framework.permissions import AllowAny
+from django.core.cache import cache
+from analytics.services.social import record_share_event, get_share_summary
+
+class SocialShareTrackView(APIView):
+    """
+    GET /api/analytics/track/{portfolio_id}/
+    Public endpoint to track dynamic platform sharing clicks.
+    Silently discards bot requests and applies cache-based IP rate limits.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request, portfolio_id, *args, **kwargs):
+        # 1. Fetch portfolio
+        try:
+            portfolio = Portfolio.objects.get(pk=portfolio_id)
+        except Portfolio.DoesNotExist:
+            return Response({'error': 'Portfolio not found'}, status=404)
+
+        # 2. Rate limiting check (max 10 requests per IP per portfolio per hour)
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        ip = x_forwarded_for.split(',')[0].strip() if x_forwarded_for else request.META.get('REMOTE_ADDR', '')
+        rate_key = f"rate_limit_share_{portfolio_id}_{ip}"
+        
+        req_count = cache.get(rate_key, 0)
+        if req_count >= 10:
+            return Response({'error': 'Too many share tracking requests. Please try again later.'}, status=429)
+        cache.set(rate_key, req_count + 1, 3600)  # 1 hour expiration
+
+        # 3. Record share event (filters bot inside service)
+        record_share_event(portfolio, request)
+        
+        return Response(status=204)
+
+
+class ShareSummaryView(APIView):
+    """
+    GET /api/analytics/shares/{portfolio_id}/
+    Returns platform-specific sharing click metrics aggregated for the last N days.
+    Owner-authenticated only.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, portfolio_id, *args, **kwargs):
+        # 1. Verify ownership
+        try:
+            portfolio = Portfolio.objects.get(pk=portfolio_id, user=request.user)
+        except Portfolio.DoesNotExist:
+            return Response({'error': 'Portfolio not found or permission denied'}, status=404)
+
+        # 2. Get period days from query params (default 30 days)
+        try:
+            days = int(request.query_params.get('days', 30))
+        except (ValueError, TypeError):
+            days = 30
+
+        # 3. Fetch summary
+        summary = get_share_summary(portfolio, days=days)
+        total = summary.pop('total', 0)
+
+        return Response({
+            'summary': summary,
+            'total': total,
+            'period_days': days
+        })
+

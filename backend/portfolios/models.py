@@ -31,6 +31,83 @@ class Portfolio(models.Model):
     # Storing it here ensures that changing the DP of one portfolio
     # never affects any other portfolio of the same user.
     avatar = models.TextField(blank=True, null=True)
+    custom_seo_title = models.CharField(max_length=70, blank=True, null=True)
+    custom_seo_description = models.CharField(max_length=160, blank=True, null=True)
+    custom_og_image = models.URLField(blank=True, null=True)
+
+    # Per-portfolio developer details — overrides the shared user Profile
+    profile_name = models.CharField(max_length=255, blank=True, null=True)
+    profile_title = models.CharField(max_length=255, blank=True, null=True)
+    profile_location = models.CharField(max_length=255, blank=True, null=True)
+    profile_bio = models.TextField(blank=True, null=True)
+    profile_email = models.EmailField(blank=True, null=True)
+    profile_phone = models.CharField(max_length=50, blank=True, null=True)
+    profile_resume_link = models.TextField(blank=True, null=True)
+    
+    # Social overrides
+    profile_github = models.URLField(max_length=500, blank=True, null=True)
+    profile_twitter = models.URLField(max_length=500, blank=True, null=True)
+    profile_linkedin = models.URLField(max_length=500, blank=True, null=True)
+    profile_facebook = models.URLField(max_length=500, blank=True, null=True)
+    profile_instagram = models.URLField(max_length=500, blank=True, null=True)
+    profile_website = models.URLField(max_length=500, blank=True, null=True)
+    profile_calendly = models.URLField(max_length=500, blank=True, null=True)
+
+    @property
+    def developer_name(self):
+        return self.profile_name or (self.user.profile.name if hasattr(self.user, 'profile') else "")
+
+    @property
+    def developer_title(self):
+        return self.profile_title or (self.user.profile.title if hasattr(self.user, 'profile') else "")
+
+    @property
+    def developer_location(self):
+        return self.profile_location or (self.user.profile.location if hasattr(self.user, 'profile') else "")
+
+    @property
+    def developer_bio(self):
+        return self.profile_bio or (self.user.profile.bio if hasattr(self.user, 'profile') else "")
+
+    @property
+    def developer_email(self):
+        return self.profile_email or (self.user.profile.email if hasattr(self.user, 'profile') else "")
+
+    @property
+    def developer_phone(self):
+        return self.profile_phone or (self.user.profile.phone if hasattr(self.user, 'profile') else "")
+
+    @property
+    def developer_resume_link(self):
+        return self.profile_resume_link or (self.user.profile.resume_link if hasattr(self.user, 'profile') else "")
+
+    @property
+    def developer_github(self):
+        return self.profile_github or (self.user.profile.github if hasattr(self.user, 'profile') else "")
+
+    @property
+    def developer_twitter(self):
+        return self.profile_twitter or (self.user.profile.twitter if hasattr(self.user, 'profile') else "")
+
+    @property
+    def developer_linkedin(self):
+        return self.profile_linkedin or (self.user.profile.linkedin if hasattr(self.user, 'profile') else "")
+
+    @property
+    def developer_facebook(self):
+        return self.profile_facebook or (self.user.profile.facebook if hasattr(self.user, 'profile') else "")
+
+    @property
+    def developer_instagram(self):
+        return self.profile_instagram or (self.user.profile.instagram if hasattr(self.user, 'profile') else "")
+
+    @property
+    def developer_website(self):
+        return self.profile_website or (self.user.profile.website if hasattr(self.user, 'profile') else "")
+
+    @property
+    def developer_calendly(self):
+        return self.profile_calendly or (self.user.profile.calendly if hasattr(self.user, 'profile') else "")
 
     def __str__(self):
         return f"{self.user.email} - {self.name}"
