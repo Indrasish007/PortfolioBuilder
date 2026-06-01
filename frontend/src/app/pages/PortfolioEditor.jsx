@@ -13,7 +13,6 @@ import LivePortfolio from "../templates/LivePortfolio.jsx";
 import { useToast } from "../context/ToasterContext.jsx";
 import { useAuthStore } from "../store/authStore.js";
 import api from "../services/api.js";
-import useAutoSave from "../hooks/useAutoSave.js";
 
 function FramePreview({ children, className, style }) {
   const [contentRef, setContentRef] = useState(null);
@@ -92,9 +91,7 @@ export default function PortfolioEditor() {
   // ── Draft restore banner ──────────────────────────────────────────────────
   const [draftBanner, setDraftBanner] = useState(null);
 
-  // ── Leave & Save modal ──────────────────────────────────────────────────
-  const [leaveModalOpen, setLeaveModalOpen] = useState(false);
-  const pendingNavRef = useRef(null);
+
 
   const defaultSections = ["About", "Skills", "Experience", "Projects", "Education", "Testimonials", "Contact"];
   const sections = portfolio?.sections || defaultSections;
@@ -113,10 +110,7 @@ export default function PortfolioEditor() {
   const projects = portfolio?.projects || [];
   const username = user.username || "preview";
 
-  // ── Auto-save via hook (ref-based, never stale) ──────────────────────────
-  const { saveStatus, triggerSave } = useAutoSave(
-    portfolio, template, themeName, savePortfolio, activeSection
-  );
+
 
   const handleSave = async () => {
     if (!portfolio?.id) {
@@ -519,63 +513,7 @@ export default function PortfolioEditor() {
       )}
     </AnimatePresence>
 
-    {/* ── Leave & Save modal ── */}
-    <AnimatePresence>
-      {leaveModalOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm"
-        >
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
-            transition={{ duration: 0.18 }}
-            className="glass rounded-2xl p-6 max-w-sm w-full mx-4 border border-border shadow-xl"
-          >
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5 text-amber-400" />
-              </div>
-              <div>
-                <div className="font-semibold">Unsaved changes</div>
-                <div className="text-xs text-muted-foreground">Your portfolio has edits that haven't been saved yet.</div>
-              </div>
-            </div>
-            <p className="text-sm text-muted-foreground mb-5">
-              Leave now? Your changes will be auto-saved before you go.
-            </p>
-            <div className="flex gap-2 justify-end">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  pendingNavRef.current = null;
-                  setLeaveModalOpen(false);
-                }}
-              >
-                Stay
-              </Button>
-              <Button
-                size="sm"
-                onClick={async () => {
-                  setLeaveModalOpen(false);
-                  await triggerSave();
-                  const dest = pendingNavRef.current;
-                  pendingNavRef.current = null;
-                  if (dest) navigate(dest);
-                }}
-              >
-                {saveStatus === "saving" ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Save className="w-3.5 h-3.5 mr-1" />}
-                Leave &amp; Save
-              </Button>
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+
 
     <AnimatePresence>
       {previewOpen && (
@@ -935,22 +873,7 @@ export default function PortfolioEditor() {
             {isLoading ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Save className="w-3 h-3 mr-1" />}
             Save
           </Button>
-          {/* Auto-save status indicator */}
-          {saveStatus !== "idle" && (
-            <span className={`text-[10px] font-medium flex items-center gap-1 px-2 py-0.5 rounded-full border transition-all ${
-              saveStatus === "saving" ? "text-amber-400 border-amber-500/20 bg-amber-500/8" :
-              saveStatus === "saved"  ? "text-emerald-400 border-emerald-500/20 bg-emerald-500/8" :
-                                       "text-red-400 border-red-500/20 bg-red-500/8"
-            }`}>
-              {saveStatus === "saving" && <Loader2 className="w-2.5 h-2.5 animate-spin" />}
-              {saveStatus === "saved"  && <Check className="w-2.5 h-2.5" />}
-              {saveStatus === "failed" && <AlertTriangle className="w-2.5 h-2.5" />}
-              {saveStatus === "saving" ? "Saving…" : saveStatus === "saved" ? "All changes saved" : "Save failed"}
-              {saveStatus === "failed" && (
-                <button onClick={() => triggerSave()} className="ml-1 underline">Retry</button>
-              )}
-            </span>
-          )}
+
           <div className="flex-1 flex items-center justify-center gap-1">
             {[
               { id: "desktop", i: Monitor }, { id: "tablet", i: Tablet }, { id: "mobile", i: Smartphone },

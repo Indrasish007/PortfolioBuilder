@@ -102,7 +102,7 @@ export default function Navbar() {
     >
       <div className="max-w-7xl mx-auto h-16 px-5 flex items-center justify-between">
         <Logo />
-        <nav className="hidden md:flex items-center gap-1">
+        <nav className="hidden md:flex items-center gap-4">
           <Link
             to="/"
             onClick={handleHomeClick}
@@ -132,10 +132,15 @@ export default function Navbar() {
             Contact Us
           </a>
         </nav>
-        <div className="hidden md:flex items-center gap-2">
+        <div className="hidden md:flex items-center gap-4">
           <ThemeToggle />
-          {user ? (
-            location.pathname !== "/" && <Button as={Link} to="/dashboard" size="sm">Dashboard</Button>
+          {location.pathname === "/" ? (
+            <>
+              {!user && <Button as={Link} to="/login" variant="ghost" size="sm">Log in</Button>}
+              <Button as={Link} to="/signup" size="sm">Get started</Button>
+            </>
+          ) : user ? (
+            <Button as={Link} to="/dashboard" size="sm">Dashboard</Button>
           ) : (
             <>
               <Button as={Link} to="/login" variant="ghost" size="sm">Log in</Button>
@@ -179,8 +184,13 @@ export default function Navbar() {
               Contact Us
             </a>
             <div className="flex gap-2 mt-2">
-              {user ? (
-                location.pathname !== "/" && <Button as={Link} to="/dashboard" size="sm" className="flex-1" onClick={() => setOpen(false)}>Dashboard</Button>
+              {location.pathname === "/" ? (
+                <>
+                  {!user && <Button as={Link} to="/login" variant="outline" size="sm" className="flex-1" onClick={() => setOpen(false)}>Log in</Button>}
+                  <Button as={Link} to="/signup" size="sm" className="flex-1" onClick={() => setOpen(false)}>Get started</Button>
+                </>
+              ) : user ? (
+                <Button as={Link} to="/dashboard" size="sm" className="flex-1" onClick={() => setOpen(false)}>Dashboard</Button>
               ) : (
                 <>
                   <Button as={Link} to="/login" variant="outline" size="sm" className="flex-1" onClick={() => setOpen(false)}>Log in</Button>

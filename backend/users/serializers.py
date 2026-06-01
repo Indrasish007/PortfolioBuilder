@@ -12,9 +12,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
     name       = serializers.CharField(source='profile.name',      required=False, allow_blank=True)
     phone      = serializers.CharField(source='profile.phone',     required=False, allow_blank=True)
     location   = serializers.CharField(source='profile.location',  required=False, allow_blank=True)
-    website    = serializers.URLField( source='profile.website',   required=False, allow_blank=True)
-    linkedin   = serializers.URLField( source='profile.linkedin',  required=False, allow_blank=True)
-    github     = serializers.URLField( source='profile.github',    required=False, allow_blank=True)
+    website    = serializers.CharField( source='profile.website',   required=False, allow_blank=True)
+    linkedin   = serializers.CharField( source='profile.linkedin',  required=False, allow_blank=True)
+    github     = serializers.CharField( source='profile.github',    required=False, allow_blank=True)
     avatar     = serializers.CharField(source='profile.avatar',    required=False, allow_blank=True)
     # Tracks the last portfolio the user was editing (cross-device persistence)
     last_edited_portfolio_id = serializers.IntegerField(

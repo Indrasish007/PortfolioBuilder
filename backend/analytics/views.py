@@ -450,11 +450,11 @@ class TrafficSourcesView(APIView):
             return Response({'error': 'Portfolio not found or permission denied'}, status=404)
 
         from portfolios.models import TrafficSource
-        sources = TrafficSource.objects.filter(portfolio=portfolio)
+        sources = TrafficSource.objects.filter(portfolio=portfolio).exclude(source='Referral')
         
         total_count = sum(s.visit_count for s in sources)
         
-        categories = ['Direct', 'Search', 'Social', 'Referral', 'Email']
+        categories = ['Direct', 'Search', 'Social', 'Email']
         source_map = {s.source: s.visit_count for s in sources}
         
         results = []
@@ -483,6 +483,7 @@ class TrafficSourcesTotalView(APIView):
         sources = (
             TrafficSource.objects
             .filter(portfolio__in=portfolios)
+            .exclude(source='Referral')
             .values('source')
             .annotate(total=Sum('visit_count'))
         )
@@ -490,7 +491,7 @@ class TrafficSourcesTotalView(APIView):
         source_map = {item['source']: item['total'] for item in sources}
         total_count = sum(source_map.values())
         
-        categories = ['Direct', 'Search', 'Social', 'Referral', 'Email']
+        categories = ['Direct', 'Search', 'Social', 'Email']
         results = []
         for cat in categories:
             count = source_map.get(cat, 0)

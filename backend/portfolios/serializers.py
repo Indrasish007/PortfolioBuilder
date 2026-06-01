@@ -43,7 +43,7 @@ class TestimonialSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'role', 'quote']
 
 class BlogSerializer(serializers.ModelSerializer):
-    url = serializers.URLField(required=False, allow_null=True, allow_blank=True)
+    url = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
     class Meta:
         model = Blog
@@ -55,13 +55,13 @@ class ProfileSerializer(serializers.ModelSerializer):
     # silently overwritten by the auth email.
     email = serializers.EmailField(required=False, allow_null=True, allow_blank=True)
     username = serializers.CharField(source='user.username', read_only=True)
-    github = serializers.URLField(required=False, allow_null=True, allow_blank=True)
-    twitter = serializers.URLField(required=False, allow_null=True, allow_blank=True)
-    linkedin = serializers.URLField(required=False, allow_null=True, allow_blank=True)
-    facebook = serializers.URLField(required=False, allow_null=True, allow_blank=True)
-    instagram = serializers.URLField(required=False, allow_null=True, allow_blank=True)
-    website = serializers.URLField(required=False, allow_null=True, allow_blank=True)
-    calendly = serializers.URLField(required=False, allow_null=True, allow_blank=True)
+    github = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    twitter = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    linkedin = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    facebook = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    instagram = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    website = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    calendly = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
     class Meta:
         model = Profile
@@ -145,9 +145,8 @@ class PortfolioSerializer(serializers.ModelSerializer):
         # per-portfolio and stored on the Portfolio row, not the Profile.
         if user_data and isinstance(user_data, dict):
             profile_data = user_data.get('profile', user_data)
-            avatar_value = profile_data.pop('avatar', None)  # intercept avatar
-            # Save the avatar on the Portfolio itself
-            if avatar_value is not None:
+            if 'avatar' in profile_data:
+                avatar_value = profile_data.pop('avatar', None)  # intercept avatar
                 portfolio.avatar = avatar_value
                 portfolio.save(update_fields=['avatar'])
             try:
@@ -184,11 +183,14 @@ class PortfolioSerializer(serializers.ModelSerializer):
         validated_data.pop('avatar', None)
 
         avatar_value = None  # will be set below from user.avatar if provided
+        avatar_provided = False
         user_data = validated_data.pop('user', None)
         if user_data and isinstance(user_data, dict):
             profile_data = user_data.get('profile', user_data)
             # Intercept avatar — it lives on Portfolio, not Profile
-            avatar_value = profile_data.pop('avatar', None)
+            if 'avatar' in profile_data:
+                avatar_provided = True
+                avatar_value = profile_data.pop('avatar', None)
             try:
                 profile = instance.user.profile
                 changed_fields = []
@@ -216,10 +218,10 @@ class PortfolioSerializer(serializers.ModelSerializer):
                 setattr(instance, field_name, validated_data[vd_key])
                 changed_flat.append(field_name)
 
-        # Always persist the avatar that came through user.avatar.
+        # Always persist the avatar that came through user.avatar if it was provided.
         # It is saved as part of the same UPDATE if other fields changed too,
         # otherwise in its own minimal UPDATE so it's never silently skipped.
-        if avatar_value is not None:
+        if avatar_provided:
             instance.avatar = avatar_value
             if 'avatar' not in changed_flat:
                 changed_flat.append('avatar')
