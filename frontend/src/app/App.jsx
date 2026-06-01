@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
-import { ThemeProvider } from "./context/ThemeContext.jsx";
+import { ThemeProvider, useTheme } from "./context/ThemeContext.jsx";
 import { ToasterProvider } from "./context/ToasterContext.jsx";
 import { OnboardingProvider } from "./context/OnboardingContext.jsx";
 import CursorGlow from "./components/CursorGlow.jsx";
@@ -53,6 +53,23 @@ function SEOManager() {
   return null;
 }
 
+function ThemeRouteManager() {
+  const location = useLocation();
+  const { theme } = useTheme();
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const isPublicRoute = location.pathname.startsWith("/p/") || location.pathname.startsWith("/u/");
+    if (theme === "dark" && !isPublicRoute) {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
+  }, [location.pathname, theme]);
+
+  return null;
+}
+
 import PublicLayout from "./layouts/PublicLayout.jsx";
 import AuthLayout from "./layouts/AuthLayout.jsx";
 import DashboardLayout from "./layouts/DashboardLayout.jsx";
@@ -85,6 +102,7 @@ export default function App() {
             <ScrollToTop />
             <CursorGlow />
             <SEOManager />
+            <ThemeRouteManager />
             <Routes>
               <Route element={<PublicLayout />}>
                 <Route path="/" element={<Landing />} />

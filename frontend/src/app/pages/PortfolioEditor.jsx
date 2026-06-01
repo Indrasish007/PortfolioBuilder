@@ -9,7 +9,8 @@ import Badge from "../components/Badge.jsx";
 import BackButton from "../components/BackButton.jsx";
 import { usePortfolioStore } from "../store/portfolioStore.js";
 import { templates, themes } from "../services/templates.js";
-import LivePortfolio from "../templates/LivePortfolio.jsx";
+import LivePortfolio, { TEMPLATE_PALETTE } from "../templates/LivePortfolio.jsx";
+import { TH } from "../templates/layouts/shared.jsx";
 import { useToast } from "../context/ToasterContext.jsx";
 import { useAuthStore } from "../store/authStore.js";
 import api from "../services/api.js";
@@ -18,7 +19,7 @@ import SEOScoreWidget from "../../components/settings/SEOScoreWidget.jsx";
 import SocialShareChart from "../../components/analytics/SocialShareChart.jsx";
 import ShareModal from "../components/ShareModal.jsx";
 
-function FramePreview({ children, className, style }) {
+function FramePreview({ children, className, style, bg, fg }) {
   const [contentRef, setContentRef] = useState(null);
   const mountNode = contentRef?.contentWindow?.document?.body;
   const headNode = contentRef?.contentWindow?.document?.head;
@@ -27,22 +28,32 @@ function FramePreview({ children, className, style }) {
     if (!headNode) return;
     const ownerDocument = headNode.ownerDocument;
     
-    // Copy stylesheets from parent document
-    const styles = document.querySelectorAll('style, link[rel="stylesheet"]');
-    styles.forEach((styleEl) => {
-      const clone = styleEl.cloneNode(true);
-      headNode.appendChild(clone);
-    });
+    // Copy stylesheets from parent document if not already copied
+    if (headNode.querySelectorAll('style, link[rel="stylesheet"]').length === 0) {
+      const styles = document.querySelectorAll('style, link[rel="stylesheet"]');
+      styles.forEach((styleEl) => {
+        const clone = styleEl.cloneNode(true);
+        headNode.appendChild(clone);
+      });
+    }
     
-    // Scoped body styles inside iframe
-    const styleBlock = ownerDocument.createElement('style');
+    // Find or create dynamic body style block
+    const styleKey = "iframe-dynamic-theme-style";
+    let styleBlock = headNode.querySelector(`#${styleKey}`);
+    if (!styleBlock) {
+      styleBlock = ownerDocument.createElement('style');
+      styleBlock.id = styleKey;
+      headNode.appendChild(styleBlock);
+    }
+    
     styleBlock.textContent = `
-      body {
+      html, body {
         margin: 0;
         padding: 0;
         min-height: 100vh;
         height: 100%;
-        background-color: transparent;
+        background-color: ${bg || "transparent"} !important;
+        color: ${fg || "inherit"} !important;
       }
       ::-webkit-scrollbar {
         width: 6px;
@@ -56,8 +67,7 @@ function FramePreview({ children, className, style }) {
         border-radius: 4px;
       }
     `;
-    headNode.appendChild(styleBlock);
-  }, [headNode]);
+  }, [headNode, bg, fg]);
 
   return (
     <iframe
@@ -81,6 +91,11 @@ export default function PortfolioEditor() {
     fetchPortfolio, resetPortfolio, savePortfolio, loadDraftData,
     isLoading,
   } = usePortfolioStore();
+
+  const nativePalette = TEMPLATE_PALETTE[template] || {};
+  const baseTheme = TH[themeName] || TH.midnight;
+  const bg = baseTheme.bg || nativePalette.bg || "#fafafa";
+  const fg = baseTheme.fg || nativePalette.fg || "#0a0a0a";
 
   const [device, setDevice] = useState("desktop");
   const [tab, setTab] = useState("content");
@@ -559,7 +574,7 @@ export default function PortfolioEditor() {
               transition={{ duration: 0.25 }}
               className="h-full w-full max-w-full bg-background shadow-2xl overflow-hidden"
             >
-              <FramePreview className="w-full h-full">
+              <FramePreview className="w-full h-full" bg={bg} fg={fg}>
                 <LivePortfolio portfolio={portfolio} template={template} themeName={themeName} />
               </FramePreview>
             </motion.div>
@@ -943,7 +958,7 @@ export default function PortfolioEditor() {
             transition={{ duration: 0.3 }}
             className="h-full w-full max-w-full rounded-xl border border-border bg-background shadow-card overflow-hidden"
           >
-            <FramePreview className="w-full h-full">
+            <FramePreview className="w-full h-full" bg={bg} fg={fg}>
               <LivePortfolio portfolio={portfolio} template={template} themeName={themeName} />
             </FramePreview>
           </motion.div>

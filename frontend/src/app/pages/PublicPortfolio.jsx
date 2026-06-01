@@ -2,7 +2,8 @@ import { useParams, Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import api from "../services/api.js";
-import LivePortfolio from "../templates/LivePortfolio.jsx";
+import LivePortfolio, { TEMPLATE_PALETTE } from "../templates/LivePortfolio.jsx";
+import { TH } from "../templates/layouts/shared.jsx";
 import { usePortfolioSEO } from "../../hooks/usePortfolioSEO";
 
 // Derive the analytics beacon URL from the api instance's baseURL —
@@ -261,8 +262,16 @@ export default function PublicPortfolio() {
     );
   }
 
+  // Get template-specific background/text color to prevent leakage from document body background
+  const chosenTemplate = p.template || "minimal";
+  const chosenTheme = p.theme || "midnight";
+  const nativePalette = TEMPLATE_PALETTE[chosenTemplate] || {};
+  const baseTheme = TH[chosenTheme] || TH.midnight;
+  const bg = baseTheme.bg || nativePalette.bg || "#fafafa";
+  const fg = baseTheme.fg || nativePalette.fg || "#0a0a0a";
+
   return (
-    <div style={{ position:"relative", minHeight:"100vh" }}>
+    <div style={{ position:"relative", minHeight:"100vh", backgroundColor: bg, color: fg }}>
       {/* Preview banner */}
       {isPreview && (
         <div style={{ position:"sticky", top:0, zIndex:50, display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 16px", height:44,
@@ -288,8 +297,8 @@ export default function PublicPortfolio() {
       {/* Template-aware rendering */}
       <LivePortfolio
         portfolio={p}
-        template={p.template || "minimal"}
-        themeName={p.theme || "midnight"}
+        template={chosenTemplate}
+        themeName={chosenTheme}
       />
     </div>
   );

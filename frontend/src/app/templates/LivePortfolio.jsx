@@ -48,7 +48,7 @@ const FAMILIES = {
 // Native colour palette for every template.
 // These override the generic TH theme so the live preview always matches
 // the template's identity the moment the user clicks it.
-const TEMPLATE_PALETTE = {
+export const TEMPLATE_PALETTE = {
   // ── Minimal family ─────────────────────────────────────────────────────
   minimal:       { bg: "#fafafa",  fg: "#0a0a0a",  ac: "#111111" },
   scandinavian:  { bg: "#f0f4f8",  fg: "#1e293b",  ac: "#0284c7" },
@@ -185,7 +185,53 @@ export default function LivePortfolio({ portfolio, template, themeName }) {
         height: "100%",
         minHeight: "100%",
         display: "flex",
-        flexDirection: "column"
+        flexDirection: "column",
+
+        // Fixed Template variables (Independent of global dark/light theme)
+        "--background": t.bg,
+        "--foreground": t.fg,
+        "--card": t.bg,
+        "--card-foreground": t.fg,
+        "--popover": t.bg,
+        "--popover-foreground": t.fg,
+        "--border": `${t.fg}15`,
+        "--input": `${t.fg}15`,
+        "--primary": t.ac,
+        "--primary-foreground": t.bg,
+        "--secondary": `${t.fg}10`,
+        "--secondary-foreground": t.fg,
+        "--muted": `${t.fg}10`,
+        "--muted-foreground": `${t.fg}70`,
+        "--accent": `${t.ac}15`,
+        "--accent-foreground": t.ac,
+        "--ring": t.ac,
+
+        // Tailwind utility colors mapping to fixed overrides
+        "--color-background": "var(--background)",
+        "--color-foreground": "var(--foreground)",
+        "--color-card": "var(--card)",
+        "--color-card-foreground": "var(--card-foreground)",
+        "--color-popover": "var(--popover)",
+        "--color-popover-foreground": "var(--popover-foreground)",
+        "--color-primary": "var(--primary)",
+        "--color-primary-foreground": "var(--primary-foreground)",
+        "--color-secondary": "var(--secondary)",
+        "--color-secondary-foreground": "var(--secondary-foreground)",
+        "--color-muted": "var(--muted)",
+        "--color-muted-foreground": "var(--muted-foreground)",
+        "--color-accent": "var(--accent)",
+        "--color-accent-foreground": "var(--accent-foreground)",
+        "--color-border": "var(--border)",
+        "--color-input": "var(--input)",
+        "--color-ring": "var(--ring)",
+
+        // Glassmorphism overrides
+        "--glass-bg": `color-mix(in srgb, ${t.bg} 70%, transparent)`,
+        "--glass-border": `color-mix(in srgb, ${t.fg} 12%, transparent)`,
+
+        // Brand variables
+        "--brand": t.ac,
+        "--color-brand": "var(--brand)",
       }}
     >
       {layoutContent}
