@@ -102,6 +102,8 @@ function PortfolioScorePanel({ scoreData, accent }) {
   const CIRC = 2 * Math.PI * R;
 
   const [animScore, setAnimScore] = useState(0);
+  const [showCriteria, setShowCriteria] = useState(false);
+
   useEffect(() => {
     const raf = requestAnimationFrame(() => {
       setTimeout(() => setAnimScore(score), 80);
@@ -131,7 +133,7 @@ function PortfolioScorePanel({ scoreData, accent }) {
         </span>
       </div>
 
-      <div className="flex items-center gap-5 mb-5">
+      <div className="flex items-center gap-5 mb-4">
         <div className="relative flex-shrink-0">
           <svg width={112} height={112} className="-rotate-90">
             <circle cx={56} cy={56} r={R} fill="none" stroke={`${color}18`} strokeWidth={STROKE} />
@@ -174,6 +176,57 @@ function PortfolioScorePanel({ scoreData, accent }) {
           </div>
         </div>
       </div>
+
+      {/* Checklist Toggle Button */}
+      <button
+        onClick={() => setShowCriteria(!showCriteria)}
+        className="w-full mb-4 text-xs font-semibold py-2 px-3 rounded-xl border hover:bg-white/[0.04] active:scale-[0.98] transition flex items-center justify-center gap-1.5 cursor-pointer"
+        style={{ color: color, borderColor: `${color}30` }}
+      >
+        {showCriteria ? (
+          <>Hide Score Checklist <ChevronUp className="w-3.5 h-3.5" /></>
+        ) : (
+          <>View Score Checklist <ChevronDown className="w-3.5 h-3.5" /></>
+        )}
+      </button>
+
+      {/* Collapsible 11 Criteria Checklist */}
+      {showCriteria && (
+        <div className="border-t border-white/[0.04] mb-4 pt-4 space-y-2">
+          <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mb-2">
+            Completeness Checklist ({scoreData.breakdown.length} Criteria)
+          </div>
+          <div className="space-y-2 max-h-60 overflow-y-auto pr-1 no-scrollbar">
+            {scoreData.breakdown.map((item) => (
+              <div
+                key={item.key}
+                className="flex items-center justify-between text-xs p-2 rounded-lg bg-white/[0.01] border border-white/[0.02] hover:bg-white/[0.02] transition"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  {item.done ? (
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                  ) : (
+                    <div className="w-3.5 h-3.5 rounded-full border border-muted-foreground/30 flex-shrink-0" />
+                  )}
+                  <span className="text-sm flex-shrink-0 leading-none">{item.emoji}</span>
+                  <span className={`truncate ${item.done ? "text-foreground font-medium" : "text-muted-foreground"}`}>
+                    {item.label}
+                  </span>
+                </div>
+                <span
+                  className="flex-shrink-0 font-mono font-bold text-[10px] px-1.5 py-0.5 rounded"
+                  style={{
+                    background: item.done ? `${color}22` : "rgba(255,255,255,0.04)",
+                    color: item.done ? color : "var(--muted-foreground)"
+                  }}
+                >
+                  {item.earned}/{item.max} pts
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {suggestions && suggestions.length > 0 && (
         <div className="border-t border-white/[0.04] pt-4 space-y-2">
@@ -536,11 +589,11 @@ export default function Analytics() {
         </div>
       </div>
 
+      <ProjectClicksAnalyticsCard projects={projectClicks} />
+
       {/* Tab Contents: Traffic & Conversions */}
       <section className="space-y-6">
         <SectionHeading icon={TrendingUp} title="Traffic & Conversions" subtitle="Direct, unique, and download conversion paths across all pages" />
-        
-        <ProjectClicksAnalyticsCard projects={projectClicks} />
         
         <TrafficSourcesChart total={true} />
 
