@@ -6,7 +6,7 @@ import {
   Github, Globe, Linkedin, Twitter, Instagram, X,
   Pencil, Plus, Trash2, Save, Calendar, Languages,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { templates, themes, templateCategories } from "../services/templates.js";
 import { usePortfolioStore } from "../store/portfolioStore.js";
 import { useToast } from "../context/ToasterContext.jsx";
@@ -118,20 +118,15 @@ export default function CVPreview() {
     return saved ? JSON.parse(saved) : null;
   })();
 
-  if (!rawCV) {
-    navigate("/dashboard", { replace: true });
-    return null;
-  }
-
   // ── Editable state ────────────────────────────────────────────────────────
   const [editData, setEditData] = useState(() => ({
     ...rawCV,
-    skills: rawCV.skills ? [...rawCV.skills] : [],
-    languages: rawCV.languages ? rawCV.languages.map((l) => ({ ...l })) : [],
-    social_links: rawCV.social_links ? rawCV.social_links.map((l) => ({ ...l })) : [],
-    experience: rawCV.experience ? rawCV.experience.map((e) => ({ ...e })) : [],
-    education: rawCV.education ? rawCV.education.map((e) => ({ ...e })) : [],
-    projects: rawCV.projects ? rawCV.projects.map((p) => ({ ...p, tech: p.tech ? [...p.tech] : [] })) : [],
+    skills: rawCV?.skills ? [...rawCV.skills] : [],
+    languages: rawCV?.languages ? rawCV.languages.map((l) => ({ ...l })) : [],
+    social_links: rawCV?.social_links ? rawCV.social_links.map((l) => ({ ...l })) : [],
+    experience: rawCV?.experience ? rawCV.experience.map((e) => ({ ...e })) : [],
+    education: rawCV?.education ? rawCV.education.map((e) => ({ ...e })) : [],
+    projects: rawCV?.projects ? rawCV.projects.map((p) => ({ ...p, tech: p.tech ? [...p.tech] : [] })) : [],
   }));
 
   const [editingSection, setEditingSection] = useState(null);
@@ -142,6 +137,17 @@ export default function CVPreview() {
   const [newSkill, setNewSkill] = useState("");
   const [newLangName, setNewLangName] = useState("");
   const [newLangProf, setNewLangProf] = useState("");
+
+  // Redirect to dashboard only if there is no pending CV and we are not currently importing/navigating to editor.
+  useEffect(() => {
+    if (!rawCV && !importing) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [rawCV, importing, navigate]);
+
+  if (!rawCV) {
+    return null;
+  }
 
   // ── Array helpers ─────────────────────────────────────────────────────────
   const updateExperience = (idx, field, value) =>
@@ -201,26 +207,24 @@ export default function CVPreview() {
       setTemplate(selectedTemplate);
       setThemeName(selectedTheme);
 
-      Promise.resolve().then(() => {
-        if (editData.full_name)   updateField("user.name",        editData.full_name);
-        if (editData.headline)    updateField("user.title",       editData.headline);
-        if (editData.bio)         updateField("user.bio",         editData.bio);
-        if (editData.email)       updateField("user.email",       editData.email);
-        if (editData.phone)       updateField("user.phone",       editData.phone);
-        if (editData.location)    updateField("user.location",    editData.location);
-        if (editData.resume_link) updateField("user.resume_link", editData.resume_link);
+      if (editData.full_name)   updateField("user.name",        editData.full_name);
+      if (editData.headline)    updateField("user.title",       editData.headline);
+      if (editData.bio)         updateField("user.bio",         editData.bio);
+      if (editData.email)       updateField("user.email",       editData.email);
+      if (editData.phone)       updateField("user.phone",       editData.phone);
+      if (editData.location)    updateField("user.location",    editData.location);
+      if (editData.resume_link) updateField("user.resume_link", editData.resume_link);
 
-        if (editData.social_links?.length > 0) {
-          editData.social_links.forEach(({ platform, url }) => {
-            if (platform && url) updateField(`user.social.${platform.toLowerCase()}`, url);
-          });
-        }
-        if (editData.skills?.length > 0)     updateField("skills",     editData.skills);
-        if (editData.experience?.length > 0) updateField("experience", editData.experience);
-        if (editData.education?.length > 0)  updateField("education",  editData.education);
-        if (editData.projects?.length > 0)   updateField("projects",   editData.projects);
-        if (editData.languages?.length > 0)  updateField("languages",  editData.languages);
-      });
+      if (editData.social_links?.length > 0) {
+        editData.social_links.forEach(({ platform, url }) => {
+          if (platform && url) updateField(`user.social.${platform.toLowerCase()}`, url);
+        });
+      }
+      if (editData.skills?.length > 0)     updateField("skills",     editData.skills);
+      if (editData.experience?.length > 0) updateField("experience", editData.experience);
+      if (editData.education?.length > 0)  updateField("education",  editData.education);
+      if (editData.projects?.length > 0)   updateField("projects",   editData.projects);
+      if (editData.languages?.length > 0)  updateField("languages",  editData.languages);
 
       toast({ title: "Imported!", description: "Your CV data has been loaded into the editor.", type: "success" });
       sessionStorage.removeItem("pendingParsedCV");

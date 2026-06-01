@@ -84,7 +84,6 @@ export default function Dashboard() {
       // Clear lastPortfolioId if the deleted portfolio was the last edited one
       if (deleteConfirm.includes(lastPortfolioId)) {
         localStorage.removeItem("lastEditedPortfolioId");
-        localStorage.removeItem("editorDraft");
       }
     } catch (err) {
       console.error("Delete failed:", err);
@@ -183,8 +182,6 @@ export default function Dashboard() {
             onChange={handleFileChange}
           />
           <Button onClick={() => {
-            // Button 1: always blank — clear draft + navigate with forceNew
-            localStorage.removeItem("editorDraft");
             localStorage.removeItem("lastEditedPortfolioId");
             navigate("/editor", { state: { forceNew: true } });
           }}>

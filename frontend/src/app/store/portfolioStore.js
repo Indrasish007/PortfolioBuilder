@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 import { defaultPortfolio } from "../services/mockPortfolio.js";
 import api from "../services/api";
 
@@ -16,9 +15,8 @@ const TEMPLATE_DEFAULT_THEME = {
 };
 
 export const usePortfolioStore = create(
-  persist(
-    (set, get) => ({
-      portfolio: defaultPortfolio,
+  (set, get) => ({
+    portfolio: defaultPortfolio,
       template: "developer",
       themeName: "midnight",
       history: [],
@@ -34,22 +32,13 @@ export const usePortfolioStore = create(
           future: [],
         }),
 
-      // Load a draft directly into the store without touching the API.
-      // Used to restore an unsaved new portfolio from localStorage.
-      loadDraftData: (draftData, draftTemplate, draftThemeName) =>
-        set({
-          portfolio: { ...defaultPortfolio, ...draftData },
-          template:  draftTemplate  || "developer",
-          themeName: draftThemeName || "midnight",
-          history: [],
-          future: [],
-        }),
-
       fetchPortfolio: async (id) => {
+        if (!id || id === "null" || id === "undefined") {
+          return null;
+        }
         set({ isLoading: true });
         try {
-          const url = id ? `/portfolios/${id}/` : "/portfolios/";
-          const response = await api.get(url);
+          const response = await api.get(`/portfolios/${id}/`);
           let data = response.data;
 
           if (Array.isArray(data)) {
@@ -189,15 +178,5 @@ export const usePortfolioStore = create(
         const cur = { portfolio: get().portfolio, template: get().template, themeName: get().themeName };
         set({ ...next, future: f.slice(0, -1), history: [...get().history, cur] });
       },
-    }),
-    {
-      name: "pb-editor-draft",
-      // Only persist the core editor content — not loading state or history
-      partialize: (state) => ({
-        portfolio: state.portfolio,
-        template:  state.template,
-        themeName: state.themeName,
-      }),
-    }
-  )
+  })
 );

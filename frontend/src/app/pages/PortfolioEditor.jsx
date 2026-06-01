@@ -108,8 +108,7 @@ export default function PortfolioEditor() {
   const authUser = useAuthStore((s) => s.user) || {};
   const [portfolioName, setPortfolioName] = useState("");
 
-  // ── Draft restore banner ──────────────────────────────────────────────────
-  const [draftBanner, setDraftBanner] = useState(null);
+
 
 
 
@@ -217,19 +216,16 @@ export default function PortfolioEditor() {
   useEffect(() => {
 
     // ── Case 0: forceNew — "Create New" / "New Portfolio" buttons ────────────
-    // Always opens a completely blank editor. Never restores anything.
     if (location.state?.forceNew) {
       resetPortfolio();
-      // Draft was already cleared by the button handler before navigating
       return;
     }
 
     // ── Case 1: /editor/:id ─────────────────────────────────────────────────
-    if (id) {
+    if (id && id !== "null" && id !== "undefined") {
       fetchPortfolio(id).then((data) => {
         if (!data) {
           localStorage.removeItem("lastEditedPortfolioId");
-          localStorage.removeItem("editorDraft");
           navigate("/editor", { replace: true });
           toast({ title: "Portfolio not found", description: "Starting with a fresh editor.", type: "error" });
           return;
@@ -238,21 +234,6 @@ export default function PortfolioEditor() {
         // Record as last-edited
         localStorage.setItem("lastEditedPortfolioId", String(data.id));
         api.post("/users/last-edited/", { portfolio_id: data.id }).catch(() => {});
-
-        // Check if localStorage draft is newer than DB (unsaved changes)
-        try {
-          const rawDraft = localStorage.getItem("editorDraft");
-          if (rawDraft) {
-            const draft = JSON.parse(rawDraft);
-            if (draft.portfolioId === data.id && draft.savedAt && draft.data) {
-              const draftTime = new Date(draft.savedAt).getTime();
-              const dbTime = data.updated_at ? new Date(data.updated_at).getTime() : 0;
-              if (draftTime > dbTime + 5000) {
-                setDraftBanner({ localDraft: draft });
-              }
-            }
-          }
-        } catch { /* ignore */ }
       });
       return;
     }
@@ -291,55 +272,9 @@ export default function PortfolioEditor() {
       return;
     }
 
-    // ── Case 4: Editor sidebar button — smart restore ────────────────────
-    // Priority 1: localStorage draft (covers both new-unsaved AND existing-unsaved)
-    // Priority 2: Last saved portfolio from DB
-    // Priority 3: Fresh blank editor
+    // Default Fallback: Fresh blank editor
     if (!location.state?.fromCVImport && !location.state?.fromOnboarding) {
-      const openSmartRestore = async () => {
-
-        // ── Priority 1: Check localStorage draft ─────────────────────────
-        try {
-          const rawDraft = localStorage.getItem("editorDraft");
-          if (rawDraft) {
-            const draft = JSON.parse(rawDraft);
-
-            if (draft.isNewUnsaved && draft.data) {
-              // User was editing a brand-new portfolio that was never saved
-              loadDraftData(draft.data, draft.template, draft.themeName);
-              return;
-            }
-
-            if (draft.portfolioId && draft.data) {
-              // User was editing an existing portfolio with unsaved local changes
-              // Navigate to that portfolio — the draft banner will offer to restore
-              navigate(`/editor/${draft.portfolioId}`, { replace: true });
-              return;
-            }
-          }
-        } catch { /* ignore malformed draft */ }
-
-        // ── Priority 2: Last edited portfolio from DB ────────────────────
-        try {
-          const res = await api.get("/users/last-edited/");
-          const portfolioId = res.data?.portfolio_id;
-          if (portfolioId) {
-            navigate(`/editor/${portfolioId}`, { replace: true });
-            return;
-          }
-        } catch { /* fall through */ }
-
-        // Fallback: localStorage ID (offline / DB unreachable)
-        const localId = localStorage.getItem("lastEditedPortfolioId");
-        if (localId) {
-          navigate(`/editor/${localId}`, { replace: true });
-          return;
-        }
-
-        // ── Priority 3: Fresh blank editor ──────────────────────────────
-        resetPortfolio();
-      };
-      openSmartRestore();
+      resetPortfolio();
     }
   }, [id, location.state]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -586,54 +521,7 @@ export default function PortfolioEditor() {
       <div className="flex flex-col gap-3 min-h-0 overflow-y-auto">
         <BackButton fallback="/dashboard" className="mb-0 w-max" />
 
-        {/* ── Draft restore banner ── */}
-        <AnimatePresence>
-          {draftBanner && (
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              className="flex items-start gap-3 px-3 py-2.5 rounded-xl border text-sm"
-              style={{ background: "color-mix(in oklch, var(--brand) 8%, var(--card))", borderColor: "color-mix(in oklch, var(--brand) 30%, transparent)" }}
-            >
-              <RefreshCw className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: "var(--brand)" }} />
-              <div className="flex-1 min-w-0">
-                <span className="font-semibold text-xs" style={{ color: "var(--brand)" }}>Unsaved changes found</span>
-                <span className="text-xs text-muted-foreground ml-1.5">We found local changes newer than the last saved version.</span>
-                <div className="flex gap-2 mt-2">
-                  <button
-                    onClick={() => {
-                      const d = draftBanner.localDraft;
-                      if (d.data) {
-                        Object.entries({ portfolio: d.data, template: d.template || template, themeName: d.themeName || themeName })
-                          .forEach(([, v]) => {});
-                        // Restore by manually setting store fields
-                        if (d.data.user?.name) updateField("user.name", d.data.user.name);
-                        Object.keys(d.data).forEach((k) => {
-                          if (k !== "user") updateField(k, d.data[k]);
-                        });
-                      }
-                      setDraftBanner(null);
-                    }}
-                    className="text-[11px] px-2.5 py-1 rounded-lg font-bold text-white transition hover:brightness-110"
-                    style={{ background: "linear-gradient(135deg, var(--brand), var(--brand-2))" }}
-                  >
-                    Restore
-                  </button>
-                  <button
-                    onClick={() => { localStorage.removeItem("editorDraft"); setDraftBanner(null); }}
-                    className="text-[11px] px-2.5 py-1 rounded-lg border border-border/60 text-muted-foreground hover:text-foreground hover:bg-accent/40 transition"
-                  >
-                    Discard
-                  </button>
-                </div>
-              </div>
-              <button onClick={() => setDraftBanner(null)} className="text-muted-foreground hover:text-foreground transition flex-shrink-0">
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
+
 
         {/* Portfolio name title */}
         {(portfolio?.name || portfolio?.id) && (

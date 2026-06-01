@@ -32,27 +32,7 @@ function EditorNavLink({ onClick }) {
     e.preventDefault();
     onClick?.();
 
-    // Priority 1: localStorage draft
-    try {
-      const rawDraft = localStorage.getItem("editorDraft");
-      if (rawDraft) {
-        const draft = JSON.parse(rawDraft);
-
-        if (draft.isNewUnsaved && draft.data) {
-          // Was editing a new unsaved portfolio — restore it
-          navigate("/editor", { state: { _smartRestore: true } });
-          return;
-        }
-
-        if (draft.portfolioId && draft.data) {
-          // Was editing an existing portfolio — go there (draft banner will restore)
-          navigate(`/editor/${draft.portfolioId}`);
-          return;
-        }
-      }
-    } catch { /* ignore */ }
-
-    // Priority 2: Last edited from DB
+    // Priority 1: Last edited from DB
     try {
       const res = await fetch("/api/users/last-edited/", {
         headers: {
@@ -71,13 +51,13 @@ function EditorNavLink({ onClick }) {
 
     // Fallback: localStorage ID
     const localId = localStorage.getItem("lastEditedPortfolioId");
-    if (localId) {
+    if (localId && localId !== "undefined" && localId !== "null") {
       navigate(`/editor/${localId}`);
       return;
     }
 
-    // Priority 3: Fresh editor (no draft, no last edited)
-    navigate("/editor", { state: { _smartRestore: true } });
+    // Priority 2: Fresh editor
+    navigate("/editor");
   };
 
   return (
@@ -463,8 +443,6 @@ export default function DashboardLayout() {
                 size="sm"
                 className="hidden sm:inline-flex"
                 onClick={() => {
-                  // Button 2: always blank — clear draft + navigate with forceNew
-                  localStorage.removeItem("editorDraft");
                   localStorage.removeItem("lastEditedPortfolioId");
                   navigate("/editor", { state: { forceNew: true } });
                 }}
@@ -476,8 +454,6 @@ export default function DashboardLayout() {
                 size="sm"
                 className="sm:hidden inline-flex w-9 h-9 items-center justify-center p-0"
                 onClick={() => {
-                  // Button 2: always blank — clear draft + navigate with forceNew
-                  localStorage.removeItem("editorDraft");
                   localStorage.removeItem("lastEditedPortfolioId");
                   navigate("/editor", { state: { forceNew: true } });
                 }}
