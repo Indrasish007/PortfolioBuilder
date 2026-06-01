@@ -131,7 +131,8 @@ export default function PortfolioEditor() {
         api.post("/users/last-edited/", { portfolio_id: newId }).catch(() => {});
         navigate(`/editor/${newId}`, { replace: true });
       }
-    } catch {
+    } catch (err) {
+      console.error("Save failed:", err);
       toast({ title: "Save failed", description: "Something went wrong. Please try again.", type: "error" });
     }
   };

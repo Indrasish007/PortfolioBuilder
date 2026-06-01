@@ -18,6 +18,9 @@ class EducationSerializer(serializers.ModelSerializer):
         fields = ['id', 'school', 'degree', 'period']
 
 class ProjectSerializer(serializers.ModelSerializer):
+    github = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    live = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+
     class Meta:
         model = Project
         fields = ['id', 'title', 'description', 'tech', 'github', 'live', 'featured', 'image']
