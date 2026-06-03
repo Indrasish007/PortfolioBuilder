@@ -30,10 +30,15 @@ class ProjectSerializer(serializers.ModelSerializer):
         if data:
             data = dict(data)
             for field in ['github', 'live']:
-                if field in data and data[field]:
-                    val = str(data[field]).strip()
-                    if val and not val.startswith(('http://', 'https://')):
-                        data[field] = f'https://{val}'
+                if field in data:
+                    val = data[field]
+                    if val is None or val == '':
+                        # CharField(null=True) — store None instead of empty string
+                        data[field] = None
+                    else:
+                        val = str(val).strip()
+                        if val and not val.startswith(('http://', 'https://')):
+                            data[field] = f'https://{val}'
         return super().to_internal_value(data)
 
 class CertificationSerializer(serializers.ModelSerializer):
@@ -52,6 +57,18 @@ class BlogSerializer(serializers.ModelSerializer):
     class Meta:
         model = Blog
         fields = ['id', 'title', 'date', 'dateRaw', 'excerpt', 'url']
+
+    def to_internal_value(self, data):
+        if data:
+            data = dict(data)
+            if 'url' in data:
+                val = data['url']
+                if val is None or val == '':
+                    # URLField(null=True) rejects empty strings — convert to None
+                    data['url'] = None
+                elif isinstance(val, str) and val.strip() and not val.strip().startswith(('http://', 'https://')):
+                    data['url'] = f'https://{val.strip()}'
+        return super().to_internal_value(data)
 
 class ProfileSerializer(serializers.ModelSerializer):
     # `email` is stored on the Profile model itself — NOT sourced from user.email (the auth/sign-in email).
@@ -79,10 +96,15 @@ class ProfileSerializer(serializers.ModelSerializer):
             data = dict(data)
             url_fields = ['github', 'twitter', 'linkedin', 'facebook', 'instagram', 'website', 'calendly', 'resume_link']
             for field in url_fields:
-                if field in data and data[field]:
-                    val = str(data[field]).strip()
-                    if val and not val.startswith(('http://', 'https://', 'data:')):
-                        data[field] = f'https://{val}'
+                if field in data:
+                    val = data[field]
+                    if val is None or val == '':
+                        # URLField(null=True) rejects empty strings — convert to None
+                        data[field] = None
+                    else:
+                        val = str(val).strip()
+                        if val and not val.startswith(('http://', 'https://', 'data:')):
+                            data[field] = f'https://{val}'
         return super().to_internal_value(data)
 
 class PortfolioSerializer(serializers.ModelSerializer):

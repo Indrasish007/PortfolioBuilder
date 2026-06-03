@@ -152,7 +152,18 @@ export default function PortfolioEditor() {
       }
     } catch (err) {
       console.error("Save failed:", err);
-      toast({ title: "Save failed", description: "Something went wrong. Please try again.", type: "error" });
+      // Log server-side validation errors (DRF returns them in err.response.data)
+      if (err?.response?.data) {
+        console.error("Server validation errors:", JSON.stringify(err.response.data, null, 2));
+      }
+      const serverMsg = err?.response?.data
+        ? Object.entries(err.response.data).map(([k, v]) => `${k}: ${Array.isArray(v) ? v[0] : v}`).join('; ')
+        : null;
+      toast({
+        title: "Save failed",
+        description: serverMsg || "Something went wrong. Please try again.",
+        type: "error",
+      });
     }
   };
 
