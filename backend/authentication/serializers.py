@@ -17,7 +17,11 @@ class UserSerializer(serializers.ModelSerializer):
             last_name=validated_data.get('last_name', '')
         )
         # Create an empty profile automatically
-        Profile.objects.create(user=user, name=user.first_name)
+        try:
+            Profile.objects.create(user=user, name=user.first_name)
+        except Exception as profile_err:
+            import sys
+            print(f"Non-critical profile creation error during signup: {profile_err}", file=sys.stderr)
         return user
 
 class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):

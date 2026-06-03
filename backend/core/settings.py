@@ -122,6 +122,8 @@ DATABASES = {
 database_url = os.environ.get("DATABASE_URL")
 if database_url:
     DATABASES["default"] = dj_database_url.parse(database_url)
+    DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = True
+
 
 
 # Password validation
@@ -184,8 +186,16 @@ if _cors_env:
     CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors_env.split(',') if o.strip()]
     CORS_ALLOW_ALL_ORIGINS = False
 else:
-    # Development fallback or wildcard — allow all origins
-    CORS_ALLOW_ALL_ORIGINS = True
+    # Production fallback
+    CORS_ALLOWED_ORIGINS = [
+        "https://buildyourfolio.vercel.app"
+    ]
+    if DEBUG:
+        CORS_ALLOW_ALL_ORIGINS = True
+    else:
+        CORS_ALLOW_ALL_ORIGINS = False
+
+CSRF_TRUSTED_ORIGINS = list(CORS_ALLOWED_ORIGINS)
 
 CORS_ALLOW_CREDENTIALS = True
 
