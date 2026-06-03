@@ -1,5 +1,5 @@
-import { useParams, Link, useSearchParams } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { useParams, Link, useSearchParams, useNavigate } from "react-router-dom";
+import { ArrowLeft, X } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import api from "../services/api.js";
 import LivePortfolio, { TEMPLATE_PALETTE } from "../templates/LivePortfolio.jsx";
@@ -19,6 +19,7 @@ export default function PublicPortfolio() {
   const { idOrSlug, username } = useParams();
   const identifier = username || idOrSlug;
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [p, setP] = useState(null);
   const [loading, setLoading] = useState(true);
   const isPreview = searchParams.get("back") === "1";
@@ -276,9 +277,32 @@ export default function PublicPortfolio() {
       {isPreview && (
         <div style={{ position:"sticky", top:0, zIndex:50, display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 16px", height:44,
           background:"rgba(124,58,237,0.12)", borderBottom:"1px solid rgba(124,58,237,0.3)", backdropFilter:"blur(8px)" }}>
-          <Link to="/editor" style={{ display:"inline-flex", alignItems:"center", gap:6, fontSize:13, fontWeight:600, color:"inherit", textDecoration:"none" }}>
-            <ArrowLeft size={15}/> Back to Editor
-          </Link>
+          <button
+            onClick={() => {
+              if (window.opener || window.history.length <= 1) {
+                window.close();
+              } else {
+                navigate(p?.id ? `/editor/${p.id}` : "/editor");
+              }
+            }}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              fontSize: 13,
+              fontWeight: 600,
+              color: "inherit",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: 0,
+              transition: "opacity 0.2s",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.75")}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+          >
+            <X size={15}/> Close Preview
+          </button>
           <span style={{ fontSize:11, padding:"2px 8px", borderRadius:999, border:"1px solid rgba(124,58,237,0.4)", opacity:0.7 }}>Preview Mode</span>
         </div>
       )}

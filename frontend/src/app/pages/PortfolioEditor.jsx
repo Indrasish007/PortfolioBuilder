@@ -481,7 +481,7 @@ export default function PortfolioEditor() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 24 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-[100] bg-background flex flex-col"
+          className="fixed inset-0 z-[2000] bg-background flex flex-col"
         >
           {/* Preview top bar */}
           <div className="flex-shrink-0 flex items-center justify-between px-4 h-11 border-b border-border/60 bg-background/90 backdrop-blur-md">

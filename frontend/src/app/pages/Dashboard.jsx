@@ -348,7 +348,7 @@ export default function Dashboard() {
                           </Button>
                           <Button
                             as="a"
-                            href={p.status === "Published" && p.slug ? `/p/${p.slug}` : `/p/${p.id}`}
+                            href={(p.status === "Published" && p.slug ? `/p/${p.slug}` : `/p/${p.id}`) + "?back=1"}
                             target="_blank"
                             rel="noreferrer"
                             size="sm"
