@@ -210,15 +210,23 @@ export default function Settings() {
     if (field === "username") checkUsername(value);
   };
 
-  const handleAvatarUpload = (e) => {
+  const handleAvatarUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setProfile((p) => ({ ...p, avatar: reader.result }));
+    try {
+      toast({ title: "Uploading image...", type: "info" });
+      const formData = new FormData();
+      formData.append("image", file);
+      const res = await api.post("/portfolios/upload-image/", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      setProfile((p) => ({ ...p, avatar: res.data.url }));
       setProfileDirty(true);
-    };
-    reader.readAsDataURL(file);
+      toast({ title: "Avatar uploaded successfully", type: "success" });
+    } catch (err) {
+      console.error("Avatar upload failed:", err);
+      toast({ title: "Upload failed", description: "Could not upload image.", type: "error" });
+    }
   };
 
   const validateProfile = () => {

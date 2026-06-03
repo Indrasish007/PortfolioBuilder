@@ -85,30 +85,9 @@ def generate_sitemap_index_entries():
     ]
 
 
-def _ping_worker():
-    base_url = getattr(settings, 'SITE_BASE_URL', 'https://portfoliobuilder.com')
-    sitemap_url = urljoin(base_url, '/sitemap.xml')
-    
-    urls = [
-        f"https://www.google.com/ping?sitemap={sitemap_url}",
-        f"https://www.bing.com/ping?sitemap={sitemap_url}"
-    ]
-    for url in urls:
-        try:
-            req = urllib.request.Request(
-                url, 
-                headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
-            )
-            # 5-second connection/read timeout
-            with urllib.request.urlopen(req, timeout=5) as response:
-                pass
-        except Exception:
-            # Swallow all exceptions silently as required
-            pass
-
-
 def ping_search_engines(canonical_url=None):
     """
-    Fire-and-forget background ping daemon thread to notify search engines of updates.
+    Sitemap pinging is deprecated by search engines (e.g. Google) and disabled
+    here to optimize performance and prevent background thread freezing on Vercel.
     """
-    threading.Thread(target=_ping_worker, daemon=True).start()
+    pass

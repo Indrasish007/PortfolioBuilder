@@ -400,3 +400,34 @@ class PortfolioSEOTestCase(TestCase):
         self.assertIn("Set a custom SEO title", payload["recommendations"][0])
 
 
+from unittest.mock import patch
+from django.core.files.uploadedfile import SimpleUploadedFile
+
+class ImageUploadTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="testuser2", email="test2@example.com", password="password")
+        self.client = APIClient()
+        refresh = RefreshToken.for_user(self.user)
+        self.token = str(refresh.access_token)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
+
+    @patch('cloudinary.uploader.upload')
+    def test_upload_image_success(self, mock_upload):
+        mock_upload.return_value = {
+            "secure_url": "https://res.cloudinary.com/mock-cloud/image/upload/v12345/test.png"
+        }
+        
+        file_data = b"fake image content"
+        uploaded_file = SimpleUploadedFile("avatar.png", file_data, content_type="image/png")
+        
+        response = self.client.post("/api/portfolios/upload-image/", {"image": uploaded_file}, format="multipart")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["url"], "https://res.cloudinary.com/mock-cloud/image/upload/v12345/test.png")
+        mock_upload.assert_called_once()
+
+    def test_upload_image_no_file(self):
+        response = self.client.post("/api/portfolios/upload-image/", {}, format="multipart")
+        self.assertEqual(response.status_code, 400)
+
+
+

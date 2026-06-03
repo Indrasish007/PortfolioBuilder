@@ -145,43 +145,47 @@ export default function DashboardLayout() {
     if (!file) return;
 
     setIsParsing(true);
-    toast({ title: "Uploading CV…", description: "Uploading your file for parsing.", type: "info" });
+    toast({ title: "Uploading CV…", description: "Uploading file to server.", type: "info" });
 
-    const formData = new FormData();
-    formData.append("file", file);
+    try {
+      // 1. Upload CV to Cloudinary
+      const uploadData = new FormData();
+      uploadData.append("file", file);
+      const uploadRes = await api.post("/portfolios/upload-image/", uploadData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      const cloudinaryUrl = uploadRes.data.url;
 
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      const resumeDataUrl = reader.result;
-      try {
-        toast({ title: "Parsing CV…", description: "Our AI is extracting details from your CV.", type: "info" });
-        const res = await api.post("/ai/parse-cv/", formData, {
-          headers: { "Content-Type": "multipart/form-data" },
+      // 2. Parse CV with AI
+      toast({ title: "Parsing CV…", description: "Our AI is extracting details from your CV.", type: "info" });
+      const parseData = new FormData();
+      parseData.append("file", file);
+      const res = await api.post("/ai/parse-cv/", parseData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      const data = res.data;
+
+      if (data) {
+        const parsedCV = { ...data, resume_link: cloudinaryUrl };
+        // Persist so the user can navigate away and come back
+        sessionStorage.setItem("pendingParsedCV", JSON.stringify(parsedCV));
+        setHasPendingCV(true);
+        toast({ title: "CV Parsed!", description: "Review your details before importing.", type: "success" });
+        navigate("/cv-preview", {
+          state: { parsedCV },
         });
-        const data = res.data;
-        if (data) {
-          const parsedCV = { ...data, resume_link: resumeDataUrl };
-          // Persist so the user can navigate away and come back
-          sessionStorage.setItem("pendingParsedCV", JSON.stringify(parsedCV));
-          setHasPendingCV(true);
-          toast({ title: "CV Parsed!", description: "Review your details before importing.", type: "success" });
-          navigate("/cv-preview", {
-            state: { parsedCV },
-          });
-        }
-      } catch (err) {
-        console.error("Parsing failed", err);
-        toast({
-          title: "Parsing Failed",
-          description: "Could not parse your CV. Try again or build manually.",
-          type: "error",
-        });
-      } finally {
-        setIsParsing(false);
-        if (fileInputRef.current) fileInputRef.current.value = "";
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      console.error("CV upload/parsing failed", err);
+      toast({
+        title: "Parsing Failed",
+        description: "Could not parse your CV. Try again or build manually.",
+        type: "error",
+      });
+    } finally {
+      setIsParsing(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   };
 
   return (

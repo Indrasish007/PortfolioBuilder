@@ -75,8 +75,7 @@ export const useAuthStore = create((set, get) => ({
 
   signup: async (email, password, name) => {
     try {
-      await api.post('/auth/signup/', { email, password, first_name: name });
-      const response = await api.post('/auth/login/', { email, password });
+      const response = await api.post('/auth/signup/', { email, password, first_name: name });
       const { access, refresh } = response.data;
       localStorage.setItem('access_token', access);
       localStorage.setItem('refresh_token', refresh);

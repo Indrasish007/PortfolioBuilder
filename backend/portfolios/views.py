@@ -824,3 +824,55 @@ class DynamicOGImageBySlugView(APIView):
         cache.set(cache_key, svg_content, 600)
         return HttpResponse(svg_content, content_type="image/svg+xml")
 
+
+import cloudinary.uploader
+import logging
+
+logger = logging.getLogger(__name__)
+
+class ImageUploadView(APIView):
+    """
+    POST /api/portfolios/upload-image/
+    Expects a multipart file upload with key 'image' or 'file'.
+    Uploads the file directly to Cloudinary and returns the URL.
+    Falls back to returning a local Base64 Data URL if Cloudinary is unconfigured (mock)
+    or fails, ensuring robust local development and offline/fallback operations.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request, *args, **kwargs):
+        import os
+        file_obj = request.FILES.get('image') or request.FILES.get('file')
+        if not file_obj:
+            return Response({'error': 'No file uploaded under key "image" or "file".'}, status=http_status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            cloud_name = os.getenv('CLOUDINARY_CLOUD_NAME', 'mock_cloud_name')
+            if cloud_name == 'mock_cloud_name' or not cloud_name:
+                raise ValueError("Cloudinary credentials are not configured (mock_cloud_name detected).")
+
+            # Upload to Cloudinary with auto resource_type to handle images and PDFs
+            result = cloudinary.uploader.upload(
+                file_obj,
+                resource_type="auto"
+            )
+            secure_url = result.get('secure_url')
+            if not secure_url:
+                return Response({'error': 'Cloudinary upload did not return a secure URL.'}, status=http_status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'url': secure_url}, status=http_status.HTTP_200_OK)
+        except Exception as e:
+            logger.warning(f"Cloudinary upload failed/skipped: {e}. Falling back to Base64 data URL for local development/compatibility.")
+            try:
+                import base64
+                file_obj.seek(0)
+                file_content = file_obj.read()
+                mime_type = getattr(file_obj, 'content_type', 'application/octet-stream')
+                base64_str = base64.b64encode(file_content).decode('utf-8')
+                data_url = f"data:{mime_type};base64,{base64_str}"
+                return Response({'url': data_url}, status=http_status.HTTP_200_OK)
+            except Exception as fallback_err:
+                logger.exception("Fallback Base64 encoding failed")
+                return Response({'error': f'Failed to process file: {str(e)}'}, status=http_status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+

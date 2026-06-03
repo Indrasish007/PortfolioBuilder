@@ -595,12 +595,22 @@ export default function PortfolioEditor() {
                       <ImageIcon className="w-5 h-5 mb-1" /> Drop image or click to upload
                     </>
                   )}
-                  <input type="file" className="hidden" accept="image/*" onChange={(e) => {
+                  <input type="file" className="hidden" accept="image/*" onChange={async (e) => {
                     const file = e.target.files?.[0];
                     if (file) {
-                      const reader = new FileReader();
-                      reader.onloadend = () => updateField("user.avatar", reader.result);
-                      reader.readAsDataURL(file);
+                      try {
+                        toast({ title: "Uploading image...", type: "info" });
+                        const formData = new FormData();
+                        formData.append("image", file);
+                        const res = await api.post("/portfolios/upload-image/", formData, {
+                          headers: { "Content-Type": "multipart/form-data" }
+                        });
+                        updateField("user.avatar", res.data.url);
+                        toast({ title: "Image uploaded successfully", type: "success" });
+                      } catch (err) {
+                        console.error("Avatar upload failed:", err);
+                        toast({ title: "Upload failed", description: "Could not upload image.", type: "error" });
+                      }
                     }
                   }} />
                 </label>
@@ -1225,12 +1235,22 @@ function ProjectsEditor({ projects, updateField }) {
                   type="file"
                   className="hidden"
                   accept="image/*"
-                  onChange={(e) => {
+                  onChange={async (e) => {
                     const file = e.target.files?.[0];
                     if (file) {
-                      const reader = new FileReader();
-                      reader.onloadend = () => updateItem(i, "image", reader.result);
-                      reader.readAsDataURL(file);
+                      try {
+                        toast({ title: "Uploading image...", type: "info" });
+                        const formData = new FormData();
+                        formData.append("image", file);
+                        const res = await api.post("/portfolios/upload-image/", formData, {
+                          headers: { "Content-Type": "multipart/form-data" }
+                        });
+                        updateItem(i, "image", res.data.url);
+                        toast({ title: "Image uploaded successfully", type: "success" });
+                      } catch (err) {
+                        console.error("Project image upload failed:", err);
+                        toast({ title: "Upload failed", description: "Could not upload image.", type: "error" });
+                      }
                     }
                   }}
                 />
@@ -1320,15 +1340,22 @@ function ProjectsEditor({ projects, updateField }) {
     }
   };
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        updateField("user.resume_link", reader.result);
+      try {
+        toast({ title: "Uploading CV...", type: "info" });
+        const formData = new FormData();
+        formData.append("file", file);
+        const res = await api.post("/portfolios/upload-image/", formData, {
+          headers: { "Content-Type": "multipart/form-data" }
+        });
+        updateField("user.resume_link", res.data.url);
         toast({ title: "CV Uploaded", description: "Your CV has been attached to your portfolio.", type: "success" });
-      };
-      reader.readAsDataURL(file);
+      } catch (err) {
+        console.error("CV upload failed:", err);
+        toast({ title: "Upload failed", description: "Could not upload CV.", type: "error" });
+      }
     }
   };
 
@@ -1592,12 +1619,22 @@ function GalleryEditor({ gallery, updateField }) {
         <div className="text-xs text-muted-foreground">Upload Images ({gallery.length})</div>
         <label className="text-xs text-brand hover:underline cursor-pointer">
           + Add Image
-          <input type="file" className="hidden" accept="image/*" onChange={(e) => {
+          <input type="file" className="hidden" accept="image/*" onChange={async (e) => {
             const file = e.target.files?.[0];
             if (file) {
-              const reader = new FileReader();
-              reader.onloadend = () => updateField("gallery", [...gallery, reader.result]);
-              reader.readAsDataURL(file);
+              try {
+                toast({ title: "Uploading image...", type: "info" });
+                const formData = new FormData();
+                formData.append("image", file);
+                const res = await api.post("/portfolios/upload-image/", formData, {
+                  headers: { "Content-Type": "multipart/form-data" }
+                });
+                updateField("gallery", [...gallery, res.data.url]);
+                toast({ title: "Image added successfully", type: "success" });
+              } catch (err) {
+                console.error("Gallery image upload failed:", err);
+                toast({ title: "Upload failed", description: "Could not upload image.", type: "error" });
+              }
             }
           }} />
         </label>

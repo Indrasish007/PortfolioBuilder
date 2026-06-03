@@ -1,6 +1,7 @@
 from rest_framework import generics
 from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import UserSerializer, EmailTokenObtainPairSerializer
 from users.models import CustomUser
 
@@ -18,9 +19,16 @@ class SignupView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         try:
             self.perform_create(serializer)
+            user = serializer.instance
+            
+            # Generate JWT tokens for auto-login
+            refresh = RefreshToken.for_user(user)
+            
             return Response({
                 "success": True,
-                "message": "Account created successfully"
+                "message": "Account created successfully",
+                "access": str(refresh.access_token),
+                "refresh": str(refresh)
             }, status=status.HTTP_201_CREATED)
         except Exception as e:
             # Defensive handling: if user was created but connection closed/errored on commit/cleanup
@@ -33,9 +41,14 @@ class SignupView(generics.CreateAPIView):
                 try:
                     if CustomUser.objects.filter(email=email).exists():
                         print("User exists despite signup exception, returning success.", file=sys.stderr)
+                        # Fetch the user to generate tokens
+                        existing_user = CustomUser.objects.get(email=email)
+                        refresh = RefreshToken.for_user(existing_user)
                         return Response({
                             "success": True,
-                            "message": "Account created successfully"
+                            "message": "Account created successfully",
+                            "access": str(refresh.access_token),
+                            "refresh": str(refresh)
                         }, status=status.HTTP_201_CREATED)
                 except Exception as check_err:
                     print(f"Error checking user existence: {check_err}", file=sys.stderr)

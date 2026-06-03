@@ -4,7 +4,8 @@ from .views import (
     PortfolioViewSet, PublicPortfolioView, PublicPortfolioBySlugView,
     PublicPortfolioByDomainView, PublishPortfolioView, UnpublishPortfolioView,
     AnalyticsView, DashboardStatsView, PublicPortfolioListView, ProjectSetFeaturedView,
-    TrackProjectClickView, TrackVisitView, DynamicOGImageView, DynamicOGImageBySlugView
+    TrackProjectClickView, TrackVisitView, DynamicOGImageView, DynamicOGImageBySlugView,
+    ImageUploadView
 )
 
 router = DefaultRouter()
@@ -21,6 +22,8 @@ urlpatterns = [
     # Publish / unpublish actions (authenticated)
     path('<int:pk>/publish/', PublishPortfolioView.as_view(), name='publish_portfolio'),
     path('<int:pk>/unpublish/', UnpublishPortfolioView.as_view(), name='unpublish_portfolio'),
+    # Upload assets
+    path('upload-image/', ImageUploadView.as_view(), name='portfolio_upload_image'),
     # Analytics & stats
     path('<int:pk>/analytics/', AnalyticsView.as_view(), name='analytics'),
     path('stats/dashboard/', DashboardStatsView.as_view(), name='dashboard_stats'),
