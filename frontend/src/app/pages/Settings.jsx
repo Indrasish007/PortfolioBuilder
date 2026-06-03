@@ -29,6 +29,39 @@ function isValidUrl(u) {
   try { new URL(u); return true; } catch { return false; }
 }
 
+function formatApiError(err, fallback = "Save failed.") {
+  if (!err || !err.response) return fallback;
+  const data = err.response.data;
+  if (!data) return fallback;
+  
+  if (typeof data === "string") return data;
+  if (data.detail) return data.detail;
+  if (data.error) return data.error;
+  
+  if (typeof data === "object") {
+    const messages = [];
+    for (const [key, val] of Object.entries(data)) {
+      const fieldName = key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, " ");
+      if (Array.isArray(val)) {
+        messages.push(`${fieldName}: ${val.join(", ")}`);
+      } else if (typeof val === "string") {
+        messages.push(`${fieldName}: ${val}`);
+      } else if (typeof val === "object" && val !== null) {
+        for (const [subKey, subVal] of Object.entries(val)) {
+          const subFieldName = subKey.charAt(0).toUpperCase() + subKey.slice(1).replace(/_/g, " ");
+          if (Array.isArray(subVal)) {
+            messages.push(`${fieldName} ${subFieldName}: ${subVal.join(", ")}`);
+          } else if (typeof subVal === "string") {
+            messages.push(`${fieldName} ${subFieldName}: ${subVal}`);
+          }
+        }
+      }
+    }
+    if (messages.length > 0) return messages.join(" | ");
+  }
+  return fallback;
+}
+
 // ─── Reusable field row ───────────────────────────────────────────────────────
 
 function FieldRow({ icon: Icon, label, value, type = "text", error, onChange, onBlur, hint, disabled }) {
@@ -207,6 +240,13 @@ export default function Settings() {
   const handleProfileChange = (field, value) => {
     setProfile((p) => ({ ...p, [field]: value }));
     setProfileDirty(true);
+    if (profileErrors[field]) {
+      setProfileErrors((errs) => {
+        const newErrs = { ...errs };
+        delete newErrs[field];
+        return newErrs;
+      });
+    }
     if (field === "username") checkUsername(value);
   };
 
@@ -243,20 +283,53 @@ export default function Settings() {
     if (Object.keys(errs).length) { setProfileErrors(errs); return; }
     setSavingProfile(true);
     try {
+      let avatarUrl = profile.avatar;
+      if (typeof avatarUrl === "string" && avatarUrl.startsWith("data:")) {
+        const dataURLtoFile = (dataurl, filename) => {
+          try {
+            const arr = dataurl.split(',');
+            const mime = arr[0].match(/:(.*?);/)[1];
+            const bstr = atob(arr[1]);
+            let n = bstr.length;
+            const u8arr = new Uint8Array(n);
+            while (n--) {
+              u8arr[n] = bstr.charCodeAt(n);
+            }
+            return new File([u8arr], filename, { type: mime });
+          } catch (e) {
+            console.error("Failed to parse data URL", e);
+            return null;
+          }
+        };
+
+        const file = dataURLtoFile(avatarUrl, "avatar.png");
+        if (file) {
+          toast({ title: "Uploading image...", type: "info" });
+          const formData = new FormData();
+          formData.append("file", file);
+          const uploadRes = await api.post("/portfolios/upload-image/", formData, {
+            headers: { "Content-Type": "multipart/form-data" }
+          });
+          avatarUrl = uploadRes.data.url;
+          setProfile((p) => ({ ...p, avatar: avatarUrl }));
+        }
+      }
+
       const nameParts = profile.name.trim().split(" ");
       await api.patch("/users/me/", {
         first_name: nameParts[0] || "",
         last_name:  nameParts.slice(1).join(" ") || "",
         username:   profile.username,
         name:       profile.name,
-        avatar:     profile.avatar,
+        avatar:     avatarUrl,
       });
-      updateUser({ name: profile.name, username: profile.username, avatar: profile.avatar });
+      updateUser({ name: profile.name, username: profile.username, avatar: avatarUrl });
       setProfileDirty(false);
       setProfileErrors({});
       toast({ title: "Profile updated successfully", type: "success" });
     } catch (err) {
-      const msg = err.response?.data?.username?.[0] || err.response?.data?.detail || "Save failed.";
+      console.error("Save profile failed:", err.response?.data || err);
+      const msg = formatApiError(err, "Save failed.");
       toast({ title: msg, type: "error" });
     } finally {
       setSavingProfile(false);
@@ -274,6 +347,13 @@ export default function Settings() {
   const handleContactChange = (field, value) => {
     setContact((c) => ({ ...c, [field]: value }));
     setContactDirty(true);
+    if (contactErrors[field]) {
+      setContactErrors((errs) => {
+        const newErrs = { ...errs };
+        delete newErrs[field];
+        return newErrs;
+      });
+    }
   };
 
   const validateContact = () => {
@@ -295,8 +375,10 @@ export default function Settings() {
       setContactDirty(false);
       setContactErrors({});
       toast({ title: "Contact information updated successfully", type: "success" });
-    } catch {
-      toast({ title: "Save failed. Please try again.", type: "error" });
+    } catch (err) {
+      console.error("Save contact failed:", err.response?.data || err);
+      const msg = formatApiError(err, "Save failed. Please try again.");
+      toast({ title: msg, type: "error" });
     } finally {
       setSavingContact(false);
     }

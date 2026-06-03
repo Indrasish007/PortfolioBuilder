@@ -9,13 +9,13 @@ class UserProfileSerializer(serializers.ModelSerializer):
     Write: only updates allowed profile fields (not auth fields like email/password).
     """
     # From Profile
-    name       = serializers.CharField(source='profile.name',      required=False, allow_blank=True)
-    phone      = serializers.CharField(source='profile.phone',     required=False, allow_blank=True)
-    location   = serializers.CharField(source='profile.location',  required=False, allow_blank=True)
-    website    = serializers.CharField( source='profile.website',   required=False, allow_blank=True)
-    linkedin   = serializers.CharField( source='profile.linkedin',  required=False, allow_blank=True)
-    github     = serializers.CharField( source='profile.github',    required=False, allow_blank=True)
-    avatar     = serializers.CharField(source='profile.avatar',    required=False, allow_blank=True)
+    name       = serializers.CharField(source='profile.name',      required=False, allow_blank=True, allow_null=True)
+    phone      = serializers.CharField(source='profile.phone',     required=False, allow_blank=True, allow_null=True)
+    location   = serializers.CharField(source='profile.location',  required=False, allow_blank=True, allow_null=True)
+    website    = serializers.CharField(source='profile.website',   required=False, allow_blank=True, allow_null=True)
+    linkedin   = serializers.CharField(source='profile.linkedin',  required=False, allow_blank=True, allow_null=True)
+    github     = serializers.CharField(source='profile.github',    required=False, allow_blank=True, allow_null=True)
+    avatar     = serializers.CharField(source='profile.avatar',    required=False, allow_blank=True, allow_null=True)
     # Tracks the last portfolio the user was editing (cross-device persistence)
     last_edited_portfolio_id = serializers.IntegerField(
         source='profile.last_edited_portfolio_id', required=False, allow_null=True
@@ -30,6 +30,17 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'last_edited_portfolio_id',
         ]
         read_only_fields = ['id', 'email']
+
+    def to_internal_value(self, data):
+        if data:
+            data = dict(data)
+            url_fields = ['website', 'linkedin', 'github']
+            for field in url_fields:
+                if field in data and data[field]:
+                    val = str(data[field]).strip()
+                    if val and not val.startswith(('http://', 'https://')):
+                        data[field] = f'https://{val}'
+        return super().to_internal_value(data)
 
     def update(self, instance, validated_data):
         profile_data = validated_data.pop('profile', {})
