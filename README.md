@@ -379,4 +379,4 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 ---
 
-*Made with ❤️ by [Indrasish007](https://github.com/Indrasish007) & pair-programmed with Antigravity.*
+*Made with ❤️ by [Indrasish007](https://github.com/Indrasish007).*
