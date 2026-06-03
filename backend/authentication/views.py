@@ -45,6 +45,55 @@ class SignupView(generics.CreateAPIView):
                 "error": "An error occurred during signup."
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+from rest_framework.views import APIView
+import io
+from django.core.management import call_command
+from django.db import connection
+
+class FixMigrationsView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def get(self, request):
+        output = []
+        
+        # 1. Check if column exists
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    SELECT column_name 
+                    FROM information_schema.columns 
+                    WHERE table_name='portfolios_portfolio' AND column_name='custom_seo_title';
+                """)
+                row = cursor.fetchone()
+                exists = row is not None
+                output.append(f"Column custom_seo_title exists: {exists} (row: {row})")
+        except Exception as e:
+            exists = False
+            output.append(f"Error checking column: {e}")
+            
+        # 2. Run fake back to 0013 and migrate
+        output.append("Faking portfolios back to 0013...")
+        try:
+            out_buf = io.StringIO()
+            call_command('migrate', 'portfolios', '0013', fake=True, stdout=out_buf, stderr=out_buf)
+            output.append(f"Fake back output: {out_buf.getvalue()}")
+        except Exception as e:
+            output.append(f"Error faking back: {e}")
+            
+        output.append("Running migrate...")
+        try:
+            out_buf = io.StringIO()
+            call_command('migrate', stdout=out_buf, stderr=out_buf)
+            output.append(f"Migrate output: {out_buf.getvalue()}")
+        except Exception as e:
+            output.append(f"Error running migrate: {e}")
+            
+        return Response({
+            "status": "done",
+            "log": output
+        })
+
 class EmailTokenObtainPairView(TokenObtainPairView):
     serializer_class = EmailTokenObtainPairSerializer
 
