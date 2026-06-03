@@ -84,9 +84,86 @@ export const usePortfolioStore = create(
         set({ isLoading: true });
         try {
           const state = get();
-          const payload = { ...state.portfolio, template: state.template, theme: state.themeName };
+          
+          // Deep clone to safely modify nested objects without mutating state directly
+          const payload = structuredClone({ 
+            ...state.portfolio, 
+            template: state.template, 
+            theme: state.themeName 
+          });
 
           if (overrideName) payload.name = overrideName;
+
+          // Helper to convert dataURL to File for backend upload
+          const dataURLtoFile = (dataurl, filename) => {
+            try {
+              const arr = dataurl.split(',');
+              const mime = arr[0].match(/:(.*?);/)[1];
+              const bstr = atob(arr[1]);
+              let n = bstr.length;
+              const u8arr = new Uint8Array(n);
+              while (n--) {
+                u8arr[n] = bstr.charCodeAt(n);
+              }
+              return new File([u8arr], filename, { type: mime });
+            } catch (e) {
+              console.error("Failed to parse data URL", e);
+              return null;
+            }
+          };
+
+          // Helper to upload a base64 string if found
+          const uploadIfBase64 = async (value, defaultFilename) => {
+            if (typeof value === 'string' && value.startsWith('data:')) {
+              const file = dataURLtoFile(value, defaultFilename);
+              if (file) {
+                const formData = new FormData();
+                formData.append('file', file);
+                const res = await api.post('/portfolios/upload-image/', formData, {
+                  headers: { 'Content-Type': 'multipart/form-data' }
+                });
+                return res.data.url;
+              }
+            }
+            return value;
+          };
+
+          // 1. Process portfolio avatar
+          if (payload.avatar) {
+            payload.avatar = await uploadIfBase64(payload.avatar, "avatar.png");
+          }
+          if (payload.user?.avatar) {
+            payload.user.avatar = await uploadIfBase64(payload.user.avatar, "avatar.png");
+          }
+
+          // 2. Process portfolio resume
+          if (payload.profile_resume_link) {
+            payload.profile_resume_link = await uploadIfBase64(payload.profile_resume_link, "resume.pdf");
+          }
+          if (payload.user?.resume_link) {
+            payload.user.resume_link = await uploadIfBase64(payload.user.resume_link, "resume.pdf");
+          }
+
+          // 3. Process project images
+          if (payload.projects) {
+            payload.projects = await Promise.all(
+              payload.projects.map(async (proj) => {
+                if (proj.image) {
+                  proj.image = await uploadIfBase64(proj.image, "project.png");
+                }
+                return proj;
+              })
+            );
+          }
+
+          // 4. Process gallery images
+          if (payload.gallery) {
+            payload.gallery = await Promise.all(
+              payload.gallery.map(async (img, idx) => {
+                return await uploadIfBase64(img, `gallery_${idx}.png`);
+              })
+            );
+          }
 
           // Skills: backend expects array of objects
           if (payload.skills) {
