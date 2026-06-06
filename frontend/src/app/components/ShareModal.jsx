@@ -233,23 +233,10 @@ export default function ShareModal({ isOpen, onClose, portfolioUrl, portfolioNam
 
   // Platform Execution Action Handler
   const handlePlatformShare = (platformKey, platform, actionType) => {
-    // 1. Generate Platform Tracked URL
     const trackedUrl = generateSourceUrl(absoluteBaseUrl, platformKey);
     const text = `Check out my professional portfolio!`;
 
-    // 2. Automatically copy tracked URL to clipboard synchronously
-    const success = copyTextToClipboard(trackedUrl);
-    if (success) {
-      toast({
-        title: `✓ ${platform.name} tracking link copied`,
-        description: "URL copied to clipboard before sharing.",
-        type: "success"
-      });
-    } else {
-      console.warn("Failed to write to clipboard");
-    }
-
-    // 3. Dispatch specific intent opening synchronously (no async delays)
+    // 1. Build intent URL first
     let intentUrl = trackedUrl;
     if (actionType === "feed" && platform.getFeedUrl) {
       intentUrl = platform.getFeedUrl(trackedUrl, text);
@@ -259,6 +246,41 @@ export default function ShareModal({ isOpen, onClose, portfolioUrl, portfolioNam
       intentUrl = platform.openUrl;
     }
 
+    // 2. Copy FIRST (sync execCommand stays within the gesture tick,
+    //    so window.open below is still allowed by the browser).
+    const syncSuccess = copyTextToClipboard(trackedUrl);
+    if (syncSuccess) {
+      toast({
+        title: `✓ ${platform.name} link copied`,
+        description: "Tracked URL copied — opening platform now.",
+        type: "success"
+      });
+    } else if (navigator.clipboard && navigator.clipboard.writeText) {
+      // Async fallback (HTTPS / production) — fires after window.open
+      navigator.clipboard.writeText(trackedUrl)
+        .then(() => {
+          toast({
+            title: `✓ ${platform.name} link copied`,
+            description: "Tracked URL copied to clipboard.",
+            type: "success"
+          });
+        })
+        .catch(() => {
+          toast({
+            title: `${platform.name} opened`,
+            description: "Clipboard blocked — copy the link from the bar below.",
+            type: "info"
+          });
+        });
+    } else {
+      toast({
+        title: `${platform.name} opened`,
+        description: "Copy the link from the URL bar below.",
+        type: "info"
+      });
+    }
+
+    // 3. Open the platform AFTER copying
     window.open(intentUrl, "_blank", "noopener,noreferrer");
   };
 
