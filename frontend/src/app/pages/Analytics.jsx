@@ -829,14 +829,37 @@ export default function Analytics() {
 
 // ── Share Link Generator ────────────────────────────────────────────────────
 const SHARE_PLATFORMS = [
-  { key: "linkedin",  label: "LinkedIn",  color: "#0077b5", emoji: "💼" },
-  { key: "facebook",  label: "Facebook",  color: "#1877f2", emoji: "📘" },
-  { key: "instagram", label: "Instagram", color: "#ec4899", emoji: "📸" },
-  { key: "whatsapp",  label: "WhatsApp",  color: "#22c55e", emoji: "💬" },
-  { key: "telegram",  label: "Telegram",  color: "#0088cc", emoji: "✈️" },
-  { key: "reddit",    label: "Reddit",    color: "#ff4500", emoji: "🔴" },
-  { key: "github",    label: "GitHub",    color: "#4f46e5", emoji: "🐙" },
-  { key: "twitter",   label: "X / Twitter",color: "#38bdf8", emoji: "𝕏" },
+  // Professional
+  { key: "linkedin",      label: "LinkedIn",       color: "#0077b5", emoji: "💼", group: "Professional Networks",
+    getShareUrl: (url) => `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}` },
+  { key: "github",        label: "GitHub",         color: "#4f46e5", emoji: "🐙", group: "Professional Networks",
+    getShareUrl: () => `https://github.com/` },
+  { key: "medium",        label: "Medium",         color: "#00ab6c", emoji: "📝", group: "Professional Networks",
+    getShareUrl: () => `https://medium.com/` },
+  { key: "stackoverflow", label: "Stack Overflow",  color: "#f48024", emoji: "🔸", group: "Professional Networks",
+    getShareUrl: () => `https://stackoverflow.com/` },
+  { key: "hackernews",    label: "Hacker News",     color: "#ff6600", emoji: "🟠", group: "Professional Networks",
+    getShareUrl: (url) => `https://news.ycombinator.com/submitlink?u=${encodeURIComponent(url)}&t=${encodeURIComponent("My Professional Portfolio")}` },
+  // Messaging
+  { key: "whatsapp",      label: "WhatsApp",        color: "#22c55e", emoji: "💬", group: "Messaging",
+    getShareUrl: (url) => `https://api.whatsapp.com/send?text=${encodeURIComponent("Check out my portfolio! " + url)}` },
+  { key: "telegram",      label: "Telegram",        color: "#0088cc", emoji: "✈️", group: "Messaging",
+    getShareUrl: (url) => `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent("Check out my professional portfolio!")}` },
+  { key: "discord",       label: "Discord",         color: "#5865f2", emoji: "🎮", group: "Messaging",
+    getShareUrl: () => `https://discord.com/channels/@me` },
+  { key: "email",         label: "Email",           color: "#f472b6", emoji: "📧", group: "Messaging",
+    getShareUrl: (url) => `mailto:?subject=${encodeURIComponent("Professional Portfolio")}&body=${encodeURIComponent("Check out my portfolio!\n\n" + url)}` },
+  // Social
+  { key: "twitter",       label: "X / Twitter",    color: "#38bdf8", emoji: "𝕏", group: "Social",
+    getShareUrl: (url) => `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent("Check out my professional portfolio!")}` },
+  { key: "facebook",      label: "Facebook",        color: "#1877f2", emoji: "📘", group: "Social",
+    getShareUrl: (url) => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}` },
+  { key: "instagram",     label: "Instagram",       color: "#ec4899", emoji: "📸", group: "Social",
+    getShareUrl: () => `https://instagram.com/` },
+  { key: "reddit",        label: "Reddit",          color: "#ff4500", emoji: "🔴", group: "Social",
+    getShareUrl: (url) => `https://www.reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent("My Professional Portfolio")}` },
+  { key: "youtube",       label: "YouTube",         color: "#ff0000", emoji: "▶️", group: "Social",
+    getShareUrl: () => `https://youtube.com/` },
 ];
 
 function ShareLinkGenerator({ perPortfolio }) {
@@ -872,12 +895,21 @@ function ShareLinkGenerator({ perPortfolio }) {
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
+  const openPlatform = (plat) => {
+    const trackedUrl = getTrackedUrl(plat.key);
+    const shareUrl = plat.getShareUrl ? plat.getShareUrl(trackedUrl) : trackedUrl;
+    window.open(shareUrl, "_blank", "noopener,noreferrer");
+  };
+
+  // Group platforms
+  const groups = [...new Set(SHARE_PLATFORMS.map(p => p.group))];
+
   return (
     <section id="share-link-generator-section" className="pt-4 border-t border-white/[0.04] space-y-5">
       <SectionHeading
         icon={Share2}
         title="Share Link Generator"
-        subtitle="Generate platform-specific tracked URLs for accurate attribution"
+        subtitle="Generate platform-specific tracked URLs — copy links or open platforms directly"
         accentColor="#a78bfa"
       />
 
@@ -900,52 +932,88 @@ function ShareLinkGenerator({ perPortfolio }) {
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {SHARE_PLATFORMS.map((plat) => {
-          const trackedUrl = getTrackedUrl(plat.key);
-          const isCopied = copiedKey === plat.key;
-          return (
-            <div
-              key={plat.key}
-              className="p-3.5 rounded-2xl border border-white/[0.05] bg-white/[0.01] hover:bg-white/[0.03] transition space-y-2.5"
-            >
-              <div className="flex items-center gap-2">
-                <span
-                  className="w-7 h-7 rounded-lg flex items-center justify-center text-sm flex-shrink-0"
-                  style={{ background: `${plat.color}22` }}
-                >
-                  {plat.emoji}
-                </span>
-                <span className="text-xs font-bold" style={{ color: plat.color }}>
-                  {plat.label}
-                </span>
-              </div>
-              <div className="font-mono text-[10px] text-muted-foreground bg-black/20 rounded-lg px-2 py-1.5 truncate select-all border border-white/[0.04]">
-                {trackedUrl}
-              </div>
-              <button
-                onClick={() => copyUrl(plat.key)}
-                className="w-full flex items-center justify-center gap-1.5 text-[11px] font-bold py-1.5 rounded-lg border transition"
-                style={{
-                  borderColor: `${plat.color}30`,
-                  color: isCopied ? "#34d399" : plat.color,
-                  background: isCopied ? "rgba(52,211,153,0.08)" : `${plat.color}10`,
-                }}
-              >
-                {isCopied ? (
-                  <><Check className="w-3.5 h-3.5" /> Copied!</>
-                ) : (
-                  <><Copy className="w-3.5 h-3.5" /> Copy Link</>
-                )}
-              </button>
+      {groups.map((group) => {
+        const platforms = SHARE_PLATFORMS.filter(p => p.group === group);
+        return (
+          <div key={group} className="space-y-3">
+            <div className="text-[10px] font-black uppercase tracking-wider text-muted-foreground/70 flex items-center gap-2">
+              <div className="h-px flex-1 bg-white/[0.04] rounded" />
+              {group}
+              <div className="h-px flex-1 bg-white/[0.04] rounded" />
             </div>
-          );
-        })}
-      </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+              {platforms.map((plat) => {
+                const trackedUrl = getTrackedUrl(plat.key);
+                const isCopied = copiedKey === plat.key;
+                return (
+                  <div
+                    key={plat.key}
+                    className="p-3.5 rounded-2xl border border-white/[0.05] bg-white/[0.01] hover:bg-white/[0.03] transition space-y-2.5"
+                    style={{ borderColor: `${plat.color}14` }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="w-7 h-7 rounded-lg flex items-center justify-center text-sm flex-shrink-0"
+                        style={{ background: `${plat.color}22` }}
+                      >
+                        {plat.emoji}
+                      </span>
+                      <span className="text-xs font-bold" style={{ color: plat.color }}>
+                        {plat.label}
+                      </span>
+                    </div>
+                    <div className="font-mono text-[10px] text-muted-foreground bg-black/20 rounded-lg px-2 py-1.5 truncate select-all border border-white/[0.04]">
+                      {trackedUrl}
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <button
+                        onClick={() => copyUrl(plat.key)}
+                        className="flex items-center justify-center gap-1 text-[10px] font-bold py-1.5 rounded-lg border transition"
+                        style={{
+                          borderColor: `${plat.color}30`,
+                          color: isCopied ? "#34d399" : plat.color,
+                          background: isCopied ? "rgba(52,211,153,0.08)" : `${plat.color}10`,
+                        }}
+                      >
+                        {isCopied ? (
+                          <><Check className="w-3 h-3" /> Copied!</>
+                        ) : (
+                          <><Copy className="w-3 h-3" /> Copy</>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => openPlatform(plat)}
+                        className="flex items-center justify-center gap-1 text-[10px] font-bold py-1.5 rounded-lg border transition"
+                        style={{
+                          borderColor: `${plat.color}30`,
+                          color: plat.color,
+                          background: `${plat.color}10`,
+                        }}
+                      >
+                        <ExternalLink className="w-3 h-3" /> Open
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
 
       {selectedPortfolio && (
-        <div className="text-[10px] text-muted-foreground text-center">
-          Base URL: <span className="font-mono text-foreground/70">{baseUrl}</span>
+        <div className="p-3 rounded-xl bg-black/20 border border-white/[0.04] flex items-center gap-2">
+          <span className="text-[10px] text-muted-foreground shrink-0">Base URL:</span>
+          <span className="font-mono text-[10px] text-foreground/70 truncate flex-1">{baseUrl}</span>
+          <button
+            onClick={() => {
+              try { navigator.clipboard.writeText(baseUrl); } catch(_) {}
+            }}
+            className="shrink-0 p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-muted-foreground hover:text-foreground transition"
+            title="Copy base URL"
+          >
+            <Copy className="w-3 h-3" />
+          </button>
         </div>
       )}
     </section>
@@ -959,6 +1027,8 @@ const MOBILE_APP_PLATFORMS = [
   { name: "Facebook App",   emoji: "📘", fix: "?utm_source=facebook" },
   { name: "WhatsApp",       emoji: "💬", fix: "?utm_source=whatsapp" },
   { name: "Telegram",       emoji: "✈️", fix: "?utm_source=telegram" },
+  { name: "Discord",        emoji: "🎮", fix: "?utm_source=discord" },
+  { name: "Reddit App",     emoji: "🔴", fix: "?utm_source=reddit" },
 ];
 
 function AttributionLimitations() {

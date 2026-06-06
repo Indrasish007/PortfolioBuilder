@@ -375,19 +375,19 @@ export default function Dashboard() {
                               <Globe className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                               <span className="text-muted-foreground font-medium shrink-0">Live:</span>
                               <a
-                                href={p.slug ? `/p/${p.slug}` : `/p/${p.id}`}
+                                href={p.slug ? `/u/${p.slug}` : `/p/${p.id}`}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="text-brand hover:underline font-mono truncate break-all block flex-1 font-semibold"
                               >
-                                {origin}{p.slug ? `/p/${p.slug}` : `/p/${p.id}`}
+                                {origin}{p.slug ? `/u/${p.slug}` : `/p/${p.id}`}
                               </a>
                             </div>
                             <Button
                               variant="glass"
                               size="sm"
                               onClick={() => {
-                                const liveUrl = `${origin}${p.slug ? `/p/${p.slug}` : `/p/${p.id}`}`;
+                                const liveUrl = `${origin}${p.slug ? `/u/${p.slug}` : `/p/${p.id}`}`;
                                 setSharePortfolioUrl(liveUrl);
                                 setSharePortfolioName(p.name);
                                 setShareModalOpen(true);

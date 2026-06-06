@@ -365,12 +365,12 @@ export default function PortfolioEditor() {
                     <div className="flex-1 min-w-0">
                       <div className="text-[10px] uppercase font-bold text-muted-foreground/75 tracking-wider mb-0.5">Deployment Domain</div>
                       <a
-                        href={`/p/${portfolio.slug}`}
+                        href={portfolio.slug ? `/u/${portfolio.slug}` : `/p/${portfolio.id}`}
                         target="_blank"
                         rel="noreferrer"
                         className="text-brand hover:underline font-mono text-sm font-semibold truncate block"
                       >
-                        {window.location.origin}/p/{portfolio.slug}
+                        {window.location.origin}{portfolio.slug ? `/u/${portfolio.slug}` : `/p/${portfolio.id}`}
                       </a>
                     </div>
                     <Button
@@ -387,7 +387,7 @@ export default function PortfolioEditor() {
                 <div className="grid grid-cols-2 gap-2 mt-4">
                   <Button
                     as="a"
-                    href={`/p/${portfolio.slug}`}
+                    href={portfolio.slug ? `/u/${portfolio.slug}` : `/p/${portfolio.id}`}
                     target="_blank"
                     rel="noreferrer"
                     variant="outline"
@@ -479,7 +479,7 @@ export default function PortfolioEditor() {
     <ShareModal
       isOpen={shareModalOpen}
       onClose={() => setShareModalOpen(false)}
-      portfolioUrl={`/p/${portfolio.slug}`}
+      portfolioUrl={`${window.location.origin}${portfolio.slug ? `/u/${portfolio.slug}` : `/p/${portfolio.id}`}`}
       portfolioName={portfolio.name || "My Portfolio"}
     />
 
