@@ -54,6 +54,20 @@ class SocialShareEvent(models.Model):
     referrer = models.URLField(max_length=500, blank=True, null=True)  # raw HTTP referrer header
     user_agent = models.TextField(blank=True, null=True)  # for bot filtering
 
+    # Attribution tracking persistence fields
+    source = models.CharField(max_length=100, default='Direct')
+    medium = models.CharField(max_length=100, blank=True, null=True)
+    campaign = models.CharField(max_length=255, blank=True, null=True)
+    utm_source = models.CharField(max_length=100, blank=True, null=True)
+    utm_medium = models.CharField(max_length=100, blank=True, null=True)
+    utm_campaign = models.CharField(max_length=255, blank=True, null=True)
+    first_touch_source = models.CharField(max_length=100, blank=True, null=True)
+    first_touch_medium = models.CharField(max_length=100, blank=True, null=True)
+    first_touch_campaign = models.CharField(max_length=255, blank=True, null=True)
+    last_touch_source = models.CharField(max_length=100, blank=True, null=True)
+    last_touch_medium = models.CharField(max_length=100, blank=True, null=True)
+    last_touch_campaign = models.CharField(max_length=255, blank=True, null=True)
+
     class Meta:
         indexes = [
             models.Index(fields=['portfolio', 'clicked_at']),

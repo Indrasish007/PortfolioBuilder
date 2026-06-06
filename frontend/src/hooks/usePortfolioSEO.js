@@ -83,14 +83,10 @@ export function usePortfolioSEO(seo) {
       setJsonLd(seo.schema);
     }
 
-    // ── Social Click / Share Tracking Beacon ──────────────────
-    if (seo.portfolio_id) {
-      try {
-        navigator.sendBeacon(`/api/analytics/track/${seo.portfolio_id}/`);
-      } catch (err) {
-        console.warn("Failed to fire social share tracking beacon:", err);
-      }
-    }
+    // Note: Social share tracking (SocialShareEvent) is intentionally NOT fired here.
+    // Share events must only be recorded when the user explicitly clicks a share button
+    // in the ShareModal. Auto-firing a beacon on every page load created phantom
+    // "Direct" share events for all organic traffic, corrupting share analytics.
 
     // ── Cleanup on unmount ──────────────────────────────────
     return () => {

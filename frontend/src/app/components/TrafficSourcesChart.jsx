@@ -5,6 +5,7 @@ import api from "../services/api.js";
 import GlassCard from "./GlassCard.jsx";
 
 const SOURCE_COLORS = {
+  "Direct / Unknown": "#f59e0b",  // Amber — unknown origin warning
   Direct: "#22d3ee",           // Teal
   LinkedIn: "#0077b5",         // LinkedIn Blue
   GitHub: "#4f46e5",           // Indigo/Purple

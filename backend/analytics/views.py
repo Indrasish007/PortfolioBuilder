@@ -538,6 +538,9 @@ class SocialShareTrackView(APIView):
         
         return Response(status=204)
 
+    def post(self, request, portfolio_id, *args, **kwargs):
+        return self.get(request, portfolio_id, *args, **kwargs)
+
 
 class ShareSummaryView(APIView):
     """
@@ -569,4 +572,37 @@ class ShareSummaryView(APIView):
             'total': total,
             'period_days': days
         })
+
+
+class RecentRecordsView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, *args, **kwargs):
+        events = PortfolioEvent.objects.all().order_by('-id')[:20]
+        data = []
+        for e in events:
+            data.append({
+                'id': e.id,
+                'portfolio_id': e.portfolio_id,
+                'event_type': e.event_type,
+                'visitor_id': e.visitor_id,
+                'duration': e.duration,
+                'device': e.device,
+                'country': e.country,
+                'created_at': e.created_at.isoformat() if e.created_at else None,
+                'source': e.source,
+                'medium': e.medium,
+                'campaign': e.campaign,
+                'referrer': e.referrer,
+                'utm_source': e.utm_source,
+                'utm_medium': e.utm_medium,
+                'utm_campaign': e.utm_campaign,
+                'first_touch_source': e.first_touch_source,
+                'first_touch_medium': e.first_touch_medium,
+                'first_touch_campaign': e.first_touch_campaign,
+                'last_touch_source': e.last_touch_source,
+                'last_touch_medium': e.last_touch_medium,
+                'last_touch_campaign': e.last_touch_campaign,
+            })
+        return Response(data)
 

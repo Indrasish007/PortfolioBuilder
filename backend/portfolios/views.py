@@ -174,6 +174,9 @@ def classify_traffic_source(referrer, utm_source):
     utm_source = (utm_source or '').strip().lower()
     referrer = (referrer or '').strip().lower()
 
+    if utm_source == 'direct':
+        return 'Direct'
+
     # 1. UTM Source Classification
     if utm_source:
         if utm_source == 'share':
@@ -194,8 +197,8 @@ def classify_traffic_source(referrer, utm_source):
             return 'Facebook'
         if 'instagram' in utm_source or utm_source == 'ig':
             return 'Instagram'
-        if 'twitter' in utm_source or utm_source == 'x.com' or utm_source == 'x':
-            return 'X/Twitter'
+        if utm_source in ('twitter', 'x', 'x.com', 't.co'):
+            return 'X'
         if 'reddit' in utm_source:
             return 'Reddit'
         if 'youtube' in utm_source:
@@ -208,10 +211,16 @@ def classify_traffic_source(referrer, utm_source):
             return 'Medium'
         if 'quora' in utm_source:
             return 'Quora'
-        if 'hackernews' in utm_source or 'hacker-news' in utm_source:
-            return 'Hacker News'
+        if utm_source in ('hn', 'hackernews', 'hacker-news'):
+            return 'HackerNews'
         if 'stackoverflow' in utm_source or 'stack-overflow' in utm_source:
             return 'Stack Overflow'
+        if 'tiktok' in utm_source:
+            return 'TikTok'
+        if 'threads' in utm_source:
+            return 'Threads'
+        if 'snapchat' in utm_source:
+            return 'Snapchat'
 
         # Search Engines
         if 'google' in utm_source:
@@ -226,14 +235,25 @@ def classify_traffic_source(referrer, utm_source):
             return 'Baidu'
         if 'yandex' in utm_source:
             return 'Yandex'
+        if 'ecosia' in utm_source:
+            return 'Ecosia'
+        if 'brave' in utm_source:
+            return 'Brave Search'
 
         # Email
         if utm_source in ('email', 'newsletter', 'mail'):
             return 'Email'
 
+        # Catch-all: format custom campaign sources exactly (replace underscores/dashes with spaces and capitalize)
+        words = utm_source.replace('_', ' ').replace('-', ' ').split()
+        return ' '.join(word.capitalize() for word in words)
+
     # 2. Referrer Classification
     if not referrer:
-        return 'Direct'
+        # Both utm_source and referrer are empty — could be true direct (bookmark/address bar)
+        # or mobile app traffic where the OS strips the referrer header.
+        # Label as "Direct / Unknown" so dashboard users know origin is uncertain.
+        return 'Direct / Unknown'
 
     # Social Platforms
     if 'linkedin.com' in referrer or 'lnkd.in' in referrer:
@@ -247,7 +267,7 @@ def classify_traffic_source(referrer, utm_source):
     if 'instagram.com' in referrer:
         return 'Instagram'
     if any(domain in referrer for domain in ('twitter.com', 'x.com')) or '/t.co' in referrer or referrer == 't.co':
-        return 'X/Twitter'
+        return 'X'
     if 'reddit.com' in referrer:
         return 'Reddit'
     if 'youtube.com' in referrer or 'youtu.be' in referrer:
@@ -261,9 +281,15 @@ def classify_traffic_source(referrer, utm_source):
     if 'quora.com' in referrer:
         return 'Quora'
     if 'news.ycombinator.com' in referrer:
-        return 'Hacker News'
+        return 'HackerNews'
     if 'stackoverflow.com' in referrer:
         return 'Stack Overflow'
+    if 'tiktok.com' in referrer:
+        return 'TikTok'
+    if 'threads.net' in referrer:
+        return 'Threads'
+    if 'snapchat.com' in referrer:
+        return 'Snapchat'
 
     # Email
     email_domains = [
@@ -285,6 +311,10 @@ def classify_traffic_source(referrer, utm_source):
         return 'Baidu'
     if 'yandex.ru' in referrer or 'yandex.com' in referrer:
         return 'Yandex'
+    if 'ecosia.org' in referrer:
+        return 'Ecosia'
+    if 'brave.com' in referrer or 'search.brave.com' in referrer:
+        return 'Brave Search'
 
     return 'Referral'
 
@@ -353,13 +383,22 @@ class AnalyticsView(APIView):
             else:
                 device = 'Desktop'
         
-        if event_type == 'view':
-            import datetime as dt
-            # Traffic source monitoring
-            referrer_val = data.get('referrer', '')
-            utm_source_val = data.get('utm_source', '')
-            source = classify_traffic_source(referrer_val, utm_source_val)
+        # Determine normalized traffic source
+        referrer_val = data.get('referrer', '') if isinstance(data, dict) else ''
+        utm_source_val = (data.get('utm_source') or data.get('source') or '') if isinstance(data, dict) else ''
+        source = classify_traffic_source(referrer_val, utm_source_val)
 
+        # End-to-end debugging logs: log incoming payload
+        import sys
+        print(f"\n[Analytics EVENT] Received event_type={event_type!r}", file=sys.stderr)
+        print(f"  URL: {request.build_absolute_uri()}", file=sys.stderr)
+        print(f"  Referrer: {referrer_val}", file=sys.stderr)
+        print(f"  Parsed UTM: source={data.get('utm_source')}, medium={data.get('utm_medium')}, campaign={data.get('utm_campaign')}", file=sys.stderr)
+        print(f"  First-touch: source={data.get('first_touch_source')}, medium={data.get('first_touch_medium')}, campaign={data.get('first_touch_campaign')}", file=sys.stderr)
+        print(f"  Last-touch: source={data.get('last_touch_source')}, medium={data.get('last_touch_medium')}, campaign={data.get('last_touch_campaign')}", file=sys.stderr)
+        print(f"  Final Payload: {data}", file=sys.stderr)
+
+        if event_type == 'view':
             from django.core.cache import cache
             # Deduplicate using a source-specific cache key to allow different sources in the 5-min window
             cache_key = f"view_recorded_{portfolio.id}_{visitor_id}_{source}"
@@ -369,14 +408,35 @@ class AnalyticsView(APIView):
                 # Set cache to prevent duplicate views for this source in the next 5 minutes
                 cache.set(cache_key, True, 300)
 
-                PortfolioEvent.objects.create(portfolio=portfolio, event_type=event_type, visitor_id=visitor_id, device=device, country=country)
+                event = PortfolioEvent.objects.create(
+                    portfolio=portfolio,
+                    event_type=event_type,
+                    visitor_id=visitor_id,
+                    device=device,
+                    country=country,
+                    source=source,
+                    medium=data.get('medium'),
+                    campaign=data.get('campaign'),
+                    referrer=referrer_val,
+                    utm_source=data.get('utm_source'),
+                    utm_medium=data.get('utm_medium'),
+                    utm_campaign=data.get('utm_campaign'),
+                    first_touch_source=data.get('first_touch_source'),
+                    first_touch_medium=data.get('first_touch_medium'),
+                    first_touch_campaign=data.get('first_touch_campaign'),
+                    last_touch_source=data.get('last_touch_source'),
+                    last_touch_medium=data.get('last_touch_medium'),
+                    last_touch_campaign=data.get('last_touch_campaign')
+                )
+                print(f"  Database Saved: ID={event.id}, source={event.source}, utm_source={event.utm_source}, first_touch_source={event.first_touch_source}, last_touch_source={event.last_touch_source}", file=sys.stderr, flush=True)
+
                 portfolio.views += 1
                 portfolio.save()
 
                 from .models import TrafficSource
                 traffic_obj, created = TrafficSource.objects.get_or_create(
                     portfolio=portfolio,
-                    source=source,
+                    source=event.source,
                     defaults={'visit_count': 1}
                 )
                 if not created:
@@ -384,7 +444,27 @@ class AnalyticsView(APIView):
                     traffic_obj.save(update_fields=['visit_count'])
 
         elif event_type == 'resume_download':
-            PortfolioEvent.objects.create(portfolio=portfolio, event_type=event_type, visitor_id=visitor_id, device=device, country=country)
+            event = PortfolioEvent.objects.create(
+                portfolio=portfolio,
+                event_type=event_type,
+                visitor_id=visitor_id,
+                device=device,
+                country=country,
+                source=source,
+                medium=data.get('medium'),
+                campaign=data.get('campaign'),
+                referrer=referrer_val,
+                utm_source=data.get('utm_source'),
+                utm_medium=data.get('utm_medium'),
+                utm_campaign=data.get('utm_campaign'),
+                first_touch_source=data.get('first_touch_source'),
+                first_touch_medium=data.get('first_touch_medium'),
+                first_touch_campaign=data.get('first_touch_campaign'),
+                last_touch_source=data.get('last_touch_source'),
+                last_touch_medium=data.get('last_touch_medium'),
+                last_touch_campaign=data.get('last_touch_campaign')
+            )
+            print(f"  Database Saved: ID={event.id}, source={event.source}, event_type={event_type}, first_touch_source={event.first_touch_source}", file=sys.stderr, flush=True)
 
         elif event_type == 'session_time':
             # Record how long this visitor spent on the portfolio (in seconds).
@@ -396,15 +476,28 @@ class AnalyticsView(APIView):
                 capped_duration = 0
             print(f"[Analytics] session_time capped_duration={capped_duration} for portfolio pk={pk}", flush=True, file=sys.stderr)
             if capped_duration > 0:
-                PortfolioEvent.objects.create(
+                event = PortfolioEvent.objects.create(
                     portfolio=portfolio,
                     event_type='session_time',
                     visitor_id=visitor_id,
                     duration=capped_duration,
                     device=device,
                     country=country,
+                    source=source,
+                    medium=data.get('medium'),
+                    campaign=data.get('campaign'),
+                    referrer=referrer_val,
+                    utm_source=data.get('utm_source'),
+                    utm_medium=data.get('utm_medium'),
+                    utm_campaign=data.get('utm_campaign'),
+                    first_touch_source=data.get('first_touch_source'),
+                    first_touch_medium=data.get('first_touch_medium'),
+                    first_touch_campaign=data.get('first_touch_campaign'),
+                    last_touch_source=data.get('last_touch_source'),
+                    last_touch_medium=data.get('last_touch_medium'),
+                    last_touch_campaign=data.get('last_touch_campaign')
                 )
-                print(f"[Analytics] session_time saved: {capped_duration}s for portfolio pk={pk}", flush=True, file=sys.stderr)
+                print(f"  Database Saved: ID={event.id}, source={event.source}, event_type=session_time, first_touch_source={event.first_touch_source}", file=sys.stderr, flush=True)
 
         return Response({'status': 'ok'})
 
@@ -514,12 +607,44 @@ class TrackProjectClickView(APIView):
             created_at__gte=cutoff,
         ).exists()
 
+        # End-to-end debugging logs
+        import sys
+        print(f"\n[Analytics EVENT] Received project click", file=sys.stderr)
+        print(f"  Project ID: {project_id}", file=sys.stderr)
+        print(f"  Link Type: {link_type}", file=sys.stderr)
+        print(f"  Referrer: {data.get('referrer')}", file=sys.stderr)
+        print(f"  Parsed UTM: source={data.get('utm_source')}, medium={data.get('utm_medium')}, campaign={data.get('utm_campaign')}", file=sys.stderr)
+        print(f"  First-touch: source={data.get('first_touch_source')}, medium={data.get('first_touch_medium')}, campaign={data.get('first_touch_campaign')}", file=sys.stderr)
+        print(f"  Last-touch: source={data.get('last_touch_source')}, medium={data.get('last_touch_medium')}, campaign={data.get('last_touch_campaign')}", file=sys.stderr)
+        print(f"  Final Payload: {data}", file=sys.stderr)
+
         if not already:
-            ProjectClick.objects.create(
+            # Use the same centralised classification pipeline as PortfolioEvent —
+            # derive source from referrer + utm_source rather than trusting the raw
+            # frontend 'source' string which may be stale or mis-formatted.
+            click_referrer = data.get('referrer', '') or ''
+            click_utm_source = (data.get('utm_source') or data.get('source') or '')
+            click_source = classify_traffic_source(click_referrer, click_utm_source)
+
+            click_event = ProjectClick.objects.create(
                 project=project,
                 visitor_id=visitor_id,
                 link_type=link_type,
+                source=click_source,
+                medium=data.get('medium'),
+                campaign=data.get('campaign'),
+                referrer=click_referrer,
+                utm_source=data.get('utm_source'),
+                utm_medium=data.get('utm_medium'),
+                utm_campaign=data.get('utm_campaign'),
+                first_touch_source=data.get('first_touch_source'),
+                first_touch_medium=data.get('first_touch_medium'),
+                first_touch_campaign=data.get('first_touch_campaign'),
+                last_touch_source=data.get('last_touch_source'),
+                last_touch_medium=data.get('last_touch_medium'),
+                last_touch_campaign=data.get('last_touch_campaign')
             )
+            print(f"  Database Saved: ProjectClick ID={click_event.id}, source={click_event.source} (classified from utm={data.get('utm_source')!r}, referrer={click_referrer!r}), visitor={visitor_id}", file=sys.stderr, flush=True)
 
         return Response({'status': 'ok'})
 

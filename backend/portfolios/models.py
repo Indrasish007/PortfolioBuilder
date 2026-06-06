@@ -189,6 +189,21 @@ class PortfolioEvent(models.Model):
     country = models.CharField(max_length=100, default='United States')
     created_at = models.DateTimeField(auto_now_add=True)
 
+    # Attribution tracking persistence fields
+    source = models.CharField(max_length=100, default='Direct')
+    medium = models.CharField(max_length=100, blank=True, null=True)
+    campaign = models.CharField(max_length=255, blank=True, null=True)
+    referrer = models.TextField(blank=True, null=True)
+    utm_source = models.CharField(max_length=100, blank=True, null=True)
+    utm_medium = models.CharField(max_length=100, blank=True, null=True)
+    utm_campaign = models.CharField(max_length=255, blank=True, null=True)
+    first_touch_source = models.CharField(max_length=100, blank=True, null=True)
+    first_touch_medium = models.CharField(max_length=100, blank=True, null=True)
+    first_touch_campaign = models.CharField(max_length=255, blank=True, null=True)
+    last_touch_source = models.CharField(max_length=100, blank=True, null=True)
+    last_touch_medium = models.CharField(max_length=100, blank=True, null=True)
+    last_touch_campaign = models.CharField(max_length=255, blank=True, null=True)
+
     def __str__(self):
         return f"{self.event_type} - {self.portfolio.id}"
 
@@ -201,6 +216,21 @@ class ProjectClick(models.Model):
     visitor_id = models.CharField(max_length=255, default='anonymous')
     link_type = models.CharField(max_length=20, default='live')  # 'live' | 'github'
     created_at = models.DateTimeField(auto_now_add=True)
+
+    # Attribution tracking persistence fields
+    source = models.CharField(max_length=100, default='Direct')
+    medium = models.CharField(max_length=100, blank=True, null=True)
+    campaign = models.CharField(max_length=255, blank=True, null=True)
+    referrer = models.TextField(blank=True, null=True)
+    utm_source = models.CharField(max_length=100, blank=True, null=True)
+    utm_medium = models.CharField(max_length=100, blank=True, null=True)
+    utm_campaign = models.CharField(max_length=255, blank=True, null=True)
+    first_touch_source = models.CharField(max_length=100, blank=True, null=True)
+    first_touch_medium = models.CharField(max_length=100, blank=True, null=True)
+    first_touch_campaign = models.CharField(max_length=255, blank=True, null=True)
+    last_touch_source = models.CharField(max_length=100, blank=True, null=True)
+    last_touch_medium = models.CharField(max_length=100, blank=True, null=True)
+    last_touch_campaign = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
         indexes = [

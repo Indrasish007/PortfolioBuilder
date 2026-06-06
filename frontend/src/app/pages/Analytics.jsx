@@ -6,7 +6,7 @@ import {
   Eye, Users, Download, Globe,
   TrendingUp, RefreshCw, LayoutGrid, ChevronDown, ChevronUp,
   ExternalLink, BookOpen, Clock, CheckCircle2, Trophy, Github,
-  FileText, Send, Zap, Settings
+  FileText, Send, Zap, Settings, Link, Copy, Check, AlertTriangle, Share2
 } from "lucide-react";
 import GlassCard from "../components/GlassCard.jsx";
 import Badge from "../components/Badge.jsx";
@@ -817,6 +817,233 @@ export default function Analytics() {
           </div>
         )}
       </section>
+
+      {/* Share Link Generator */}
+      <ShareLinkGenerator perPortfolio={perPortfolio} />
+
+      {/* Attribution Limitations */}
+      <AttributionLimitations />
     </div>
+  );
+}
+
+// ── Share Link Generator ────────────────────────────────────────────────────
+const SHARE_PLATFORMS = [
+  { key: "linkedin",  label: "LinkedIn",  color: "#0077b5", emoji: "💼" },
+  { key: "facebook",  label: "Facebook",  color: "#1877f2", emoji: "📘" },
+  { key: "instagram", label: "Instagram", color: "#ec4899", emoji: "📸" },
+  { key: "whatsapp",  label: "WhatsApp",  color: "#22c55e", emoji: "💬" },
+  { key: "telegram",  label: "Telegram",  color: "#0088cc", emoji: "✈️" },
+  { key: "reddit",    label: "Reddit",    color: "#ff4500", emoji: "🔴" },
+  { key: "github",    label: "GitHub",    color: "#4f46e5", emoji: "🐙" },
+  { key: "twitter",   label: "X / Twitter",color: "#38bdf8", emoji: "𝕏" },
+];
+
+function ShareLinkGenerator({ perPortfolio }) {
+  const [selectedPortfolio, setSelectedPortfolio] = useState(
+    perPortfolio && perPortfolio.length > 0 ? perPortfolio[0] : null
+  );
+  const [copiedKey, setCopiedKey] = useState(null);
+
+  if (!perPortfolio || perPortfolio.length === 0) return null;
+
+  const baseUrl = selectedPortfolio
+    ? `${window.location.origin}/u/${selectedPortfolio.slug || selectedPortfolio.id}`
+    : "";
+
+  const getTrackedUrl = (platformKey) =>
+    `${baseUrl}?utm_source=${platformKey}&utm_medium=social`;
+
+  const copyUrl = (platformKey) => {
+    const url = getTrackedUrl(platformKey);
+    try {
+      navigator.clipboard.writeText(url);
+    } catch (_) {
+      const ta = document.createElement("textarea");
+      ta.value = url;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    }
+    setCopiedKey(platformKey);
+    setTimeout(() => setCopiedKey(null), 2000);
+  };
+
+  return (
+    <section id="share-link-generator-section" className="pt-4 border-t border-white/[0.04] space-y-5">
+      <SectionHeading
+        icon={Share2}
+        title="Share Link Generator"
+        subtitle="Generate platform-specific tracked URLs for accurate attribution"
+        accentColor="#a78bfa"
+      />
+
+      {/* Portfolio selector */}
+      {perPortfolio.length > 1 && (
+        <div className="flex flex-wrap gap-2">
+          {perPortfolio.map((p) => (
+            <button
+              key={p.id}
+              onClick={() => setSelectedPortfolio(p)}
+              className={`text-xs font-bold px-3 py-1.5 rounded-full border transition ${
+                selectedPortfolio?.id === p.id
+                  ? "bg-indigo-500/20 border-indigo-500/40 text-indigo-300"
+                  : "border-white/[0.06] text-muted-foreground hover:text-foreground hover:border-white/[0.15]"
+              }`}
+            >
+              {p.name}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {SHARE_PLATFORMS.map((plat) => {
+          const trackedUrl = getTrackedUrl(plat.key);
+          const isCopied = copiedKey === plat.key;
+          return (
+            <div
+              key={plat.key}
+              className="p-3.5 rounded-2xl border border-white/[0.05] bg-white/[0.01] hover:bg-white/[0.03] transition space-y-2.5"
+            >
+              <div className="flex items-center gap-2">
+                <span
+                  className="w-7 h-7 rounded-lg flex items-center justify-center text-sm flex-shrink-0"
+                  style={{ background: `${plat.color}22` }}
+                >
+                  {plat.emoji}
+                </span>
+                <span className="text-xs font-bold" style={{ color: plat.color }}>
+                  {plat.label}
+                </span>
+              </div>
+              <div className="font-mono text-[10px] text-muted-foreground bg-black/20 rounded-lg px-2 py-1.5 truncate select-all border border-white/[0.04]">
+                {trackedUrl}
+              </div>
+              <button
+                onClick={() => copyUrl(plat.key)}
+                className="w-full flex items-center justify-center gap-1.5 text-[11px] font-bold py-1.5 rounded-lg border transition"
+                style={{
+                  borderColor: `${plat.color}30`,
+                  color: isCopied ? "#34d399" : plat.color,
+                  background: isCopied ? "rgba(52,211,153,0.08)" : `${plat.color}10`,
+                }}
+              >
+                {isCopied ? (
+                  <><Check className="w-3.5 h-3.5" /> Copied!</>
+                ) : (
+                  <><Copy className="w-3.5 h-3.5" /> Copy Link</>
+                )}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+
+      {selectedPortfolio && (
+        <div className="text-[10px] text-muted-foreground text-center">
+          Base URL: <span className="font-mono text-foreground/70">{baseUrl}</span>
+        </div>
+      )}
+    </section>
+  );
+}
+
+// ── Attribution Limitations Panel ──────────────────────────────────────────
+const MOBILE_APP_PLATFORMS = [
+  { name: "LinkedIn App",   emoji: "💼", fix: "?utm_source=linkedin" },
+  { name: "Instagram App",  emoji: "📸", fix: "?utm_source=instagram" },
+  { name: "Facebook App",   emoji: "📘", fix: "?utm_source=facebook" },
+  { name: "WhatsApp",       emoji: "💬", fix: "?utm_source=whatsapp" },
+  { name: "Telegram",       emoji: "✈️", fix: "?utm_source=telegram" },
+];
+
+function AttributionLimitations() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <section className="pt-4 border-t border-white/[0.04]">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center gap-3 text-left group mb-0"
+      >
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-amber-500/15">
+          <AlertTriangle className="w-4.5 h-4.5 text-amber-400" />
+        </div>
+        <div className="flex-1">
+          <h2 className="text-sm font-bold leading-tight text-amber-300">
+            Why does traffic show as "Direct / Unknown"?
+          </h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Mobile apps strip referrer data — click to understand and fix this
+          </p>
+        </div>
+        <div className="flex-shrink-0 text-muted-foreground group-hover:text-foreground transition">
+          {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        </div>
+      </button>
+
+      {open && (
+        <div className="mt-4 space-y-5">
+          <div className="p-4 rounded-2xl border border-amber-500/20 bg-amber-500/[0.05] space-y-3">
+            <p className="text-xs leading-relaxed text-foreground/80">
+              When visitors open your portfolio link from a <strong>mobile app</strong> (LinkedIn,
+              Instagram, WhatsApp, Telegram, Facebook), the app's built-in browser does not pass
+              an HTTP <code className="font-mono bg-white/[0.06] px-1 py-0.5 rounded text-amber-300">Referer</code> header.
+              Because there is also no UTM parameter, the attribution system cannot determine
+              the true origin — so the visit is recorded as{" "}
+              <span className="font-bold text-amber-300">Direct / Unknown</span>.
+            </p>
+            <p className="text-xs leading-relaxed text-foreground/60">
+              This is a browser privacy limitation, not a bug. Desktop browser clicks from
+              these platforms do include a referrer and will be attributed correctly.
+            </p>
+          </div>
+
+          <div>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">
+              Platforms that strip referrers + recommended fix
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {MOBILE_APP_PLATFORMS.map((p) => (
+                <div
+                  key={p.name}
+                  className="p-3 rounded-xl border border-white/[0.05] bg-white/[0.01] space-y-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">{p.emoji}</span>
+                    <span className="text-xs font-bold">{p.name}</span>
+                  </div>
+                  <div className="text-[10px] text-muted-foreground leading-relaxed">
+                    Append to your share link:
+                  </div>
+                  <div className="font-mono text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-2 py-1.5 select-all">
+                    {p.fix}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="p-4 rounded-2xl border border-indigo-500/20 bg-indigo-500/[0.04] space-y-2">
+            <h4 className="text-xs font-bold text-indigo-300 flex items-center gap-2">
+              <Link className="w-3.5 h-3.5" /> Example tracked URL
+            </h4>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Instead of sharing <code className="font-mono bg-white/[0.06] px-1 py-0.5 rounded">https://yourapp.com/u/username</code>, share:
+            </p>
+            <code className="block font-mono text-[11px] text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 rounded-xl px-3 py-2 break-all">
+              https://yourapp.com/u/username?utm_source=linkedin&utm_medium=social
+            </code>
+            <p className="text-[10px] text-muted-foreground">
+              Use the <strong className="text-foreground">Share Link Generator</strong> above to create these links instantly for each platform.
+            </p>
+          </div>
+        </div>
+      )}
+    </section>
   );
 }

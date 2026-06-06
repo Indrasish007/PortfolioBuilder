@@ -1,7 +1,8 @@
 from django.urls import path
 from .views import (
     AnalyticsView, ProjectClicksSummaryView, AIInsightsView, 
-    TrafficSourcesView, TrafficSourcesTotalView, SocialShareTrackView, ShareSummaryView
+    TrafficSourcesView, TrafficSourcesTotalView, SocialShareTrackView, ShareSummaryView,
+    RecentRecordsView
 )
 
 urlpatterns = [
@@ -12,5 +13,6 @@ urlpatterns = [
     path('traffic-sources/', TrafficSourcesView.as_view(), name='traffic_sources'),
     path('track/<int:portfolio_id>/', SocialShareTrackView.as_view(), name='track_share'),
     path('shares/<int:portfolio_id>/', ShareSummaryView.as_view(), name='share_summary'),
+    path('recent-records/', RecentRecordsView.as_view(), name='recent_records'),
 ]
 

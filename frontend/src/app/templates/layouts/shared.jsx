@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Github, Twitter, Linkedin, Facebook, Instagram, Globe, FileText, ChevronDown, ChevronUp, Download } from "lucide-react";
 import api from "../../services/api.js";
+import { detectTrafficSource } from "../../utils/attribution.js";
 
 export const TH = {
   midnight: { bg: "#0b0f1a", fg: "#f8fafc", ac: "#7c3aed" },
@@ -53,7 +54,29 @@ export const handleResumeDownload = (resumeLink, action, portfolioId = null) => 
     // Track analytics if we are in public view
     if (portfolioId && window.location.pathname.startsWith('/p/')) {
       let visitorId = localStorage.getItem("visitorId") || "anonymous";
-      api.post(`/portfolios/${portfolioId}/analytics/`, { event_type: 'resume_download', visitor_id: visitorId }).catch(() => { });
+      const attribution = detectTrafficSource();
+      const payload = {
+        event_type: 'resume_download',
+        visitor_id: visitorId,
+        source: attribution.source,
+        medium: attribution.medium,
+        campaign: attribution.campaign,
+        referrer: attribution.referrer,
+        utm_source: attribution.utm_source,
+        utm_medium: attribution.utm_medium,
+        utm_campaign: attribution.utm_campaign,
+        first_touch_source: attribution.first_touch_source,
+        first_touch_medium: attribution.first_touch_medium,
+        first_touch_campaign: attribution.first_touch_campaign,
+        last_touch_source: attribution.last_touch_source,
+        last_touch_medium: attribution.last_touch_medium,
+        last_touch_campaign: attribution.last_touch_campaign
+      };
+      console.log("Referrer:", document.referrer);
+      console.log("UTM Source:", attribution.utm_source);
+      console.log("Detected Source:", attribution.source);
+      console.log("Analytics Payload:", payload);
+      api.post(`/portfolios/${portfolioId}/analytics/`, payload).catch(() => { });
     }
   } catch (err) {
     console.error("Failed to handle resume", err);
@@ -70,11 +93,34 @@ export function trackProjectClick(projectId, linkType = 'live') {
   if (!projectId) return;
   try {
     const visitorId = localStorage.getItem('visitorId') || 'anonymous';
+    const attribution = detectTrafficSource();
     const base = (api.defaults.baseURL || 'http://localhost:8000/api').replace(/\/$/, '');
+    const payload = {
+      project_id: projectId,
+      link_type: linkType,
+      visitor_id: visitorId,
+      source: attribution.source,
+      medium: attribution.medium,
+      campaign: attribution.campaign,
+      referrer: attribution.referrer,
+      utm_source: attribution.utm_source,
+      utm_medium: attribution.utm_medium,
+      utm_campaign: attribution.utm_campaign,
+      first_touch_source: attribution.first_touch_source,
+      first_touch_medium: attribution.first_touch_medium,
+      first_touch_campaign: attribution.first_touch_campaign,
+      last_touch_source: attribution.last_touch_source,
+      last_touch_medium: attribution.last_touch_medium,
+      last_touch_campaign: attribution.last_touch_campaign
+    };
+    console.log("Referrer:", document.referrer);
+    console.log("UTM Source:", attribution.utm_source);
+    console.log("Detected Source:", attribution.source);
+    console.log("Analytics Payload:", payload);
     fetch(`${base}/portfolios/track-project-click/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ project_id: projectId, link_type: linkType, visitor_id: visitorId }),
+      body: JSON.stringify(payload),
     }).catch(() => {});
   } catch (_) {}
 }

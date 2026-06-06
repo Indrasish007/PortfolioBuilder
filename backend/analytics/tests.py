@@ -77,6 +77,7 @@ class TrafficSourceTestCase(TestCase):
         # Direct
         self.assertEqual(classify_traffic_source(None, None), "Direct")
         self.assertEqual(classify_traffic_source("", ""), "Direct")
+        self.assertEqual(classify_traffic_source("", "direct"), "Direct")
         
         # UTM Sources
         self.assertEqual(classify_traffic_source("", "email"), "Email")
@@ -87,28 +88,38 @@ class TrafficSourceTestCase(TestCase):
         self.assertEqual(classify_traffic_source("", "reddit"), "Reddit")
         self.assertEqual(classify_traffic_source("", "google"), "Google")
         self.assertEqual(classify_traffic_source("", "bing"), "Bing")
-        self.assertEqual(classify_traffic_source("", "x"), "X/Twitter")
+        self.assertEqual(classify_traffic_source("", "x"), "X")
+        self.assertEqual(classify_traffic_source("", "twitter"), "X")
         self.assertEqual(classify_traffic_source("", "share"), "Share")
         self.assertEqual(classify_traffic_source("", "qrcode"), "QR Code")
         self.assertEqual(classify_traffic_source("", "native_share"), "Native Share")
+        self.assertEqual(classify_traffic_source("", "tiktok"), "TikTok")
+        self.assertEqual(classify_traffic_source("", "threads"), "Threads")
+        self.assertEqual(classify_traffic_source("", "snapchat"), "Snapchat")
+        self.assertEqual(classify_traffic_source("", "yahoo"), "Yahoo")
+        self.assertEqual(classify_traffic_source("", "yandex"), "Yandex")
+        self.assertEqual(classify_traffic_source("", "baidu"), "Baidu")
+        self.assertEqual(classify_traffic_source("", "ecosia"), "Ecosia")
+        self.assertEqual(classify_traffic_source("", "brave"), "Brave Search")
         
         # Referrer domains
-        self.assertEqual(classify_traffic_source("https://t.co/xyz", ""), "X/Twitter")
-        self.assertEqual(classify_traffic_source("https://x.com/feed", ""), "X/Twitter")
-        self.assertEqual(classify_traffic_source("https://twitter.com/feed", ""), "X/Twitter")
+        self.assertEqual(classify_traffic_source("https://t.co/xyz", ""), "X")
+        self.assertEqual(classify_traffic_source("https://x.com/feed", ""), "X")
+        self.assertEqual(classify_traffic_source("https://twitter.com/feed", ""), "X")
         self.assertEqual(classify_traffic_source("https://www.linkedin.com/feed", ""), "LinkedIn")
         self.assertEqual(classify_traffic_source("https://github.com/profile", ""), "GitHub")
         self.assertEqual(classify_traffic_source("https://web.whatsapp.com/", ""), "WhatsApp")
         self.assertEqual(classify_traffic_source("https://t.me/channel", ""), "Telegram")
         self.assertEqual(classify_traffic_source("https://reddit.com/r/python", ""), "Reddit")
         self.assertEqual(classify_traffic_source("https://discord.gg/invite", ""), "Discord")
-        
         self.assertEqual(classify_traffic_source("https://www.google.com/search", ""), "Google")
         self.assertEqual(classify_traffic_source("https://bing.com/search", ""), "Bing")
         self.assertEqual(classify_traffic_source("https://duckduckgo.com/", ""), "DuckDuckGo")
-        
         self.assertEqual(classify_traffic_source("https://mail.google.com/", ""), "Email")
         self.assertEqual(classify_traffic_source("https://someblog.com/post", ""), "Referral")
+        
+        # Custom Campaign source format
+        self.assertEqual(classify_traffic_source("", "partner_newsletter"), "Partner Newsletter")
 
     def test_traffic_sources_view_authenticated(self):
         # Create mock data
@@ -149,3 +160,189 @@ class TrafficSourceTestCase(TestCase):
         linkedin = next(s for s in sources if s["source"] == "LinkedIn")
         self.assertEqual(linkedin["count"], 10)
         self.assertEqual(linkedin["percentage"], 100)
+
+
+class AnalyticsPipelineTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="testuser", email="test@example.com", password="password")
+        self.portfolio = Portfolio.objects.create(
+            user=self.user,
+            name="My Test Portfolio",
+            theme="Dark",
+            status="Published"
+        )
+        self.client = APIClient()
+
+    def test_utm_source_linkedin_view_tracking(self):
+        payload = {
+            "event_type": "view",
+            "visitor_id": "test_visitor_123",
+            "referrer": "",
+            "utm_source": "linkedin"
+        }
+        response = self.client.post(
+            f"/api/portfolios/{self.portfolio.id}/analytics/",
+            payload,
+            format="json"
+        )
+        self.assertEqual(response.status_code, 200)
+
+        # Verify database record
+        ts = TrafficSource.objects.filter(portfolio=self.portfolio, source="LinkedIn").first()
+        self.assertIsNotNone(ts)
+        self.assertEqual(ts.visit_count, 1)
+
+        # Authenticate to fetch dashboard traffic sources
+        refresh = RefreshToken.for_user(self.user)
+        token = str(refresh.access_token)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
+
+        response = self.client.get(f"/api/analytics/traffic-sources/?portfolio_id={self.portfolio.id}")
+        self.assertEqual(response.status_code, 200)
+        sources = response.json()["sources"]
+        linkedin = next((s for s in sources if s["source"] == "LinkedIn"), None)
+        self.assertIsNotNone(linkedin)
+        self.assertEqual(linkedin["count"], 1)
+
+    def test_source_linkedin_legacy_fallback(self):
+        payload = {
+            "event_type": "view",
+            "visitor_id": "test_visitor_456",
+            "referrer": "",
+            "source": "linkedin"
+        }
+        response = self.client.post(
+            f"/api/portfolios/{self.portfolio.id}/analytics/",
+            payload,
+            format="json"
+        )
+        self.assertEqual(response.status_code, 200)
+
+        ts = TrafficSource.objects.filter(portfolio=self.portfolio, source="LinkedIn").first()
+        self.assertIsNotNone(ts)
+
+    def test_multitouch_persistence(self):
+        # Test page view event saves first-touch and last-touch fields
+        payload = {
+            "event_type": "view",
+            "visitor_id": "test_multitouch_visitor",
+            "referrer": "https://linkedin.com/",
+            "source": "LinkedIn",
+            "medium": "social",
+            "campaign": "brand",
+            "utm_source": "linkedin",
+            "utm_medium": "social",
+            "utm_campaign": "brand",
+            "first_touch_source": "LinkedIn",
+            "first_touch_medium": "social",
+            "first_touch_campaign": "brand",
+            "last_touch_source": "Google",
+            "last_touch_medium": "organic",
+            "last_touch_campaign": "search"
+        }
+        response = self.client.post(
+            f"/api/portfolios/{self.portfolio.id}/analytics/",
+            payload,
+            format="json"
+        )
+        self.assertEqual(response.status_code, 200)
+
+        # Verify database event record
+        event = PortfolioEvent.objects.filter(visitor_id="test_multitouch_visitor", event_type="view").first()
+        self.assertIsNotNone(event)
+        self.assertEqual(event.source, "LinkedIn")
+        self.assertEqual(event.medium, "social")
+        self.assertEqual(event.campaign, "brand")
+        self.assertEqual(event.utm_source, "linkedin")
+        self.assertEqual(event.first_touch_source, "LinkedIn")
+        self.assertEqual(event.first_touch_medium, "social")
+        self.assertEqual(event.first_touch_campaign, "brand")
+        self.assertEqual(event.last_touch_source, "Google")
+        self.assertEqual(event.last_touch_medium, "organic")
+        self.assertEqual(event.last_touch_campaign, "search")
+
+    def test_project_click_attribution(self):
+        project = Project.objects.create(portfolio=self.portfolio, title="Test Project")
+        payload = {
+            "project_id": project.id,
+            "link_type": "live",
+            "visitor_id": "proj_visitor",
+            "source": "LinkedIn",
+            "medium": "social",
+            "campaign": "profile",
+            "utm_source": "linkedin",
+            "first_touch_source": "LinkedIn",
+            "first_touch_medium": "social",
+            "first_touch_campaign": "profile",
+            "last_touch_source": "LinkedIn",
+            "last_touch_medium": "social",
+            "last_touch_campaign": "profile"
+        }
+        response = self.client.post(
+            "/api/portfolios/track-project-click/",
+            payload,
+            format="json"
+        )
+        self.assertEqual(response.status_code, 200)
+
+        # Verify ProjectClick record
+        click = ProjectClick.objects.filter(project=project, visitor_id="proj_visitor").first()
+        self.assertIsNotNone(click)
+        self.assertEqual(click.source, "LinkedIn")
+        self.assertEqual(click.medium, "social")
+        self.assertEqual(click.campaign, "profile")
+        self.assertEqual(click.first_touch_source, "LinkedIn")
+        self.assertEqual(click.last_touch_source, "LinkedIn")
+
+    def test_social_share_beacon_payload(self):
+        # Test that POST to track_share reads POST payload and populates SocialShareEvent attribution fields
+        payload = {
+            "source": "LinkedIn",
+            "medium": "social",
+            "campaign": "viral",
+            "utm_source": "linkedin",
+            "first_touch_source": "LinkedIn",
+            "first_touch_medium": "social",
+            "first_touch_campaign": "viral",
+            "last_touch_source": "LinkedIn",
+            "last_touch_medium": "social",
+            "last_touch_campaign": "viral"
+        }
+        response = self.client.post(
+            f"/api/analytics/track/{self.portfolio.id}/",
+            payload,
+            format="json"
+        )
+        self.assertEqual(response.status_code, 204)
+
+        from analytics.models import SocialShareEvent
+        event = SocialShareEvent.objects.filter(portfolio=self.portfolio).first()
+        self.assertIsNotNone(event)
+        self.assertEqual(event.platform, "linkedin")
+        self.assertEqual(event.source, "LinkedIn")
+        self.assertEqual(event.utm_source, "linkedin")
+        self.assertEqual(event.first_touch_source, "LinkedIn")
+        self.assertEqual(event.last_touch_source, "LinkedIn")
+
+    def test_recent_records_endpoint(self):
+        # Create a sample PortfolioEvent
+        PortfolioEvent.objects.create(
+            portfolio=self.portfolio,
+            event_type="view",
+            visitor_id="recent_visitor",
+            source="Brave Search",
+            medium="organic",
+            campaign="test_campaign",
+            utm_source="brave",
+            utm_medium="organic",
+            utm_campaign="test_campaign",
+            first_touch_source="Brave Search",
+            last_touch_source="Brave Search"
+        )
+        response = self.client.get("/api/analytics/recent-records/")
+        self.assertEqual(response.status_code, 200)
+        records = response.json()
+        self.assertTrue(len(records) > 0)
+        self.assertEqual(records[0]["visitor_id"], "recent_visitor")
+        self.assertEqual(records[0]["source"], "Brave Search")
+        self.assertEqual(records[0]["first_touch_source"], "Brave Search")

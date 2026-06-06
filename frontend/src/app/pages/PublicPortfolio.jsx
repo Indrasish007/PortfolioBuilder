@@ -5,6 +5,7 @@ import api from "../services/api.js";
 import LivePortfolio, { TEMPLATE_PALETTE } from "../templates/LivePortfolio.jsx";
 import { TH } from "../templates/layouts/shared.jsx";
 import { usePortfolioSEO } from "../../hooks/usePortfolioSEO";
+import { detectTrafficSource } from "../utils/attribution.js";
 
 // Derive the analytics beacon URL from the api instance's baseURL —
 // single source of truth, avoids the Vercel bug where a separate
@@ -22,6 +23,7 @@ export default function PublicPortfolio() {
   const navigate = useNavigate();
   const [p, setP] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [debugPayload, setDebugPayload] = useState(null);
   const isPreview = searchParams.get("back") === "1";
   const hasTrackedGeo = useRef(false);
 
@@ -66,8 +68,8 @@ export default function PublicPortfolio() {
   useEffect(() => {
     if (!p || isPreview) return;
 
-    const utm_source = new URLSearchParams(window.location.search).get('utm_source') || '';
-    const trackKey = `tracked_view_${p.id}_${utm_source || 'direct'}`;
+    const attribution = detectTrafficSource();
+    const trackKey = `tracked_view_${p.id}_${attribution.source || 'direct'}`;
     if (sessionStorage.getItem(trackKey)) return;
     sessionStorage.setItem(trackKey, '1');
 
@@ -77,13 +79,31 @@ export default function PublicPortfolio() {
       localStorage.setItem("visitorId", visitorId);
     }
 
-    const referrer = document.referrer || '';
-    api.post(`/portfolios/${p.id}/analytics/`, {
+    const payload = {
       event_type: 'view',
       visitor_id: visitorId,
-      referrer,
-      utm_source
-    }).catch(() => {});
+      source: attribution.source,
+      medium: attribution.medium,
+      campaign: attribution.campaign,
+      referrer: attribution.referrer,
+      utm_source: attribution.utm_source,
+      utm_medium: attribution.utm_medium,
+      utm_campaign: attribution.utm_campaign,
+      first_touch_source: attribution.first_touch_source,
+      first_touch_medium: attribution.first_touch_medium,
+      first_touch_campaign: attribution.first_touch_campaign,
+      last_touch_source: attribution.last_touch_source,
+      last_touch_medium: attribution.last_touch_medium,
+      last_touch_campaign: attribution.last_touch_campaign
+    };
+
+    console.log("Referrer:", document.referrer);
+    console.log("UTM Source:", attribution.utm_source);
+    console.log("Detected Source:", attribution.source);
+    console.log("Analytics Payload:", payload);
+    setDebugPayload(payload);
+
+    api.post(`/portfolios/${p.id}/analytics/`, payload).catch(() => {});
   }, [p, isPreview]);
 
   // ── Real Geolocation Country Tracking ──────────────────────────────────────
@@ -172,6 +192,7 @@ export default function PublicPortfolio() {
       localStorage.setItem("visitorId", visitorId);
     }
 
+    const attribution = detectTrafficSource();
     const beaconUrl = getAnalyticsUrl(p.id);
 
     // segmentStart = timestamp when current visible segment began (null = hidden)
@@ -188,11 +209,32 @@ export default function PublicPortfolio() {
       segmentStart = (!isUnload && !document.hidden) ? Date.now() : null;
       if (duration < 1) return;
 
-      const payload = JSON.stringify({
+      const payload = {
         event_type: 'session_time',
         visitor_id: visitorId,
         duration,
-      });
+        source: attribution.source,
+        medium: attribution.medium,
+        campaign: attribution.campaign,
+        referrer: attribution.referrer,
+        utm_source: attribution.utm_source,
+        utm_medium: attribution.utm_medium,
+        utm_campaign: attribution.utm_campaign,
+        first_touch_source: attribution.first_touch_source,
+        first_touch_medium: attribution.first_touch_medium,
+        first_touch_campaign: attribution.first_touch_campaign,
+        last_touch_source: attribution.last_touch_source,
+        last_touch_medium: attribution.last_touch_medium,
+        last_touch_campaign: attribution.last_touch_campaign
+      };
+
+      console.log("Referrer:", document.referrer);
+      console.log("UTM Source:", attribution.utm_source);
+      console.log("Detected Source:", attribution.source);
+      console.log("Analytics Payload:", payload);
+      setDebugPayload(payload);
+
+      const payloadStr = JSON.stringify(payload);
 
       // Send as text/plain to avoid CORS preflight OPTIONS request entirely,
       // ensuring immediate dispatch and 100% delivery during page unload.
@@ -200,16 +242,16 @@ export default function PublicPortfolio() {
         fetch(beaconUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain' },
-          body: payload,
+          body: payloadStr,
           keepalive: true,
         }).catch(() => {
           try {
-            navigator.sendBeacon(beaconUrl, new Blob([payload], { type: 'text/plain' }));
+            navigator.sendBeacon(beaconUrl, new Blob([payloadStr], { type: 'text/plain' }));
           } catch (_) {}
         });
       } catch (_) {
         try {
-          navigator.sendBeacon(beaconUrl, new Blob([payload], { type: 'text/plain' }));
+          navigator.sendBeacon(beaconUrl, new Blob([payloadStr], { type: 'text/plain' }));
         } catch (_) {}
       }
     };
@@ -324,6 +366,102 @@ export default function PublicPortfolio() {
         template={chosenTemplate}
         themeName={chosenTheme}
       />
+
+      {/* Dev-only debug panel */}
+      {(window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && (
+        <AttributionDebugPanel debugPayload={debugPayload} />
+      )}
+    </div>
+  );
+}
+
+function AttributionDebugPanel({ debugPayload }) {
+  const [open, setOpen] = useState(false);
+  const attribution = detectTrafficSource();
+
+  return (
+    <div style={{
+      position: 'fixed',
+      bottom: '80px',
+      left: '20px',
+      zIndex: 99999,
+      fontFamily: 'monospace',
+      fontSize: '11px',
+      background: 'rgba(15, 23, 42, 0.9)',
+      color: '#38bdf8',
+      border: '1px solid rgba(56, 189, 248, 0.3)',
+      borderRadius: '12px',
+      boxShadow: '0 0 20px rgba(56, 189, 248, 0.15)',
+      backdropFilter: 'blur(8px)',
+      width: open ? '340px' : '160px',
+      transition: 'width 0.2s',
+      overflow: 'hidden'
+    }}>
+      <div 
+        onClick={() => setOpen(!open)}
+        style={{
+          padding: '8px 12px',
+          background: 'rgba(56, 189, 248, 0.1)',
+          borderBottom: open ? '1px solid rgba(56, 189, 248, 0.2)' : 'none',
+          cursor: 'pointer',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          fontWeight: 'bold',
+          userSelect: 'none'
+        }}
+      >
+        <span>🛠️ Attribution Debug</span>
+        <span>{open ? '▼' : '▲'}</span>
+      </div>
+      {open && (
+        <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '350px', overflowY: 'auto' }}>
+          <div>
+            <span style={{ color: '#94a3b8' }}>URL: </span>
+            <span style={{ color: '#e2e8f0', wordBreak: 'break-all' }}>{window.location.href}</span>
+          </div>
+          <div>
+            <span style={{ color: '#94a3b8' }}>Referrer: </span>
+            <span style={{ color: '#e2e8f0', wordBreak: 'break-all' }}>{document.referrer || 'None'}</span>
+          </div>
+          <div style={{ borderTop: '1px dashed rgba(56, 189, 248, 0.2)', paddingTop: '6px' }}>
+            <strong style={{ color: '#38bdf8' }}>UTM Parameters:</strong>
+            <pre style={{ margin: '4px 0 0 0', color: '#34d399' }}>
+{JSON.stringify({
+  utm_source: attribution.utm_source,
+  utm_medium: attribution.utm_medium,
+  utm_campaign: attribution.utm_campaign
+}, null, 2)}
+            </pre>
+          </div>
+          <div style={{ borderTop: '1px dashed rgba(56, 189, 248, 0.2)', paddingTop: '6px' }}>
+            <strong style={{ color: '#38bdf8' }}>First-Touch:</strong>
+            <pre style={{ margin: '4px 0 0 0', color: '#a78bfa' }}>
+{JSON.stringify({
+  source: attribution.first_touch_source,
+  medium: attribution.first_touch_medium,
+  campaign: attribution.first_touch_campaign
+}, null, 2)}
+            </pre>
+          </div>
+          <div style={{ borderTop: '1px dashed rgba(56, 189, 248, 0.2)', paddingTop: '6px' }}>
+            <strong style={{ color: '#38bdf8' }}>Last-Touch:</strong>
+            <pre style={{ margin: '4px 0 0 0', color: '#fb7185' }}>
+{JSON.stringify({
+  source: attribution.last_touch_source,
+  medium: attribution.last_touch_medium,
+  campaign: attribution.last_touch_campaign
+}, null, 2)}
+            </pre>
+          </div>
+          <div style={{ borderTop: '1px dashed rgba(56, 189, 248, 0.2)', paddingTop: '6px' }}>
+            <strong style={{ color: '#38bdf8' }}>Final Payload:</strong>
+            <pre style={{ margin: '4px 0 0 0', color: '#fbbf24', overflowX: 'auto' }}>
+{debugPayload ? JSON.stringify(debugPayload, null, 2) : 'No payload sent yet'}
+            </pre>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
