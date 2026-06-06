@@ -7,51 +7,41 @@ import {
   Smartphone,
   Lightbulb,
   CheckCircle2,
-  TrendingUp,
   RefreshCw,
   AlertCircle
 } from "lucide-react";
 import api from "../services/api.js";
 
-// Helper to resolve icon based on insight type
 const getInsightIcon = (type) => {
   switch (type) {
-    case "engagement":
-      return Flame;
-    case "audience":
-      return Smartphone;
-    case "content":
-      return Sparkles;
-    case "geo":
-      return Globe;
-    case "optimization":
-      return Lightbulb;
-    case "consistency":
-      return CheckCircle2;
-    default:
-      return Sparkles;
+    case "engagement":   return Flame;
+    case "audience":     return Smartphone;
+    case "content":      return Sparkles;
+    case "geo":          return Globe;
+    case "optimization": return Lightbulb;
+    case "consistency":  return CheckCircle2;
+    default:             return Sparkles;
   }
 };
 
-// Priority styling helper
 const getPriorityStyles = (priority) => {
   switch (priority) {
     case "high":
       return {
-        badge: "bg-red-500/15 text-red-400 border-red-500/20",
+        badge: "bg-red-500/15 text-red-500 border-red-500/20",
         label: "🔥 High Engagement",
         accent: "#ef4444"
       };
     case "medium":
       return {
-        badge: "bg-violet-500/15 text-violet-400 border-violet-500/20",
+        badge: "bg-violet-500/15 text-violet-500 border-violet-500/20",
         label: "✨ Recommendation",
         accent: "#8b5cf6"
       };
     case "low":
     default:
       return {
-        badge: "bg-cyan-500/15 text-cyan-400 border-cyan-500/20",
+        badge: "bg-cyan-500/15 text-cyan-500 border-cyan-500/20",
         label: "💡 Optimization Tip",
         accent: "#06b6d4"
       };
@@ -88,7 +78,10 @@ export default function AIInsights({ portfolioId }) {
 
   if (loading) {
     return (
-      <div className="rounded-2xl p-6 border border-white/[0.04] bg-white/[0.01] backdrop-blur-md flex flex-col items-center justify-center min-h-[150px] space-y-3">
+      <div
+        className="rounded-2xl p-6 border flex flex-col items-center justify-center min-h-[150px] space-y-3"
+        style={{ borderColor: "var(--border)", background: "var(--card)" }}
+      >
         <div className="w-6 h-6 rounded-full border-2 border-violet-500 border-t-transparent animate-spin" />
         <span className="text-xs text-muted-foreground font-medium">Analyzing traffic patterns…</span>
       </div>
@@ -97,12 +90,12 @@ export default function AIInsights({ portfolioId }) {
 
   if (error) {
     return (
-      <div className="rounded-2xl p-5 border border-red-500/10 bg-red-950/10 backdrop-blur-md flex items-center gap-3 text-red-400">
+      <div className="rounded-2xl p-5 border border-red-500/20 bg-red-500/5 flex items-center gap-3 text-red-500">
         <AlertCircle className="w-5 h-5 flex-shrink-0" />
         <div className="flex-1 text-xs font-medium leading-relaxed">{error}</div>
         <button
           onClick={() => fetchInsights(false)}
-          className="text-xs font-bold underline hover:text-white transition"
+          className="text-xs font-bold underline hover:opacity-75 transition"
         >
           Retry
         </button>
@@ -111,7 +104,13 @@ export default function AIInsights({ portfolioId }) {
   }
 
   return (
-    <div className="rounded-2xl p-5 border border-white/[0.06] bg-gradient-to-b from-white/[0.03] to-white/[0.01] shadow-2xl relative overflow-hidden backdrop-blur-lg">
+    <div
+      className="rounded-2xl p-5 border shadow-lg relative overflow-hidden"
+      style={{
+        borderColor: "var(--border)",
+        background: "var(--card)",
+      }}
+    >
       {/* Background glow effects */}
       <div className="absolute top-0 right-0 w-32 h-32 bg-violet-600/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
@@ -123,15 +122,15 @@ export default function AIInsights({ portfolioId }) {
             <Sparkles className="w-3.5 h-3.5 text-white animate-pulse" />
           </div>
           <div>
-            <h4 className="text-sm font-bold text-white tracking-wide">✨ AI Insights</h4>
-            <p className="text-[10px] text-muted-foreground">Automated audience interpretation & recommendations</p>
+            <h4 className="text-sm font-bold tracking-wide" style={{ color: "var(--foreground)" }}>✨ AI Insights</h4>
+            <p className="text-[10px] text-muted-foreground">Automated audience interpretation &amp; recommendations</p>
           </div>
         </div>
 
         <button
           onClick={() => fetchInsights(true)}
           disabled={refreshing}
-          className="p-1.5 rounded-lg border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.06] text-muted-foreground hover:text-white transition disabled:opacity-50 flex items-center justify-center"
+          className="p-1.5 rounded-lg border border-border/60 bg-accent/20 hover:bg-accent/50 text-muted-foreground hover:text-foreground transition disabled:opacity-50 flex items-center justify-center"
           title="Refresh insights"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
@@ -162,22 +161,20 @@ export default function AIInsights({ portfolioId }) {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -12 }}
                   transition={{ duration: 0.35, ease: "easeOut", delay: idx * 0.05 }}
-                  className="rounded-xl p-3 border border-white/[0.04] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/[0.08] transition duration-200 flex gap-3.5 items-start relative group"
+                  className="rounded-xl p-3 border border-border/40 bg-accent/10 hover:bg-accent/20 hover:border-border/60 transition duration-200 flex gap-3.5 items-start relative group"
                 >
-                  {/* Left Icon Container with priority colored indicator */}
+                  {/* Left Icon */}
                   <div
                     className="w-8.5 h-8.5 rounded-lg flex items-center justify-center flex-shrink-0 transition duration-300"
-                    style={{
-                      background: `color-mix(in oklch, ${styles.accent} 12%, transparent)`,
-                    }}
+                    style={{ background: `color-mix(in oklch, ${styles.accent} 12%, transparent)` }}
                   >
                     <Icon className="w-4 h-4 transition duration-300 group-hover:scale-110" style={{ color: styles.accent }} />
                   </div>
 
-                  {/* Text Content */}
+                  {/* Text */}
                   <div className="flex-1 min-w-0 space-y-1">
                     <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <span className="text-xs font-bold text-white tracking-wide">{insight.title}</span>
+                      <span className="text-xs font-bold tracking-wide" style={{ color: "var(--foreground)" }}>{insight.title}</span>
                       <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border tracking-wide uppercase ${styles.badge}`}>
                         {styles.label}
                       </span>

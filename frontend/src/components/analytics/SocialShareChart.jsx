@@ -78,14 +78,14 @@ export default function SocialShareChart({ portfolioId }) {
           <button
             onClick={() => fetchSummary(true)}
             disabled={refreshing || loading}
-            className="p-1.5 rounded-lg border border-border/60 bg-card/40 hover:bg-accent/40 transition disabled:opacity-50"
+            className="p-1.5 rounded-lg border border-border/60 bg-accent/20 hover:bg-accent/50 transition disabled:opacity-50"
             title="Refresh sharing stats"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
           </button>
 
           {/* Period selector */}
-          <div className="flex rounded-lg bg-black/40 border border-border/60 p-0.5 text-xs">
+          <div className="flex rounded-lg bg-accent/30 border border-border/60 p-0.5 text-xs">
             {[
               { label: "7d", val: 7 },
               { label: "30d", val: 30 },
@@ -128,8 +128,8 @@ export default function SocialShareChart({ portfolioId }) {
               <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">Total Clicks</div>
               <div className="text-xl font-extrabold mt-1 text-brand">{total.toLocaleString()}</div>
             </div>
-            {chartData.slice(0, 3).map((item, idx) => (
-              <div key={item.name} className="rounded-xl p-3 bg-white/[0.02] border border-border/30">
+            {chartData.slice(0, 3).map((item) => (
+              <div key={item.name} className="rounded-xl p-3 bg-accent/20 border border-border/50">
                 <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium truncate flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full" style={{ background: item.color }} />
                   {item.name}
@@ -155,17 +155,16 @@ export default function SocialShareChart({ portfolioId }) {
                   allowDecimals={false}
                 />
                 <Tooltip
-                  cursor={{ fill: "rgba(255, 255, 255, 0.03)" }}
+                  cursor={{ fill: "color-mix(in oklch, var(--muted) 40%, transparent)" }}
                   contentStyle={{
-                    background: "rgba(15, 15, 18, 0.95)",
-                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    background: "var(--card)",
+                    border: "1px solid var(--border)",
                     borderRadius: 12,
                     color: "var(--foreground)",
-                    boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.5)",
-                    backdropFilter: "blur(4px)"
+                    boxShadow: "0 10px 25px -5px rgba(0,0,0,0.15)",
                   }}
-                  labelStyle={{ fontWeight: "bold", fontSize: 11 }}
-                  itemStyle={{ fontSize: 11 }}
+                  labelStyle={{ fontWeight: "bold", fontSize: 11, color: "var(--foreground)" }}
+                  itemStyle={{ fontSize: 11, color: "var(--foreground)" }}
                 />
                 <Bar dataKey="clicks" radius={[6, 6, 0, 0]} maxBarSize={45}>
                   {chartData.map((entry, index) => (
