@@ -9,20 +9,36 @@ from django.core.management import call_command
 
 def check_and_migrate():
     print("Checking database columns for out-of-sync migrations...")
+    table_exists = False
+    column_exists = False
     try:
         with connection.cursor() as cursor:
+            # First, check if the table exists
             cursor.execute("""
-                SELECT column_name 
-                FROM information_schema.columns 
-                WHERE table_name='portfolios_portfolio' AND column_name='custom_seo_title';
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_name = 'portfolios_portfolio'
+                );
             """)
-            exists = cursor.fetchone() is not None
+            table_exists = cursor.fetchone()[0]
+            
+            if table_exists:
+                # If table exists, check if the column exists
+                cursor.execute("""
+                    SELECT column_name 
+                    FROM information_schema.columns 
+                    WHERE table_name='portfolios_portfolio' AND column_name='custom_seo_title';
+                """)
+                column_exists = cursor.fetchone() is not None
     except Exception as e:
-        print(f"Error checking column existence (might be database initialization): {e}")
-        exists = True # Skip faking if we can't query the table yet
+        print(f"Error checking table/column existence: {e}")
+        # Safeguard: if something fails, do not fake anything
+        table_exists = False
+        column_exists = False
 
-    if not exists:
-        print("Column custom_seo_title does not exist in production database. Correcting migration state...")
+    # We only fake if the table exists but the column is missing
+    if table_exists and not column_exists:
+        print("Table portfolios_portfolio exists but column custom_seo_title does not. Correcting migration state...")
         try:
             # Fake back to 0013 so Django thinks 0014 and 0015 are unapplied
             call_command('migrate', 'portfolios', '0013', fake=True, interactive=False)

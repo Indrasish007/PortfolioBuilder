@@ -29,16 +29,9 @@ if not SECRET_KEY:
     raise ValueError('SECRET_KEY environment variable is not set!')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'False') == 'True'
+DEBUG = False
 
-# Comma-separated list: ALLOWED_HOSTS=myapp.up.railway.app,localhost
-_raw_hosts = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1')
-ALLOWED_HOSTS = [h.strip() for h in _raw_hosts.split(',') if h.strip()]
-
-# Automatically include Render external hostname if set
-render_host = os.getenv('RENDER_EXTERNAL_HOSTNAME')
-if render_host and render_host not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append(render_host)
+ALLOWED_HOSTS = ["*"]
 
 
 
@@ -184,16 +177,13 @@ AUTH_USER_MODEL = 'users.CustomUser'
 _cors_env = os.getenv('CORS_ALLOWED_ORIGINS', '')
 if _cors_env:
     CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors_env.split(',') if o.strip()]
-    CORS_ALLOW_ALL_ORIGINS = False
 else:
     # Production fallback
     CORS_ALLOWED_ORIGINS = [
         "https://buildyourfolio.vercel.app"
     ]
-    if DEBUG:
-        CORS_ALLOW_ALL_ORIGINS = True
-    else:
-        CORS_ALLOW_ALL_ORIGINS = False
+
+CORS_ALLOW_ALL_ORIGINS = True
 
 CSRF_TRUSTED_ORIGINS = list(CORS_ALLOWED_ORIGINS)
 
@@ -296,6 +286,49 @@ DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'webmaster@localhost')
 # Centralized SEO domains configuration
 MAIN_DOMAIN = "portfoliobuilder.com"
 SITE_BASE_URL = "https://portfoliobuilder.com"
+
+# Logging configuration for Render logs
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'authentication': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'users': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+}
 
 
 

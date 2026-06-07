@@ -1,3 +1,4 @@
+import logging
 from rest_framework import generics
 from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -7,6 +8,11 @@ from users.models import CustomUser
 
 from rest_framework import status
 from rest_framework.response import Response
+from rest_framework.views import APIView
+from django.db import connections
+from django.db.migrations.executor import MigrationExecutor
+
+logger = logging.getLogger(__name__)
 
 class SignupView(generics.CreateAPIView):
     queryset = CustomUser.objects.all()
@@ -31,16 +37,14 @@ class SignupView(generics.CreateAPIView):
                 "refresh": str(refresh)
             }, status=status.HTTP_201_CREATED)
         except Exception as e:
-            # Defensive handling: if user was created but connection closed/errored on commit/cleanup
-            import sys, traceback
-            print("Signup exception caught:", file=sys.stderr)
-            traceback.print_exc(file=sys.stderr)
+            logger.exception("Signup failed")
             
+            # Defensive handling: if user was created but connection closed/errored on commit/cleanup
             email = request.data.get('email')
             if email:
                 try:
                     if CustomUser.objects.filter(email=email).exists():
-                        print("User exists despite signup exception, returning success.", file=sys.stderr)
+                        logger.info("User exists despite signup exception, returning success.")
                         # Fetch the user to generate tokens
                         existing_user = CustomUser.objects.get(email=email)
                         refresh = RefreshToken.for_user(existing_user)
@@ -51,7 +55,7 @@ class SignupView(generics.CreateAPIView):
                             "refresh": str(refresh)
                         }, status=status.HTTP_201_CREATED)
                 except Exception as check_err:
-                    print(f"Error checking user existence: {check_err}", file=sys.stderr)
+                    logger.exception("Error checking user existence during signup failure handling")
             
             return Response({
                 "success": False,
@@ -59,7 +63,55 @@ class SignupView(generics.CreateAPIView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-
 class EmailTokenObtainPairView(TokenObtainPairView):
     serializer_class = EmailTokenObtainPairSerializer
+
+
+class HealthCheckView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def get(self, request, *args, **kwargs):
+        health = {
+            "database": "unknown",
+            "user_model_access": "unknown",
+            "migrations_status": "unknown",
+            "unapplied_migrations": []
+        }
+        
+        # 1. Verify Database Connection
+        try:
+            connection = connections['default']
+            connection.ensure_connection()
+            health["database"] = "healthy"
+        except Exception as db_err:
+            logger.exception("Health check database connection failed")
+            health["database"] = f"unhealthy: {str(db_err)}"
+            return Response(health, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+        # 2. Verify User Model Access
+        try:
+            user_count = CustomUser.objects.count()
+            health["user_model_access"] = f"healthy (user count: {user_count})"
+        except Exception as user_err:
+            logger.exception("Health check user model access failed")
+            health["user_model_access"] = f"unhealthy: {str(user_err)}"
+            return Response(health, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+        # 3. Verify Migration Status
+        try:
+            executor = MigrationExecutor(connection)
+            plan = executor.migration_plan(executor.loader.graph.leaf_nodes())
+            unapplied = [f"{migration.app_label}.{migration.name}" for migration, _ in plan]
+            health["unapplied_migrations"] = unapplied
+            if len(unapplied) == 0:
+                health["migrations_status"] = "healthy (all migrations applied)"
+            else:
+                health["migrations_status"] = f"unhealthy ({len(unapplied)} migrations unapplied)"
+        except Exception as mig_err:
+            logger.exception("Health check migration status check failed")
+            health["migrations_status"] = f"unhealthy: {str(mig_err)}"
+            return Response(health, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+        return Response(health, status=status.HTTP_200_OK)
 

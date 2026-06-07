@@ -1,6 +1,9 @@
+import logging
 from rest_framework import serializers
 from users.models import CustomUser, Profile
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+logger = logging.getLogger(__name__)
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -20,8 +23,7 @@ class UserSerializer(serializers.ModelSerializer):
         try:
             Profile.objects.create(user=user, name=user.first_name)
         except Exception as profile_err:
-            import sys
-            print(f"Non-critical profile creation error during signup: {profile_err}", file=sys.stderr)
+            logger.exception("Non-critical profile creation error during signup")
         return user
 
 class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
