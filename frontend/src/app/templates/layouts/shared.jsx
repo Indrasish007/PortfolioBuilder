@@ -51,8 +51,11 @@ export const handleResumeDownload = (resumeLink, action, portfolioId = null) => 
       document.body.removeChild(a);
     }
 
-    // Track analytics if we are in public view
-    if (portfolioId && window.location.pathname.startsWith('/p/')) {
+    // Track analytics if we are in public view (and not in editor preview mode)
+    const path = window.location.pathname;
+    const isPublicRoute = path.startsWith('/p/') || path.startsWith('/u/');
+    const isPreview = new URLSearchParams(window.location.search).get("back") === "1";
+    if (portfolioId && isPublicRoute && !isPreview) {
       let visitorId = localStorage.getItem("visitorId") || "anonymous";
       const attribution = detectTrafficSource();
       const payload = {
@@ -86,10 +89,13 @@ export const handleResumeDownload = (resumeLink, action, portfolioId = null) => 
 /**
  * Track a project link click from the public portfolio view.
  * Fires a fire-and-forget POST so it never blocks navigation.
- * Only runs when the visitor is on a public /p/ page.
+ * Runs on both public /p/ and /u/ paths, but not in editor preview mode.
  */
 export function trackProjectClick(projectId, linkType = 'live') {
-  if (!window.location.pathname.startsWith('/p/')) return;
+  const path = window.location.pathname;
+  const isPublicRoute = path.startsWith('/p/') || path.startsWith('/u/');
+  const isPreview = new URLSearchParams(window.location.search).get("back") === "1";
+  if (!isPublicRoute || isPreview) return;
   if (!projectId) return;
   try {
     const visitorId = localStorage.getItem('visitorId') || 'anonymous';
