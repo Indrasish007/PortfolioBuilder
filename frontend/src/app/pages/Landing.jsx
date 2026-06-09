@@ -33,7 +33,6 @@ export default function Landing() {
   return (
     <div className="relative">
       <Hero />
-      <LogoCloud />
       <AboutSection />
       <GeneratorShowcase />
       <ContactSection />
@@ -75,9 +74,24 @@ function Hero() {
 
   return (
     <section className="relative pt-20 pb-24 overflow-hidden">
-      <div className="absolute inset-0 hero-bg pointer-events-none" />
+      <div className="absolute inset-0 hero-bg pointer-events-none" 
+           style={{
+             maskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)',
+             WebkitMaskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)'
+           }}
+      />
+
+      {/* Bottom transition blend to About section (radial + linear gradient) */}
+      <div className="absolute bottom-0 left-0 right-0 h-[300px] pointer-events-none"
+           style={{
+             background: `
+               radial-gradient(circle at 50% 100%, rgba(168, 85, 247, 0.18), rgba(59, 130, 246, 0.12), transparent 70%),
+               linear-gradient(180deg, transparent, rgba(124, 58, 237, 0.08))
+             `
+           }}
+      />
       <div className="absolute inset-0 grid-pattern opacity-60 pointer-events-none" />
-      
+
       {/* Floating Light Particles */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         {[
@@ -111,7 +125,7 @@ function Hero() {
       </div>
 
       <div className="relative max-w-7xl mx-auto px-5 text-center z-10">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.1 }}
@@ -151,24 +165,24 @@ function Hero() {
           Pick a template, edit visually, and ship a polished site in under 5 minutes. Let the AI co-pilot refine your story.
         </motion.p>
 
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.75, ease: [0.16, 1, 0.3, 1] }}
           className="mt-8 flex items-center justify-center gap-3 flex-wrap"
         >
-          <Button 
-            as={Link} 
-            to="/signup" 
-            size="lg" 
-            magnetic 
+          <Button
+            as={Link}
+            to="/signup"
+            size="lg"
+            magnetic
             onMouseEnter={() => setArrowHovered(true)}
             onMouseLeave={() => setArrowHovered(false)}
             className="gradient-shimmer shadow-glow hover:scale-[1.02] font-semibold"
           >
-            Build mine free 
-            <motion.span 
-              animate={{ x: arrowHovered ? 4 : 0 }} 
+            Build mine free
+            <motion.span
+              animate={{ x: arrowHovered ? 4 : 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 15 }}
               className="inline-block"
             >
@@ -176,8 +190,8 @@ function Hero() {
             </motion.span>
           </Button>
         </motion.div>
-        
-        <motion.div 
+
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.9, duration: 0.5 }}
@@ -236,22 +250,6 @@ function Hero() {
             </div>
           </GlassCard>
         </motion.div>
-      </div>
-    </section>
-  );
-}
-
-function LogoCloud() {
-  const logos = ["Stripe", "Figma", "Linear", "Vercel", "Notion", "Webflow", "Framer"];
-  return (
-    <section className="py-12 border-y border-border/50">
-      <div className="max-w-6xl mx-auto px-5">
-        <p className="text-center text-xs uppercase tracking-widest text-muted-foreground">Loved by makers from</p>
-        <div className="mt-6 grid grid-cols-3 md:grid-cols-7 gap-6 items-center">
-          {logos.map((l) => (
-            <div key={l} className="text-center text-lg font-semibold text-muted-foreground/70 hover:text-foreground transition">{l}</div>
-          ))}
-        </div>
       </div>
     </section>
   );
@@ -325,9 +323,9 @@ function BentoFeatures() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}
               whileHover={{ y: -6, scale: 1.015, boxShadow: "var(--shadow-glow)" }}
-              transition={{ 
-                type: "spring", 
-                stiffness: 280, 
+              transition={{
+                type: "spring",
+                stiffness: 280,
                 damping: 22,
                 opacity: { duration: 0.5, delay: i * 0.05 },
                 y: { duration: 0.5, delay: i * 0.05 }

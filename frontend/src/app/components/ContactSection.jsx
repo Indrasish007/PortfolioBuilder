@@ -57,10 +57,10 @@ export default function ContactSection() {
   return (
     <section id="contact" className="relative py-24 overflow-hidden border-t border-border/50 bg-background/30">
       <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-brand-3/5 blur-3xl pointer-events-none" />
-      
+
       <div className="relative max-w-7xl mx-auto px-5">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_580px] gap-16 items-center">
-          
+
           {/* LEFT: Contact Information */}
           <div className="animate-on-scroll">
             <Badge variant="brand" className="mb-4">Contact Us</Badge>
@@ -104,7 +104,7 @@ export default function ContactSection() {
           <div className="animate-on-scroll" style={{ transitionDelay: "150ms" }}>
             <GlassCard className="p-8 md:p-10 shadow-glow relative overflow-hidden">
               <div className="absolute top-0 right-0 w-24 h-24 rounded-full bg-brand/10 blur-xl pointer-events-none" />
-              
+
               {isSubmitted ? (
                 <div className="py-12 text-center flex flex-col items-center justify-center">
                   <div className="w-16 h-16 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-6">

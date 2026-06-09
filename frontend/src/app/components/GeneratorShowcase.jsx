@@ -96,22 +96,22 @@ export default function GeneratorShowcase() {
       setUploadProgress(progress);
       if (progress >= 100) {
         clearInterval(interval);
-        
+
         // Advance to scanning
         const t1 = setTimeout(() => {
           setAnimState("scanning");
           setLogs(prev => [...prev, "Upload complete. Parsing PDF structures..."]);
-          
+
           const t2 = setTimeout(() => {
             setLogs(prev => [...prev, "Extracting personal identity details...", `Found name: "${sampleResumes[selectedIdx].parsedData.name}"`]);
-            
+
             const t3 = setTimeout(() => {
               setLogs(prev => [...prev, "Extracting professional experience logs...", "Extracting technical skill sets..."]);
-              
+
               const t4 = setTimeout(() => {
                 setAnimState("building");
                 setLogs(prev => [...prev, "Configuring layout grid...", "Styling color themes..."]);
-                
+
                 const t5 = setTimeout(() => {
                   setAnimState("complete");
                   setLogs(prev => [...prev, "Portfolio successfully generated!"]);
@@ -143,7 +143,7 @@ export default function GeneratorShowcase() {
       <div className="absolute bottom-10 right-10 w-[500px] h-[500px] rounded-full bg-brand-2/5 blur-3xl pointer-events-none" />
 
       <div className="relative max-w-7xl mx-auto px-5">
-        
+
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-16 animate-on-scroll">
           <Badge variant="brand" className="mb-4">Resume To Portfolio</Badge>
@@ -157,7 +157,7 @@ export default function GeneratorShowcase() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_600px] gap-12 items-stretch">
-          
+
           {/* LEFT PANEL: CV Uploader Scanner & Parsing Steps */}
           <div className="flex flex-col justify-between space-y-8 animate-on-scroll">
             <div className="space-y-6">
@@ -180,11 +180,10 @@ export default function GeneratorShowcase() {
                       }
                     }}
                     disabled={animState !== "complete" && animState !== "idle"}
-                    className={`p-4 rounded-xl border text-left transition-all ${
-                      selectedIdx === idx
-                        ? "border-brand bg-brand/5 shadow-glow"
-                        : "border-border bg-secondary/20 hover:border-border-hover hover:bg-secondary/40"
-                    }`}
+                    className={`p-4 rounded-xl border text-left transition-all ${selectedIdx === idx
+                      ? "border-brand bg-brand/5 shadow-glow"
+                      : "border-border bg-secondary/20 hover:border-border-hover hover:bg-secondary/40"
+                      }`}
                   >
                     <div className="flex items-center gap-2 mb-2">
                       <FileText className={`w-4 h-4 ${selectedIdx === idx ? "text-brand" : "text-muted-foreground"}`} />
@@ -197,10 +196,10 @@ export default function GeneratorShowcase() {
 
               {/* CV Uploader & Scanner Visual Display */}
               <div className="rounded-2xl border border-border bg-secondary/10 p-6 relative overflow-hidden flex flex-col items-center justify-center min-h-[180px]">
-                
+
                 {/* scanning laser beam */}
                 {animState === "scanning" && (
-                  <motion.div 
+                  <motion.div
                     animate={{ y: [0, 140, 0] }}
                     transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
                     className="absolute inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-brand to-transparent shadow-[0_0_10px_2px_var(--brand)] z-10"
@@ -209,18 +208,18 @@ export default function GeneratorShowcase() {
 
                 <AnimatePresence mode="wait">
                   {animState === "uploading" && (
-                    <motion.div 
-                      key="uploading-state" 
-                      initial={{ opacity: 0, scale: 0.95 }} 
-                      animate={{ opacity: 1, scale: 1 }} 
+                    <motion.div
+                      key="uploading-state"
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0 }}
                       className="w-full flex flex-col items-center"
                     >
                       <UploadCloud className="w-10 h-10 text-brand animate-bounce mb-3" />
                       <span className="text-xs font-semibold mb-2">Uploading: {activeCV.fileName}</span>
                       <div className="w-full max-w-xs h-1.5 rounded-full bg-border/40 overflow-hidden">
-                        <motion.div 
-                          className="h-full gradient-bg" 
+                        <motion.div
+                          className="h-full gradient-bg"
                           style={{ width: `${uploadProgress}%` }}
                         />
                       </div>
@@ -228,10 +227,10 @@ export default function GeneratorShowcase() {
                   )}
 
                   {(animState === "scanning" || animState === "building") && (
-                    <motion.div 
-                      key="scanning-state" 
-                      initial={{ opacity: 0 }} 
-                      animate={{ opacity: 1 }} 
+                    <motion.div
+                      key="scanning-state"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
                       className="flex items-center gap-4 w-full p-4 glass rounded-xl border border-brand/20 relative"
                     >
@@ -249,10 +248,10 @@ export default function GeneratorShowcase() {
                   )}
 
                   {animState === "complete" && (
-                    <motion.div 
-                      key="complete-state" 
-                      initial={{ opacity: 0, y: 10 }} 
-                      animate={{ opacity: 1, y: 0 }} 
+                    <motion.div
+                      key="complete-state"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }}
                       className="text-center"
                     >
@@ -272,10 +271,10 @@ export default function GeneratorShowcase() {
                   <span className="font-semibold text-foreground uppercase tracking-wider text-[10px]">Parser execution logs</span>
                 </div>
                 {logs.map((log, index) => (
-                  <motion.div 
-                    initial={{ opacity: 0, x: -5 }} 
-                    animate={{ opacity: 1, x: 0 }} 
-                    key={log + index} 
+                  <motion.div
+                    initial={{ opacity: 0, x: -5 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    key={log + index}
                     className="flex items-center gap-2 text-foreground/80"
                   >
                     <ChevronRight className="w-3 h-3 text-brand shrink-0" />
@@ -286,8 +285,8 @@ export default function GeneratorShowcase() {
             </div>
 
             {/* Replay action */}
-            <Button 
-              onClick={startGeneration} 
+            <Button
+              onClick={startGeneration}
               disabled={animState !== "complete"}
               variant="outline"
               className="w-full h-12 flex items-center justify-center gap-2"
@@ -306,8 +305,8 @@ export default function GeneratorShowcase() {
                 <span className="w-2.5 h-2.5 rounded-full bg-amber-400/80" />
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-400/80" />
                 <div className="ml-3 text-[10px] text-muted-foreground truncate">
-                  {animState === "complete" 
-                    ? `portfoliobuilder.ai/u/${activeCV.parsedData.name.toLowerCase().replace(" ", "")}` 
+                  {animState === "complete"
+                    ? `portfoliobuilder.ai/u/${activeCV.parsedData.name.toLowerCase().replace(" ", "")}`
                     : "portfoliobuilder.ai/generator/preview"
                   }
                 </div>
@@ -321,10 +320,10 @@ export default function GeneratorShowcase() {
               {/* Viewport Workspace */}
               <div className="flex-1 bg-secondary/10 p-6 flex flex-col justify-center relative overflow-hidden">
                 <AnimatePresence mode="wait">
-                  
+
                   {/* Phase 1: Uploading/Scanning */}
                   {(animState === "uploading" || animState === "scanning") && (
-                    <motion.div 
+                    <motion.div
                       key="idle-preview"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -343,7 +342,7 @@ export default function GeneratorShowcase() {
 
                   {/* Phase 2: Building & Complete */}
                   {(animState === "building" || animState === "complete") && (
-                    <motion.div 
+                    <motion.div
                       key="portfolio-preview"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -351,7 +350,7 @@ export default function GeneratorShowcase() {
                       className={`w-full h-full flex flex-col space-y-4 text-left transition-colors duration-1000 p-5 rounded-xl ${activeCV.parsedData.theme}`}
                     >
                       {/* Nav element */}
-                      <motion.div 
+                      <motion.div
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5 }}
@@ -368,13 +367,13 @@ export default function GeneratorShowcase() {
 
                       {/* Info element */}
                       <div className="space-y-2 py-1">
-                        <motion.div 
+                        <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: "35%" }}
                           transition={{ duration: 0.6 }}
                           className={`h-1.5 rounded ${activeCV.parsedData.textColor} bg-current opacity-40`}
                         />
-                        <motion.h4 
+                        <motion.h4
                           initial={{ opacity: 0, y: 8 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 0.2 }}
@@ -382,7 +381,7 @@ export default function GeneratorShowcase() {
                         >
                           Hi, I'm <span className={activeCV.parsedData.textColor}>{activeCV.parsedData.name}</span>
                         </motion.h4>
-                        <motion.div 
+                        <motion.div
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           transition={{ delay: 0.4 }}
@@ -390,7 +389,7 @@ export default function GeneratorShowcase() {
                         >
                           {activeCV.parsedData.role}
                         </motion.div>
-                        <motion.p 
+                        <motion.p
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           transition={{ delay: 0.6 }}
@@ -402,9 +401,9 @@ export default function GeneratorShowcase() {
 
                       {/* Modules element */}
                       <div className="grid grid-cols-2 gap-3 flex-1 overflow-hidden">
-                        
+
                         {/* Projects column */}
-                        <motion.div 
+                        <motion.div
                           initial={{ opacity: 0, scale: 0.95 }}
                           animate={{ opacity: 1, scale: 1 }}
                           transition={{ delay: 0.9 }}
@@ -425,7 +424,7 @@ export default function GeneratorShowcase() {
                         </motion.div>
 
                         {/* Skills column */}
-                        <motion.div 
+                        <motion.div
                           initial={{ opacity: 0, scale: 0.95 }}
                           animate={{ opacity: 1, scale: 1 }}
                           transition={{ delay: 1.1 }}
@@ -435,8 +434,8 @@ export default function GeneratorShowcase() {
                             <div className="text-[7px] text-muted-foreground uppercase tracking-widest font-semibold">Skills Extracted</div>
                             <div className="flex gap-1 flex-wrap mt-2">
                               {activeCV.parsedData.skills.slice(0, 4).map((skill) => (
-                                <span 
-                                  key={skill} 
+                                <span
+                                  key={skill}
                                   className={`text-[7px] px-1.5 py-0.5 rounded border ${activeCV.parsedData.pillStyle}`}
                                 >
                                   {skill}
@@ -457,7 +456,7 @@ export default function GeneratorShowcase() {
           </div>
 
         </div>
-        
+
       </div>
     </section>
   );

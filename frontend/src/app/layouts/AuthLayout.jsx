@@ -16,11 +16,6 @@ export default function AuthLayout() {
           <p className="text-muted-foreground">
             Pick a template, edit visually, and ship in under 5 minutes — backed by AI that actually understands your story.
           </p>
-          <div className="grid grid-cols-3 gap-3">
-            {["Stripe", "Figma", "Linear", "Vercel", "Webflow", "Framer"].map((n) => (
-              <div key={n} className="glass rounded-lg h-12 flex items-center justify-center text-sm text-muted-foreground">{n}</div>
-            ))}
-          </div>
         </div>
         <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} PortfolioBuilder</p>
       </div>

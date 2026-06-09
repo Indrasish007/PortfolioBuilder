@@ -1,17 +1,18 @@
 import { useEffect, useState, useRef } from "react";
-import { 
-  Palette, 
-  Sparkles, 
-  BarChart3, 
-  Award, 
-  FileText, 
-  TrendingUp, 
-  FileEdit, 
-  Paintbrush, 
+import {
+  Palette,
+  Sparkles,
+  BarChart3,
+  Award,
+  FileText,
+  TrendingUp,
+  FileEdit,
+  Paintbrush,
   Rocket,
   Globe,
   Star
 } from "lucide-react";
+import { motion } from "framer-motion";
 import GlassCard from "./GlassCard.jsx";
 import Badge from "./Badge.jsx";
 
@@ -158,13 +159,85 @@ export default function AboutSection() {
   ];
 
   return (
-    <section id="about" className="relative py-24 overflow-hidden border-y border-border/50 bg-background/50">
+    <section id="about" className="relative py-24 border-b border-border/50">
+      {/* Translucent background with top fade out to allow hero glows to flow behind */}
+      <div className="absolute inset-0 bg-gradient-to-b from-background/50 to-background/50 pointer-events-none -z-20"
+           style={{
+             maskImage: 'linear-gradient(to bottom, transparent 0%, black 200px)',
+             WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 200px)'
+           }}
+      />
+
+      {/* Extremely subtle blurred divider line */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-[1px] bg-gradient-to-r from-transparent via-border/5 to-transparent blur-[3px] opacity-30 pointer-events-none" />
+
+      {/* Top transition blend from Hero section (radial + linear gradient) */}
+      <div className="absolute top-0 left-0 right-0 h-[400px] pointer-events-none -z-10"
+           style={{
+             background: `
+               radial-gradient(circle at 50% 0%, rgba(168, 85, 247, 0.18), rgba(59, 130, 246, 0.12), transparent 70%),
+               linear-gradient(180deg, transparent, rgba(124, 58, 237, 0.08), rgba(6, 182, 212, 0.06), transparent)
+             `
+           }}
+      />
+
+      {/* Grid pattern continuation */}
+      <div className="absolute inset-x-0 top-0 h-[250px] grid-pattern pointer-events-none -z-10"
+           style={{
+             opacity: 0.3,
+             maskImage: 'linear-gradient(to bottom, black, transparent)',
+             WebkitMaskImage: 'linear-gradient(to bottom, black, transparent)'
+           }}
+      />
+
+      {/* Floating Ambient Glow Blobs */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden -z-10">
+        {/* Purple blob top-left */}
+        <div className="absolute top-[15%] left-[-10%] w-[450px] h-[450px] rounded-full bg-brand/8 blur-[120px] pointer-events-none animate-float" style={{ animationDelay: '0s', animationDuration: '12s' }} />
+        {/* Cyan blob middle-right */}
+        <div className="absolute top-[40%] right-[-10%] w-[500px] h-[500px] rounded-full bg-brand-2/6 blur-[140px] pointer-events-none animate-float" style={{ animationDelay: '-4s', animationDuration: '15s' }} />
+        {/* Indigo/Pink blob bottom-left */}
+        <div className="absolute bottom-[10%] left-[5%] w-[400px] h-[400px] rounded-full bg-brand-3/8 blur-[110px] pointer-events-none animate-float" style={{ animationDelay: '-8s', animationDuration: '10s' }} />
+      </div>
+
+      {/* Floating Light Particles matching Hero */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden -z-10">
+        {[
+          { size: 12, top: "15%", left: "80%", delay: 1 },
+          { size: 16, top: "45%", left: "15%", delay: 3.5 },
+          { size: 10, top: "75%", left: "75%", delay: 2 },
+          { size: 14, top: "85%", left: "25%", delay: 0.5 }
+        ].map((p, idx) => (
+          <motion.div
+            key={idx}
+            className="absolute rounded-full bg-brand/25 blur-sm"
+            style={{
+              width: p.size,
+              height: p.size,
+              top: p.top,
+              left: p.left,
+            }}
+            animate={{
+              y: [0, -40, 0],
+              x: [0, 20, 0],
+              opacity: [0.2, 0.6, 0.2],
+            }}
+            transition={{
+              duration: 10 + idx * 4,
+              repeat: Infinity,
+              delay: p.delay,
+              ease: "easeInOut"
+            }}
+          />
+        ))}
+      </div>
+
       {/* Background radial gradient glow for a premium look */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-brand/5 to-transparent pointer-events-none" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-brand-2/5 blur-3xl pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-brand/5 to-transparent pointer-events-none -z-10" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-brand-2/5 blur-3xl pointer-events-none -z-10" />
 
       <div className="relative max-w-7xl mx-auto px-5">
-        
+
         {/* HERO PART OF ABOUT SECTION */}
         <div className="text-center max-w-3xl mx-auto mb-20 animate-on-scroll">
           <Badge variant="brand" className="mb-4">About PortfolioBuilder</Badge>
@@ -187,7 +260,7 @@ export default function AboutSection() {
             {features.map((feat, i) => {
               const IconComp = feat.icon;
               return (
-                <div 
+                <div
                   key={feat.title}
                   className="animate-on-scroll"
                   style={{ transitionDelay: `${i * 100}ms` }}
@@ -211,8 +284,8 @@ export default function AboutSection() {
             {stats.map((s, i) => {
               const StatIcon = s.icon;
               return (
-                <div 
-                  key={s.label} 
+                <div
+                  key={s.label}
                   className="flex flex-col items-center justify-center p-4 py-6 md:py-4"
                 >
                   <div className="w-10 h-10 rounded-full bg-accent/40 flex items-center justify-center mb-2">
@@ -233,7 +306,7 @@ export default function AboutSection() {
             <h3 className="text-2xl md:text-3xl font-semibold">How It Works</h3>
             <p className="text-sm text-muted-foreground mt-2">Get your site up and running in three simple actions.</p>
           </div>
-          
+
           <div className="relative grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-8 px-4">
             {/* Horizontal connection line for desktop */}
             <div className="hidden lg:block absolute top-1/3 left-[15%] right-[15%] h-0.5 bg-gradient-to-r from-brand via-brand-2 to-brand-3 opacity-30 -z-10" />
@@ -241,8 +314,8 @@ export default function AboutSection() {
             {steps.map((st, i) => {
               const StepIcon = st.icon;
               return (
-                <div 
-                  key={st.title} 
+                <div
+                  key={st.title}
                   className="relative flex flex-col items-center text-center animate-on-scroll"
                   style={{ transitionDelay: `${i * 150}ms` }}
                 >

@@ -115,6 +115,7 @@
 }
 
 @layer base {
+
   *,
   *::before,
   *::after {
@@ -160,7 +161,7 @@
     height: 200%;
     z-index: -20;
     pointer-events: none;
-    background-image: 
+    background-image:
       radial-gradient(circle at 30% 30%, color-mix(in oklch, var(--brand) 18%, transparent) 0%, transparent 40%),
       radial-gradient(circle at 70% 70%, color-mix(in oklch, var(--brand-2) 16%, transparent) 0%, transparent 40%),
       radial-gradient(circle at 50% 50%, color-mix(in oklch, var(--brand-3) 14%, transparent) 0%, transparent 35%);
@@ -188,9 +189,11 @@
     0% {
       transform: rotate(0deg) translate(0, 0);
     }
+
     50% {
       transform: rotate(180deg) translate(-2%, -2%);
     }
+
     100% {
       transform: rotate(360deg) translate(0, 0);
     }
@@ -383,6 +386,7 @@ html.theme-transitioning body {
 
 /* Respect user's OS reduced-motion preference */
 @media (prefers-reduced-motion: reduce) {
+
   html.theme-transitioning body,
   html.theme-transitioning .glass,
   html.theme-transitioning .shadow-card,
@@ -404,11 +408,13 @@ html.theme-transitioning body {
 }
 
 /* Premium Form Input Focus Glow */
-input:focus, select:focus, textarea:focus {
+input:focus,
+select:focus,
+textarea:focus {
   outline: none !important;
   border-color: var(--color-brand) !important;
-  box-shadow: 0 0 0 2px color-mix(in oklch, var(--brand) 25%, transparent), 
-              0 0 16px color-mix(in oklch, var(--brand) 20%, transparent) !important;
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--brand) 25%, transparent),
+    0 0 16px color-mix(in oklch, var(--brand) 20%, transparent) !important;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
@@ -425,12 +431,10 @@ input:focus, select:focus, textarea:focus {
   left: -60%;
   width: 30%;
   height: 200%;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.25) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
+  background: linear-gradient(90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.25) 50%,
+      rgba(255, 255, 255, 0) 100%);
   transform: rotate(30deg);
   animation: shimmer-sweep 3s ease-in-out infinite;
   pointer-events: none;
@@ -440,9 +444,11 @@ input:focus, select:focus, textarea:focus {
   0% {
     left: -60%;
   }
+
   30% {
     left: 140%;
   }
+
   100% {
     left: 140%;
   }
@@ -450,12 +456,10 @@ input:focus, select:focus, textarea:focus {
 
 /* Premium branded skeletons */
 .skeleton-loader {
-  background: linear-gradient(
-    90deg,
-    color-mix(in oklch, var(--color-muted) 60%, transparent) 25%,
-    color-mix(in oklch, var(--color-muted) 90%, transparent) 37%,
-    color-mix(in oklch, var(--color-muted) 60%, transparent) 63%
-  );
+  background: linear-gradient(90deg,
+      color-mix(in oklch, var(--color-muted) 60%, transparent) 25%,
+      color-mix(in oklch, var(--color-muted) 90%, transparent) 37%,
+      color-mix(in oklch, var(--color-muted) 60%, transparent) 63%);
   background-size: 400% 100%;
   animation: skeleton-pulse 1.4s ease infinite;
 }
@@ -464,6 +468,7 @@ input:focus, select:focus, textarea:focus {
   0% {
     background-position: 100% 50%;
   }
+
   100% {
     background-position: 0% 50%;
   }
@@ -492,18 +497,24 @@ input:focus, select:focus, textarea:focus {
 .project-card-zoom-container {
   overflow: hidden;
 }
+
 .project-card-zoom-container img {
   transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
+
 .project-card-zoom-container:hover img {
   transform: scale(1.08) !important;
 }
 
 /* Hide scrollbar on public portfolios */
 .public-portfolio {
-  scrollbar-width: none !important; /* Firefox */
-  -ms-overflow-style: none !important; /* IE/Edge */
+  scrollbar-width: none !important;
+  /* Firefox */
+  -ms-overflow-style: none !important;
+  /* IE/Edge */
 }
+
 .public-portfolio::-webkit-scrollbar {
-  display: none !important; /* Chrome/Safari/Webkit */
+  display: none !important;
+  /* Chrome/Safari/Webkit */
 }
