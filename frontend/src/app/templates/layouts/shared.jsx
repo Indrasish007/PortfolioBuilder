@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Github, Twitter, Linkedin, Facebook, Instagram, Globe, FileText, ChevronDown, ChevronUp, Download } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Github, Twitter, Linkedin, Facebook, Instagram, Globe, FileText, ChevronDown, ChevronUp, Download, Mail, Phone, MapPin, Send, ArrowUp } from "lucide-react";
 import { motion } from "framer-motion";
 import api from "../../services/api.js";
 import { detectTrafficSource } from "../../utils/attribution.js";
@@ -128,8 +128,8 @@ export function trackProjectClick(projectId, linkType = 'live') {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
-    }).catch(() => {});
-  } catch (_) {}
+    }).catch(() => { });
+  } catch (_) { }
 }
 
 export function handleScrollToSection(e, sectionId) {
@@ -143,10 +143,10 @@ export function handleScrollToSection(e, sectionId) {
 
 export function getLayoutFonts(typography, defaultBody = "Inter,sans-serif", defaultHeading = null) {
   if (!typography) return { body: defaultBody, heading: defaultHeading || defaultBody };
-  
+
   let headingFont = "'Space Grotesk', sans-serif";
   let bodyFont = "'Inter', sans-serif";
-  
+
   if (typography === "Inter + Space Grotesk") {
     headingFont = "'Space Grotesk', sans-serif";
     bodyFont = "'Inter', sans-serif";
@@ -172,7 +172,7 @@ export function getLayoutFonts(typography, defaultBody = "Inter,sans-serif", def
     headingFont = "'Cinzel', serif";
     bodyFont = "'Montserrat', sans-serif";
   }
-  
+
   return { body: bodyFont, heading: headingFont };
 }
 
@@ -213,17 +213,17 @@ export function Tags({ items = [], bg, fg, radius = "999px", border }) {
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
       {items.map((s, i) => (
-        <motion.span 
-          key={i} 
+        <motion.span
+          key={i}
           whileHover={{ y: -2, scale: 1.03, filter: "brightness(1.15)" }}
           transition={{ type: "spring", stiffness: 400, damping: 15 }}
-          style={{ 
-            background: bg, 
-            color: fg, 
-            padding: "4px 12px", 
-            borderRadius: radius, 
-            fontSize: 12, 
-            border: border || "none", 
+          style={{
+            background: bg,
+            color: fg,
+            padding: "4px 12px",
+            borderRadius: radius,
+            fontSize: 12,
+            border: border || "none",
             lineHeight: 1.5,
             display: "inline-block",
             cursor: "default"
@@ -335,6 +335,401 @@ export function GalleryAlbum({ images, fg }) {
         </div>
       )}
     </>
+  );
+}
+
+export function ContactSection({ u, t, id, portfolioId }) {
+  const [formData, setFormData] = useState({ name: "", email: "", message: "" });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 300);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) return;
+
+    setIsSubmitting(true);
+    // Mock submission flow
+    setTimeout(() => {
+      setIsSubmitting(false);
+      setIsSubmitted(true);
+      setFormData({ name: "", email: "", message: "" });
+      setTimeout(() => setIsSubmitted(false), 5000);
+    }, 1200);
+  };
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const ac = t?.ac || "#7c3aed";
+  const fg = t?.fg || "#f8fafc";
+  const bg = t?.bg || "#0b0f1a";
+
+  const hasContactDetails = u?.email || u?.phone || u?.location;
+
+  // Theme adaptations
+  const isBrutalist = id === "brutalist" || id === "monochrome";
+  const isGlass = ["gradient", "aurora", "glassmorphism", "holographic"].includes(id);
+
+  // Border & shape tokens
+  const cardRadius = isBrutalist ? "0px" : isGlass ? "16px" : "12px";
+  const cardBorder = isBrutalist ? `3px solid ${ac}` : isGlass ? "1px solid rgba(255, 255, 255, 0.15)" : `1px solid color-mix(in srgb, ${fg} 10%, transparent)`;
+  const cardBg = isBrutalist ? bg : isGlass ? "rgba(255, 255, 255, 0.05)" : `color-mix(in srgb, ${fg} 3%, ${bg})`;
+  const cardShadow = isBrutalist ? `6px 6px 0px ${ac}` : isGlass ? "0 8px 32px 0 rgba(0, 0, 0, 0.2)" : "none";
+  const cardBlur = isGlass ? "blur(20px)" : "none";
+
+  const inputRadius = isBrutalist ? "0px" : "8px";
+  const inputBorder = isBrutalist ? `2px solid ${fg}` : `1px solid color-mix(in srgb, ${fg} 15%, transparent)`;
+  const inputBg = isBrutalist ? bg : `color-mix(in srgb, ${bg} 80%, transparent)`;
+  
+  const submitRadius = isBrutalist ? "0px" : "8px";
+  const submitBorder = isBrutalist ? `3px solid ${fg}` : "none";
+  const submitBg = isBrutalist ? ac : `linear-gradient(135deg, ${ac} 0%, color-mix(in srgb, ${ac} 70%, #fff) 100%)`;
+  const submitText = isBrutalist ? bg : "#ffffff";
+  const submitShadow = isBrutalist ? `4px 4px 0px ${fg}` : `0 4px 14px -4px color-mix(in srgb, ${ac} 40%, transparent)`;
+
+  return (
+    <div style={{ marginTop: 80, borderTop: isBrutalist ? `3px dashed ${ac}` : `1px solid color-mix(in srgb, ${fg} 10%, transparent)`, paddingTop: 60, position: "relative" }}>
+      <style>{`
+        .contact-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 32px;
+        }
+        @media (min-width: 768px) {
+          .contact-grid {
+            grid-template-columns: ${hasContactDetails ? "1fr 1.2fr" : "1fr"};
+          }
+        }
+        .contact-details-col {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+        }
+        .contact-detail-card {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          padding: 20px;
+          border-radius: ${cardRadius};
+          background: ${cardBg};
+          border: ${cardBorder};
+          box-shadow: ${cardShadow};
+          backdrop-filter: ${cardBlur};
+          -webkit-backdrop-filter: ${cardBlur};
+          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .contact-detail-card:hover {
+          border-color: ${ac};
+          transform: ${isBrutalist ? "translate(-4px, -4px)" : "translateY(-2px)"};
+          box-shadow: ${isBrutalist ? `8px 8px 0px ${ac}` : isGlass ? "0 12px 40px 0 rgba(0,0,0,0.3)" : `0 8px 20px -4px color-mix(in srgb, ${ac} 25%, transparent)`};
+        }
+        .contact-detail-icon-wrapper {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 48px;
+          height: 48px;
+          border-radius: ${isBrutalist ? "0" : "50%"};
+          background: ${isBrutalist ? ac : `linear-gradient(135deg, ${ac} 0%, color-mix(in srgb, ${ac} 75%, #000) 100%)`};
+          color: ${isBrutalist ? bg : "#fff"};
+          border: ${isBrutalist ? `2px solid ${fg}` : "none"};
+          flex-shrink: 0;
+        }
+        .contact-detail-info {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          min-width: 0;
+        }
+        .contact-detail-label {
+          font-size: 10px;
+          font-weight: 700;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          color: ${fg};
+          opacity: 0.5;
+        }
+        .contact-detail-value {
+          font-size: 14px;
+          font-weight: 500;
+          color: ${fg};
+          word-break: break-all;
+          text-decoration: none;
+          transition: opacity 0.2s;
+        }
+        .contact-detail-value:hover {
+          opacity: 0.8;
+        }
+        
+        .contact-form-container {
+          padding: 32px;
+          border-radius: ${cardRadius};
+          background: ${cardBg};
+          border: ${cardBorder};
+          box-shadow: ${cardShadow};
+          backdrop-filter: ${cardBlur};
+          -webkit-backdrop-filter: ${cardBlur};
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+        }
+        .contact-form-row {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 16px;
+        }
+        @media (min-width: 640px) {
+          .contact-form-row {
+            grid-template-columns: 1fr 1fr;
+          }
+        }
+        .contact-form-group {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+        .contact-form-label {
+          font-size: 10px;
+          font-weight: 700;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          color: ${fg};
+          opacity: 0.6;
+        }
+        .contact-form-input, .contact-form-textarea {
+          width: 100%;
+          padding: 12px 16px;
+          border-radius: ${inputRadius};
+          background: ${inputBg};
+          border: ${inputBorder};
+          color: ${fg};
+          font-family: inherit;
+          font-size: 14px;
+          transition: all 0.3s ease;
+          box-sizing: border-box;
+        }
+        .contact-form-input:focus, .contact-form-textarea:focus {
+          outline: none;
+          border-color: ${ac};
+          box-shadow: ${isBrutalist ? `3px 3px 0px ${ac}` : `0 0 0 2px color-mix(in srgb, ${ac} 20%, transparent)`};
+          background: ${isBrutalist ? bg : `color-mix(in srgb, ${bg} 60%, transparent)`};
+        }
+        .contact-form-textarea {
+          resize: none;
+          height: 120px;
+        }
+        .contact-form-submit-btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          padding: 14px 28px;
+          border-radius: ${submitRadius};
+          background: ${submitBg};
+          color: ${submitText};
+          border: ${submitBorder};
+          box-shadow: ${submitShadow};
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+          align-self: flex-start;
+        }
+        .contact-form-submit-btn:hover:not(:disabled) {
+          transform: ${isBrutalist ? "translate(-3px, -3px)" : "translateY(-2px)"};
+          box-shadow: ${isBrutalist ? `6px 6px 0px ${fg}` : `0 8px 20px -4px color-mix(in srgb, ${ac} 40%, transparent)`};
+          filter: ${isBrutalist ? "none" : "brightness(1.1)"};
+        }
+        .contact-form-submit-btn:active:not(:disabled) {
+          transform: translateY(0);
+          box-shadow: ${isBrutalist ? "none" : "none"};
+        }
+        .contact-form-submit-btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+          transform: none;
+          box-shadow: none;
+        }
+        
+        .back-to-top-btn {
+          position: fixed;
+          bottom: 24px;
+          right: 24px;
+          width: 48px;
+          height: 48px;
+          border-radius: ${isBrutalist ? "0" : "50%"};
+          background: ${ac};
+          color: ${isBrutalist ? bg : "#fff"};
+          border: ${isBrutalist ? `3px solid ${fg}` : "none"};
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          box-shadow: ${isBrutalist ? `4px 4px 0px ${fg}` : "0 4px 14px rgba(0, 0, 0, 0.25)"};
+          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+          z-index: 99;
+          opacity: 0;
+          transform: translateY(16px);
+          pointer-events: none;
+        }
+        .back-to-top-btn.visible {
+          opacity: 1;
+          transform: translateY(0);
+          pointer-events: auto;
+        }
+        .back-to-top-btn:hover {
+          transform: ${isBrutalist ? "translate(-4px, -4px)" : "translateY(-4px)"};
+          box-shadow: ${isBrutalist ? `8px 8px 0px ${fg}` : `0 6px 20px color-mix(in srgb, ${ac} 40%, transparent)`};
+        }
+      `}</style>
+
+      <ScrollReveal>
+        <div style={{ marginBottom: 40 }}>
+          <h2 style={{ fontSize: "clamp(24px, 4vw, 36px)", fontWeight: 800, color: fg, marginBottom: 8, letterSpacing: "-0.02em" }}>
+            Let's build something together.
+          </h2>
+          <p style={{ fontSize: "15px", color: fg, opacity: 0.7, maxWidth: 600, lineHeight: 1.6 }}>
+            Have an opportunity, a project idea, or just want to say hi? My inbox is open.
+          </p>
+        </div>
+
+        <div className="contact-grid">
+          {hasContactDetails && (
+            <div className="contact-details-col">
+              {u.email && (
+                <div className="contact-detail-card">
+                  <div className="contact-detail-icon-wrapper">
+                    <Mail size={20} />
+                  </div>
+                  <div className="contact-detail-info">
+                    <span className="contact-detail-label">Email</span>
+                    <a href={`mailto:${u.email}`} className="contact-detail-value">
+                      {u.email}
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {u.phone && (
+                <div className="contact-detail-card">
+                  <div className="contact-detail-icon-wrapper">
+                    <Phone size={20} />
+                  </div>
+                  <div className="contact-detail-info">
+                    <span className="contact-detail-label">Phone</span>
+                    <a href={`tel:${u.phone}`} className="contact-detail-value">
+                      {u.phone}
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {u.location && (
+                <div className="contact-detail-card">
+                  <div className="contact-detail-icon-wrapper">
+                    <MapPin size={20} />
+                  </div>
+                  <div className="contact-detail-info">
+                    <span className="contact-detail-label">Location</span>
+                    <span className="contact-detail-value">{u.location}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="contact-form-container">
+            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              <div className="contact-form-row">
+                <div className="contact-form-group">
+                  <label className="contact-form-label">Your Name</label>
+                  <input
+                    type="text"
+                    name="name"
+                    placeholder="Jane Doe"
+                    required
+                    value={formData.name}
+                    onChange={handleChange}
+                    className="contact-form-input"
+                  />
+                </div>
+                <div className="contact-form-group">
+                  <label className="contact-form-label">Email</label>
+                  <input
+                    type="email"
+                    name="email"
+                    placeholder="jane@company.com"
+                    required
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="contact-form-input"
+                  />
+                </div>
+              </div>
+
+              <div className="contact-form-group">
+                <label className="contact-form-label">Message</label>
+                <textarea
+                  name="message"
+                  placeholder="Tell me a little about your project or opportunity..."
+                  required
+                  value={formData.message}
+                  onChange={handleChange}
+                  className="contact-form-textarea"
+                />
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+                <button
+                  type="submit"
+                  disabled={isSubmitting || isSubmitted}
+                  className="contact-form-submit-btn"
+                >
+                  {isSubmitting ? (
+                    <span>Sending...</span>
+                  ) : isSubmitted ? (
+                    <span>Message Sent!</span>
+                  ) : (
+                    <>
+                      <Send size={16} />
+                      <span>Send Message</span>
+                    </>
+                  )}
+                </button>
+
+                {isSubmitted && (
+                  <span style={{ fontSize: "14px", color: ac, fontWeight: 500 }}>
+                    Thanks! I'll get back to you soon.
+                  </span>
+                )}
+              </div>
+            </form>
+          </div>
+        </div>
+      </ScrollReveal>
+
+      <button
+        onClick={scrollToTop}
+        className={`back-to-top-btn ${showScrollTop ? "visible" : ""}`}
+        aria-label="Back to Top"
+      >
+        <ArrowUp size={20} />
+      </button>
+    </div>
   );
 }
 

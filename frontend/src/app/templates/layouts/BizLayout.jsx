@@ -1,15 +1,15 @@
 import { Mail, Github, ExternalLink, Phone } from "lucide-react";
-import { Soc, Tags, FAQList, SectionLabel, VideoEmbed, MusicEmbed, GalleryAlbum, handleResumeDownload, trackProjectClick, handleScrollToSection, ScrollReveal } from "./shared.jsx";
+import { Soc, Tags, FAQList, SectionLabel, VideoEmbed, MusicEmbed, GalleryAlbum, handleResumeDownload, trackProjectClick, handleScrollToSection, ScrollReveal, ContactSection } from "./shared.jsx";
 
 // classic, startup, forest, oceanic
 export default function BizLayout({ p, t, id, portfolioId }) {
   const u = p.user || {};
 
   // radius/font stay template-specific; bg/fg/ac come from theme `t`
-  const radius = { classic:"4px", startup:"8px", forest:"4px", oceanic:"8px" }[id] || "6px";
-  const font   = "var(--font-body, 'Inter,sans-serif')";
-  const ac     = t.ac;
-  const fg     = t.fg;
+  const radius = { classic: "4px", startup: "8px", forest: "4px", oceanic: "8px" }[id] || "6px";
+  const font = "var(--font-body, 'Inter,sans-serif')";
+  const ac = t.ac;
+  const fg = t.fg;
 
   const lbl = (txt) => <SectionLabel text={txt} style={{ color: ac, opacity: 1 }} />;
 
@@ -127,17 +127,17 @@ export default function BizLayout({ p, t, id, portfolioId }) {
                 {p.projects.map((proj, i) => (
                   <div key={i} style={{
                     background: `${ac}07`, border: `1px solid ${ac}20`, borderRadius: radius, padding: proj.image ? 0 : 24,
-                    transition: "border-color 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1)", 
+                    transition: "border-color 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
                     display: "flex", flexDirection: "column"
                   }}
                     className="project-card-zoom-container"
-                    onMouseEnter={e => { 
-                      e.currentTarget.style.borderColor = `${ac}60`; 
+                    onMouseEnter={e => {
+                      e.currentTarget.style.borderColor = `${ac}60`;
                       e.currentTarget.style.transform = "translateY(-3px)";
                       e.currentTarget.style.boxShadow = `0 12px 30px -10px color-mix(in srgb, ${ac} 15%, transparent)`;
                     }}
-                    onMouseLeave={e => { 
-                      e.currentTarget.style.borderColor = `${ac}20`; 
+                    onMouseLeave={e => {
+                      e.currentTarget.style.borderColor = `${ac}20`;
                       e.currentTarget.style.transform = "translateY(0)";
                       e.currentTarget.style.boxShadow = "none";
                     }}>
@@ -173,11 +173,11 @@ export default function BizLayout({ p, t, id, portfolioId }) {
               {lbl("Experience")}
               <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
                 {p.experience.map((e, i) => (
-                  <div key={i} style={{ 
-                    display: "grid", 
-                    gridTemplateColumns: "repeat(auto-fill, minmax(min(160px,100%), 1fr))", 
-                    gap: "8px 24px", 
-                    padding: "24px 0", 
+                  <div key={i} style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fill, minmax(min(160px,100%), 1fr))",
+                    gap: "8px 24px",
+                    padding: "24px 0",
                     borderTop: `1px solid ${ac}15`,
                     transition: "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
                     transformOrigin: "left"
@@ -210,13 +210,13 @@ export default function BizLayout({ p, t, id, portfolioId }) {
                     background: `${ac}07`, border: `1px solid ${ac}20`, borderRadius: radius, padding: 24,
                     transition: "border-color 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1)"
                   }}
-                    onMouseEnter={e => { 
-                      e.currentTarget.style.borderColor = `${ac}60`; 
+                    onMouseEnter={e => {
+                      e.currentTarget.style.borderColor = `${ac}60`;
                       e.currentTarget.style.transform = "translateY(-3px)";
                       e.currentTarget.style.boxShadow = `0 12px 30px -10px color-mix(in srgb, ${ac} 15%, transparent)`;
                     }}
-                    onMouseLeave={e => { 
-                      e.currentTarget.style.borderColor = `${ac}20`; 
+                    onMouseLeave={e => {
+                      e.currentTarget.style.borderColor = `${ac}20`;
                       e.currentTarget.style.transform = "translateY(0)";
                       e.currentTarget.style.boxShadow = "none";
                     }}>
@@ -239,11 +239,11 @@ export default function BizLayout({ p, t, id, portfolioId }) {
             <div style={{ marginBottom: 56 }}>
               {lbl("Education")}
               {p.education.map((e, i) => (
-                <div key={i} style={{ 
-                  display: "grid", 
-                  gridTemplateColumns: "repeat(auto-fill, minmax(min(160px,100%), 1fr))", 
-                  gap: "8px 24px", 
-                  padding: "20px 0", 
+                <div key={i} style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(min(160px,100%), 1fr))",
+                  gap: "8px 24px",
+                  padding: "20px 0",
                   borderTop: `1px solid ${ac}15`,
                   transition: "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
                   transformOrigin: "left"
@@ -252,7 +252,7 @@ export default function BizLayout({ p, t, id, portfolioId }) {
                   onMouseLeave={e => e.currentTarget.style.transform = "translateX(0)"}>
                   <div style={{ fontSize: 12, opacity: 0.4 }}>{e.period}</div>
                   <div>
-                    <h3 style={{ fontWeight: 600, fontSize:"inherit", margin: 0 }}>{e.school}</h3>
+                    <h3 style={{ fontWeight: 600, fontSize: "inherit", margin: 0 }}>{e.school}</h3>
                     <div style={{ fontSize: 13, color: ac }}>{e.degree}</div>
                   </div>
                 </div>
@@ -268,9 +268,9 @@ export default function BizLayout({ p, t, id, portfolioId }) {
               {lbl("Services")}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 14 }}>
                 {p.services.map((s, i) => (
-                  <div key={i} style={{ 
+                  <div key={i} style={{
                     background: `${ac}08`, border: `1px solid ${ac}20`, borderRadius: radius, padding: 20,
-                    transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)" 
+                    transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)"
                   }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.borderColor = `${ac}60`;
@@ -299,7 +299,7 @@ export default function BizLayout({ p, t, id, portfolioId }) {
               {lbl("Testimonials")}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(260px,1fr))", gap: 14 }}>
                 {p.testimonials.map((tt, i) => (
-                  <blockquote key={i} style={{ 
+                  <blockquote key={i} style={{
                     background: `${ac}06`, border: `1px solid ${ac}18`, borderRadius: radius, padding: 20, margin: 0, fontSize: 14, lineHeight: 1.8, fontStyle: "italic",
                     transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)"
                   }}
@@ -376,53 +376,9 @@ export default function BizLayout({ p, t, id, portfolioId }) {
         )}
 
         {/* Contact */}
-        {(u.email || u.phone) && (
-          <ScrollReveal>
-            <div id="contact">
-              {lbl("Contact")}
-              <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-                {u.email && (
-                  <a href={`mailto:${u.email}`}
-                    style={{
-                      display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 28px",
-                      background: ac, color: "#000", borderRadius: radius, fontSize: 14, textDecoration: "none", fontWeight: 700,
-                      transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)"
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = "translateY(-2px)";
-                      e.currentTarget.style.filter = "brightness(1.1)";
-                      e.currentTarget.style.boxShadow = `0 8px 24px -4px color-mix(in srgb, ${ac} 60%, transparent)`;
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = "none";
-                      e.currentTarget.style.filter = "none";
-                      e.currentTarget.style.boxShadow = "none";
-                    }}>
-                    <Mail size={16} /> {u.email}
-                  </a>
-                )}
-                {u.phone && (
-                  <a href={`tel:${u.phone}`}
-                    style={{
-                      display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 28px",
-                      background: "transparent", color: ac, border: `1px solid ${ac}50`, borderRadius: radius, fontSize: 14, textDecoration: "none", fontWeight: 700,
-                      transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)"
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = "translateY(-2px)";
-                      e.currentTarget.style.background = `${ac}10`;
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = "none";
-                      e.currentTarget.style.background = "transparent";
-                    }}>
-                    <Phone size={16} /> {u.phone}
-                  </a>
-                )}
-              </div>
-            </div>
-          </ScrollReveal>
-        )}
+        <div id="contact">
+          <ContactSection u={u} t={t} id={id} portfolioId={portfolioId} />
+        </div>
       </div>
     </div>
   );
