@@ -268,3 +268,26 @@ class TrafficSource(models.Model):
 
     def __str__(self):
         return f"{self.source} - {self.visit_count} visits for Portfolio {self.portfolio.id}"
+
+
+class Message(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='messages')
+    portfolio = models.ForeignKey('Portfolio', on_delete=models.CASCADE, related_name='messages')
+    portfolio_name = models.CharField(max_length=255)
+    sender_name = models.CharField(max_length=255)
+    sender_email = models.EmailField()
+    subject = models.CharField(max_length=255, blank=True, null=True)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'created_at']),
+            models.Index(fields=['user', 'is_read', 'created_at']),
+            models.Index(fields=['user', 'portfolio', 'created_at']),
+        ]
+
+    def __str__(self):
+        return f"From: {self.sender_name} - Portfolio: {self.portfolio_name}"

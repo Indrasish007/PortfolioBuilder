@@ -1,0 +1,1537 @@
+# Real-Time Message Center Implementation Plan
+
+We will add a real-time message center that allows portfolio visitors to submit message forms. The messages will be saved in the database and broadcasted in real-time to the authenticated user's portfolio dashboard using Django Channels.
+
+## User Review Required
+
+### IMPORTANT
+- We are integrating Django Channels (using Daphne as the ASGI application). This changes the development server's entry point to ASGI, which is critical for supporting WebSockets.
+- The channel layers config is environment-aware: it uses Redis in production (based on `REDIS_URL` or `REDIS_PRIVATE_URL`) and falls back to an in-memory channel layer for local development.
+
+---
+
+## Proposed Changes
+
+### Backend Components (Django & Channels)
+
+#### [MODIFY] `requirements.txt`
+Add backend real-time dependencies:
+```text
+channels==4.1.0
+daphne==4.1.2
+channels-redis==4.2.1
+```
+
+#### [MODIFY] `settings.py`
+- Register `daphne` at the absolute top of `INSTALLED_APPS` (before `staticfiles`/`admin`).
+- Register `channels` in `INSTALLED_APPS`.
+- Set `ASGI_APPLICATION = 'core.asgi.application'`.
+- Define environment-based `CHANNEL_LAYERS` (Redis in prod, InMemory locally).
+
+#### [MODIFY] `asgi.py`
+- Update protocol routing to support standard HTTP (`get_asgi_application()`) and WebSocket requests wrapped with `AuthMiddlewareStack` routing to `portfolios.routing.websocket_urlpatterns`.
+
+#### [NEW] `routing.py`
+- Map WS url pattern `^ws/messages/$` to `consumers.MessageConsumer.as_asgi()`.
+
+#### [NEW] `consumers.py`
+- Create `MessageConsumer` inheriting from `AsyncWebsocketConsumer`.
+- Implement token-based user authentication using the JWT access token query parameter.
+- Add user-specific channels grouping (`user_{user_id}`) to broadcast notifications.
+
+#### [MODIFY] `models.py`
+Add `Message` database model with:
+- Relations to `CustomUser` and `Portfolio`.
+- Content fields (`portfolio_name`, `sender_name`, `sender_email`, `subject`, `message`, `is_read`, `created_at`).
+- Meta class with indices on fields query paths (`['user', 'created_at']`, `['user', 'is_read', 'created_at']`, `['user', 'portfolio', 'created_at']`).
+
+#### [NEW] `serializers.py`
+- Add `MessageSerializer` exposing required fields with read-only specifications for auto-generated properties.
+
+#### [MODIFY] `views.py`
+- Implement `MessageViewSet` (`list`/`retrieve`/`patch`/`delete`/`bulk-actions`/`unread-count`/`stats`) with server-side pagination, search queries, and filtering parameters.
+- Implement `PublicMessageSubmitView` endpoint allowing anyone to submit messages to portfolios with:
+  - XSS filtering and HTML escaping.
+  - Honeypot spam field checking (`website_url`).
+  - Rate limiting (max 3 messages per minute per email address).
+  - Dynamic notification broadcast to Daphne channel layers.
+
+#### [MODIFY] `urls.py`
+- Register `MessageViewSet` routes on the default router.
+- Map the public submit POST endpoint to `/portfolios/public/<int:portfolio_id>/message/`.
+
+---
+
+### Frontend Components (React & Tailwind)
+
+#### [NEW] `Messages.jsx`
+- Create the Message Center Inbox interface using premium glassmorphism styling, clean HSL colors, responsive layout, search, filters, sorting options, lazy scrolling pagination, bulk status changes/deletions, single selection view, and email copying.
+
+#### [MODIFY] `App.jsx`
+- Import `Messages.jsx` and register path `/messages` inside the `DashboardLayout` routing context.
+- Update `SEOManager` to dynamically set document title for the Messages page.
+
+#### [MODIFY] `DashboardLayout.jsx`
+- Integrate WebSocket connection initialization and automatic reconnection strategies.
+- Maintain global `unreadCount` badge state.
+- Implement `playNotificationSound` synthesized on the fly using standard Web Audio API oscillators.
+- Attach visibility/online event listeners to handle WS reconnects.
+- Register navigation link for Messages in the sidebar displaying the badge.
+
+#### [MODIFY] `shared.jsx`
+Update public `ContactSection` submission handler:
+- Submit forms asynchronously to `/portfolios/public/<portfolioId>/message/`.
+- Add invisible honeypot parameter input field.
+- Correctly render loading states and success feedbacks.
+
+---
+
+## Verification Plan
+
+### Automated Tests
+- Run database migrations: 
+  ```powershell
+  python manage.py makemigrations portfolios
+  python manage.py migrate
+  ```
+- Verify Django local server launches cleanly with ASGI setup.
+
+### Manual Verification
+- Launch the backend development server and frontend app.
+- Open the user dashboard, verify the new Messages option is rendered in the sidebar.
+- Open a public portfolio template page and submit a message via the Contact Form.
+- Verify real-time toast notification appears in the dashboard accompanied by the audio synthesized alert sound.
+- Confirm the Messages page shows the newly received message, increments the badge count, and allows marking as read, deleting, searching, filtering, and bulk operations.
+
+---
+---
+
+# 💻 Code Implementation
+
+Below is the complete set of implementation files matching the plan details above.
+
+---
+
+## 🐍 Backend Implementation (Django)
+
+### 1. File: `requirements.txt`
+```text
+channels==4.1.0
+daphne==4.1.2
+channels-redis==4.2.1
+```
+
+### 2. File: `core/settings.py` (Add to existing settings)
+```python
+INSTALLED_APPS = [
+    'daphne',  # Must be first!
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'rest_framework',
+    'channels',
+    'portfolios',
+    # ...other apps
+]
+
+# Configure ASGI application
+ASGI_APPLICATION = 'core.asgi.application'
+
+# Setup Redis in production (Render/Railway), fallback to InMemory locally
+REDIS_URL = os.getenv('REDIS_URL') or os.getenv('REDIS_PRIVATE_URL')
+if REDIS_URL:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [REDIS_URL],
+            },
+        },
+    }
+else:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer",
+        },
+    }
+```
+
+### 3. File: `core/asgi.py`
+```python
+import os
+from django.core.asgi import get_asgi_application
+from channels.routing import ProtocolTypeRouter, URLRouter
+from channels.auth import AuthMiddlewareStack
+import portfolios.routing
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
+
+django_asgi_app = get_asgi_application()
+
+application = ProtocolTypeRouter({
+    "http": django_asgi_app,
+    "websocket": AuthMiddlewareStack(
+        URLRouter(
+            portfolios.routing.websocket_urlpatterns
+        )
+    ),
+})
+```
+
+### 4. File: `portfolios/models.py` (Message Model)
+```python
+from django.db import models
+from users.models import CustomUser
+
+class Message(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='messages')
+    portfolio = models.ForeignKey('Portfolio', on_delete=models.CASCADE, related_name='messages')
+    portfolio_name = models.CharField(max_length=255)
+    sender_name = models.CharField(max_length=255)
+    sender_email = models.EmailField()
+    subject = models.CharField(max_length=255, blank=True, null=True)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'created_at']),
+            models.Index(fields=['user', 'is_read', 'created_at']),
+            models.Index(fields=['user', 'portfolio', 'created_at']),
+        ]
+
+    def __str__(self):
+        return f"From: {self.sender_name} - Portfolio: {self.portfolio_name}"
+```
+
+### 5. File: `portfolios/serializers.py`
+```python
+from rest_framework import serializers
+from .models import Message
+
+class MessageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Message
+        fields = [
+            'id', 'portfolio', 'portfolio_name', 'sender_name',
+            'sender_email', 'subject', 'message', 'is_read', 'created_at'
+        ]
+        read_only_fields = ['id', 'portfolio_name', 'created_at']
+```
+
+### 6. File: `portfolios/views.py` (Message Views)
+```python
+from rest_framework import viewsets, permissions, status
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.decorators import action
+from rest_framework.pagination import PageNumberPagination
+from django.db import models as django_models
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
+from django.utils import timezone
+from datetime import timedelta
+import html
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+from .models import Message, Portfolio
+from .serializers import MessageSerializer
+
+class StandardResultsSetPagination(PageNumberPagination):
+    page_size = 15
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+class MessageViewSet(viewsets.ModelViewSet):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = MessageSerializer
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        queryset = Message.objects.filter(user=self.request.user)
+        
+        is_read = self.request.query_params.get('is_read')
+        if is_read is not None:
+            queryset = queryset.filter(is_read=is_read.lower() == 'true')
+            
+        portfolio_id = self.request.query_params.get('portfolio_id')
+        if portfolio_id is not None:
+            queryset = queryset.filter(portfolio_id=portfolio_id)
+            
+        search_query = self.request.query_params.get('search')
+        if search_query:
+            queryset = queryset.filter(
+                django_models.Q(sender_name__icontains=search_query) |
+                django_models.Q(sender_email__icontains=search_query) |
+                django_models.Q(subject__icontains=search_query) |
+                django_models.Q(message__icontains=search_query)
+            )
+
+        sort_by = self.request.query_params.get('sort', 'newest')
+        if sort_by == 'oldest':
+            queryset = queryset.order_by('created_at')
+        else:
+            queryset = queryset.order_by('-created_at')
+
+        return queryset
+
+    @action(detail=False, methods=['get'], url_path='unread-count')
+    def unread_count(self, request):
+        count = Message.objects.filter(user=request.user, is_read=False).count()
+        return Response({'unread_count': count})
+
+    @action(detail=False, methods=['get'], url_path='stats')
+    def message_stats(self, request):
+        user = request.user
+        total = Message.objects.filter(user=user).count()
+        unread = Message.objects.filter(user=user, is_read=False).count()
+        
+        now = timezone.now()
+        this_month = Message.objects.filter(
+            user=user,
+            created_at__year=now.year,
+            created_at__month=now.month
+        ).count()
+
+        portfolios_receiving = Message.objects.filter(user=user).values('portfolio').distinct().count()
+
+        return Response({
+            'total': total,
+            'unread': unread,
+            'this_month': this_month,
+            'portfolios_receiving': portfolios_receiving
+        })
+
+    @action(detail=False, methods=['post'], url_path='bulk-actions')
+    def bulk_actions(self, request):
+        message_ids = request.data.get('ids', [])
+        action_type = request.data.get('action') # 'read', 'unread', 'delete'
+        
+        queryset = Message.objects.filter(user=request.user, id__in=message_ids)
+        
+        if action_type == 'read':
+            queryset.update(is_read=True)
+        elif action_type == 'unread':
+            queryset.update(is_read=False)
+        elif action_type == 'delete':
+            queryset.delete()
+            
+        return Response({'status': 'success'})
+
+class PublicMessageSubmitView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, portfolio_id):
+        try:
+            portfolio = Portfolio.objects.get(pk=portfolio_id)
+        except Portfolio.DoesNotExist:
+            return Response({'error': 'Portfolio not found'}, status=404)
+
+        # 1. Honeypot check (Spam protection)
+        if request.data.get('website_url'):
+            return Response({'status': 'success'}, status=201)
+
+        sender_name = request.data.get('sender_name')
+        sender_email = request.data.get('sender_email')
+        message_content = request.data.get('message')
+        subject = request.data.get('subject', '')
+
+        if not sender_name or not sender_email or not message_content:
+            return Response({'error': 'Missing required fields'}, status=400)
+
+        # 2. XSS & input sanitization
+        sender_name = html.escape(sender_name.strip()[:100])
+        sender_email = sender_email.strip()
+        message_content = html.escape(message_content.strip()[:5000])
+        subject = html.escape(subject.strip()[:150]) if subject else ''
+
+        # 3. Email verification
+        try:
+            validate_email(sender_email)
+        except ValidationError:
+            return Response({'error': 'Invalid email address'}, status=400)
+
+        # 4. Rate limiting (Max 3 messages per minute from same email)
+        one_minute_ago = timezone.now() - timedelta(minutes=1)
+        recent = Message.objects.filter(sender_email=sender_email, created_at__gte=one_minute_ago).count()
+        if recent >= 3:
+            return Response({'error': 'Too many messages sent. Please wait a minute.'}, status=429)
+
+        message = Message.objects.create(
+            user=portfolio.user,
+            portfolio=portfolio,
+            portfolio_name=portfolio.name,
+            sender_name=sender_name,
+            sender_email=sender_email,
+            subject=subject,
+            message=message_content
+        )
+
+        # 5. Live WebSocket dispatch
+        channel_layer = get_channel_layer()
+        if channel_layer:
+            serialized_msg = MessageSerializer(message).data
+            async_to_sync(channel_layer.group_send)(
+                f"user_{portfolio.user.id}",
+                {
+                    "type": "send_notification",
+                    "message": {
+                        "type": "new_message",
+                        "data": serialized_msg
+                    }
+                }
+            )
+
+        return Response(MessageSerializer(message).data, status=201)
+```
+
+### 7. File: `portfolios/routing.py`
+```python
+from django.urls import re_path
+from . import consumers
+
+websocket_urlpatterns = [
+    re_path(r'^ws/messages/$', consumers.MessageConsumer.as_asgi()),
+]
+```
+
+### 8. File: `portfolios/consumers.py`
+```python
+import json
+from channels.generic.websocket import AsyncWebsocketConsumer
+from channels.db import database_sync_to_async
+from rest_framework_simplejwt.tokens import AccessToken
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+class MessageConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        query_string = self.scope.get('query_string', b'').decode('utf-8')
+        query_params = dict(qp.split('=') for qp in query_string.split('&') if '=' in qp)
+        token = query_params.get('token')
+
+        self.user = await self.get_user_from_token(token)
+
+        if self.user and self.user.is_authenticated:
+            self.group_name = f"user_{self.user.id}"
+            await self.channel_layer.group_add(
+                self.group_name,
+                self.channel_name
+            )
+            await self.accept()
+        else:
+            await self.close()
+
+    async def disconnect(self, close_code):
+        if hasattr(self, 'group_name'):
+            await self.channel_layer.group_discard(
+                self.group_name,
+                self.channel_name
+            )
+
+    @database_sync_to_async
+    def get_user_from_token(self, token):
+        if not token:
+            return None
+        try:
+            access_token = AccessToken(token)
+            user_id = access_token['user_id']
+            return User.objects.get(id=user_id)
+        except Exception:
+            return None
+
+    async def send_notification(self, event):
+        await self.send(text_data=json.dumps(event['message']))
+```
+
+---
+
+## ⚛️ Frontend Implementation (React)
+
+### 1. File: `src/app/pages/Messages.jsx` (Inbox page)
+```jsx
+import { useState, useEffect, useRef } from "react";
+import { useToast } from "../context/ToasterContext.jsx";
+import api from "../services/api.js";
+import { 
+  Search, Mail, MailOpen, Trash2, Copy, Check, Filter, 
+  ChevronDown, RefreshCw, MessageSquare, AlertCircle, Calendar, 
+  Inbox, Info
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import Button from "../components/Button.jsx";
+
+export default function Messages() {
+  const { toast } = useToast();
+  const [messages, setMessages] = useState([]);
+  const [stats, setStats] = useState({ total: 0, unread: 0, this_month: 0, portfolios_receiving: 0 });
+  const [portfolios, setPortfolios] = useState([]);
+  const [selectedMessage, setSelectedMessage] = useState(null);
+  
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState(null);
+
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [selectedPortfolio, setSelectedPortfolio] = useState("all");
+  const [filterType, setFilterType] = useState("all"); // 'all', 'unread', 'read'
+  const [sortBy, setSortBy] = useState("newest"); // 'newest', 'oldest'
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [copied, setCopied] = useState(false);
+
+  // Debounce search input (400ms)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  // Fetch portfolios list on mount
+  useEffect(() => {
+    const fetchPortfolios = async () => {
+      try {
+        const res = await api.get('/portfolios/');
+        setPortfolios(res.data || []);
+      } catch (err) {
+        console.error("Failed to fetch portfolios list", err);
+      }
+    };
+    fetchPortfolios();
+  }, []);
+
+  // Fetch stats & messages when filters or debounced search changes
+  useEffect(() => {
+    fetchStats();
+    fetchMessages(true);
+  }, [debouncedSearch, selectedPortfolio, filterType, sortBy]);
+
+  // Listen for real-time WebSocket incoming messages dispatched from DashboardLayout
+  useEffect(() => {
+    const handleNewWebSocketMessage = (e) => {
+      const newMsg = e.detail;
+      if (!newMsg) return;
+
+      fetchStats();
+
+      const matchesPortfolio = selectedPortfolio === "all" || String(newMsg.portfolio) === String(selectedPortfolio);
+      const matchesRead = filterType === "all" || filterType === "unread";
+
+      if (matchesPortfolio && matchesRead) {
+        setMessages(prev => {
+          if (prev.some(m => m.id === newMsg.id)) return prev;
+          return [newMsg, ...prev];
+        });
+      }
+    };
+
+    window.addEventListener('newMessageReceived', handleNewWebSocketMessage);
+    return () => {
+      window.removeEventListener('newMessageReceived', handleNewWebSocketMessage);
+    };
+  }, [selectedPortfolio, filterType]);
+
+  const notifyDashboardBadgeUpdate = (count) => {
+    window.dispatchEvent(new CustomEvent('updateUnreadCount', { detail: count }));
+  };
+
+  const fetchStats = async () => {
+    try {
+      const res = await api.get('/portfolios/messages/stats/');
+      setStats(res.data);
+      notifyDashboardBadgeUpdate(res.data.unread);
+    } catch (err) {
+      console.error("Failed to fetch messages stats", err);
+    }
+  };
+
+  const fetchMessages = async (reset = false) => {
+    if (reset) {
+      setLoading(true);
+      setPage(1);
+    } else {
+      setLoadingMore(true);
+    }
+    setError(null);
+
+    try {
+      const currentPage = reset ? 1 : page;
+      const params = {
+        page: currentPage,
+        sort: sortBy,
+        search: debouncedSearch
+      };
+
+      if (selectedPortfolio !== "all") {
+        params.portfolio_id = selectedPortfolio;
+      }
+
+      if (filterType === "unread") {
+        params.is_read = "false";
+      } else if (filterType === "read") {
+        params.is_read = "true";
+      }
+
+      const res = await api.get('/portfolios/messages/', { params });
+      const newMessages = res.data.results || [];
+      setHasMore(!!res.data.next);
+
+      if (reset) {
+        setMessages(newMessages);
+        setSelectedIds([]);
+        if (newMessages.length > 0 && !selectedMessage) {
+          const found = newMessages.find(m => m.id === selectedMessage?.id);
+          if (!found) setSelectedMessage(newMessages[0]);
+        } else if (newMessages.length === 0) {
+          setSelectedMessage(null);
+        }
+      } else {
+        setMessages(prev => {
+          const combined = [...prev];
+          newMessages.forEach(msg => {
+            if (!combined.some(m => m.id === msg.id)) {
+              combined.push(msg);
+            }
+          });
+          return combined;
+        });
+      }
+    } catch (err) {
+      console.error("Failed to fetch messages list", err);
+      setError("Failed to load messages. Please click retry.");
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
+  const loadMoreMessages = () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    setPage(prev => {
+      const nextPage = prev + 1;
+      api.get('/portfolios/messages/', {
+        params: {
+          page: nextPage,
+          sort: sortBy,
+          search: debouncedSearch,
+          portfolio_id: selectedPortfolio !== "all" ? selectedPortfolio : undefined,
+          is_read: filterType === "unread" ? "false" : filterType === "read" ? "true" : undefined
+        }
+      }).then(res => {
+        setMessages(prevMsgs => {
+          const combined = [...prevMsgs];
+          (res.data.results || []).forEach(msg => {
+            if (!combined.some(m => m.id === msg.id)) {
+              combined.push(msg);
+            }
+          });
+          return combined;
+        });
+        setHasMore(!!res.data.next);
+        setLoadingMore(false);
+      }).catch(err => {
+        console.error("Failed to load more", err);
+        toast({ title: "Load More Failed", description: "Could not load next page.", type: "error" });
+        setLoadingMore(false);
+      });
+      return nextPage;
+    });
+  };
+
+  const handleListScroll = (e) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    if (scrollHeight - scrollTop - clientHeight < 50) {
+      loadMoreMessages();
+    }
+  };
+
+  // Optimistic UI updates
+  const handleSingleMessageUpdate = async (msgId, updates, apiCall) => {
+    const originalMessages = [...messages];
+    const originalSelected = selectedMessage ? { ...selectedMessage } : null;
+
+    setMessages(prev => prev.map(m => m.id === msgId ? { ...m, ...updates } : m));
+    if (selectedMessage && selectedMessage.id === msgId) {
+      setSelectedMessage(prev => ({ ...prev, ...updates }));
+    }
+
+    try {
+      await apiCall();
+      fetchStats();
+    } catch (err) {
+      console.error("API update failed", err);
+      setMessages(originalMessages);
+      setSelectedMessage(originalSelected);
+      toast({ title: "Operation Failed", description: "Connection error. Reverting change.", type: "error" });
+    }
+  };
+
+  const toggleReadStatus = (msg) => {
+    const newReadStatus = !msg.is_read;
+    handleSingleMessageUpdate(
+      msg.id,
+      { is_read: newReadStatus },
+      () => api.patch(`/portfolios/messages/${msg.id}/`, { is_read: newReadStatus })
+    );
+  };
+
+  const handleDeleteMessage = (msg) => {
+    if (!confirm("Are you sure you want to delete this message permanently?")) return;
+    
+    handleSingleMessageUpdate(
+      msg.id,
+      null,
+      async () => {
+        await api.delete(`/portfolios/messages/${msg.id}/`);
+        setMessages(prev => prev.filter(m => m.id !== msg.id));
+        setSelectedMessage(prev => {
+          const index = messages.findIndex(m => m.id === msg.id);
+          const remaining = messages.filter(m => m.id !== msg.id);
+          if (remaining.length === 0) return null;
+          return remaining[Math.min(index, remaining.length - 1)];
+        });
+        toast({ title: "Message Deleted", description: "Message deleted permanently.", type: "success" });
+      }
+    );
+  };
+
+  const handleToggleSelectAll = () => {
+    if (selectedIds.length === messages.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(messages.map(m => m.id));
+    }
+  };
+
+  const handleBulkAction = async (actionType) => {
+    if (selectedIds.length === 0) return;
+
+    const originalMessages = [...messages];
+    const originalSelected = selectedMessage ? { ...selectedMessage } : null;
+
+    if (actionType === 'read') {
+      setMessages(prev => prev.map(m => selectedIds.includes(m.id) ? { ...m, is_read: true } : m));
+      if (selectedMessage && selectedIds.includes(selectedMessage.id)) {
+        setSelectedMessage(prev => ({ ...prev, is_read: true }));
+      }
+    } else if (actionType === 'unread') {
+      setMessages(prev => prev.map(m => selectedIds.includes(m.id) ? { ...m, is_read: false } : m));
+      if (selectedMessage && selectedIds.includes(selectedMessage.id)) {
+        setSelectedMessage(prev => ({ ...prev, is_read: false }));
+      }
+    } else if (actionType === 'delete') {
+      setMessages(prev => prev.filter(m => !selectedIds.includes(m.id)));
+      if (selectedMessage && selectedIds.includes(selectedMessage.id)) {
+        setSelectedMessage(null);
+      }
+    }
+
+    try {
+      await api.post('/portfolios/messages/bulk-actions/', {
+        ids: selectedIds,
+        action: actionType
+      });
+      setSelectedIds([]);
+      fetchStats();
+      toast({
+        title: "Bulk Action Completed",
+        description: `Successfully applied action '${actionType}' to ${selectedIds.length} messages.`,
+        type: "success"
+      });
+      if (actionType === 'delete') {
+        fetchMessages(true);
+      }
+    } catch (err) {
+      console.error(err);
+      setMessages(originalMessages);
+      setSelectedMessage(originalSelected);
+      toast({ title: "Bulk Action Failed", description: "Failed to update bulk messages.", type: "error" });
+    }
+  };
+
+  const handleCopyEmail = (email) => {
+    navigator.clipboard.writeText(email);
+    setCopied(true);
+    toast({ title: "Email Copied", description: `${email} copied to clipboard.`, type: "success" });
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const formatTimeAgo = (dateStr) => {
+    if (!dateStr) return "";
+    try {
+      const d = new Date(dateStr);
+      const now = new Date();
+      const diffMs = now - d;
+      const diffMin = Math.floor(diffMs / 60000);
+      const diffHr = Math.floor(diffMin / 60);
+      const diffDay = Math.floor(diffHr / 24);
+
+      if (diffMin < 1) return "Just now";
+      if (diffMin < 60) return `${diffMin}m ago`;
+      if (diffHr < 24) return `${diffHr}h ago`;
+      if (diffDay < 7) return `${diffDay}d ago`;
+
+      return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    } catch (e) {
+      return "";
+    }
+  };
+
+  const formatFullDate = (dateStr) => {
+    if (!dateStr) return "";
+    try {
+      const d = new Date(dateStr);
+      return d.toLocaleString("en-US", { 
+        day: "numeric", month: "short", year: "numeric", 
+        hour: "numeric", minute: "2-digit", hour12: true 
+      });
+    } catch (e) {
+      return "";
+    }
+  };
+
+  return (
+    <div className="space-y-6 max-w-7xl mx-auto">
+      {/* Page Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight">Message Center</h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            Manage inquiries sent by visitors through your portfolio contact forms.
+          </p>
+        </div>
+        <Button size="sm" variant="outline" className="self-start md:self-auto flex items-center gap-2" onClick={() => { fetchStats(); fetchMessages(true); }}>
+          <RefreshCw className="w-3.5 h-3.5" /> Reload Inbox
+        </Button>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { label: "Total Messages", value: stats.total, color: "var(--brand)" },
+          { label: "Unread Messages", value: stats.unread, color: "#f59e0b", badge: stats.unread > 0 },
+          { label: "Received This Month", value: stats.this_month, color: "#10b981" },
+          { label: "Receiving Portfolios", value: stats.portfolios_receiving, color: "#8b5cf6" },
+        ].map((s, idx) => (
+          <div key={idx} className="glass rounded-2xl p-5 border border-border/30 relative overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:border-border/60 hover:shadow-glow">
+            <div className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">{s.label}</div>
+            <div className="flex items-baseline gap-2 mt-2">
+              <span className="text-2xl font-bold" style={{ color: s.color }}>{s.value}</span>
+              {s.badge && <span className="animate-pulse flex h-2 w-2 rounded-full bg-amber-500" />}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Main Inbox Window */}
+      <div className="glass rounded-3xl border border-border/30 overflow-hidden flex flex-col min-h-[600px] shadow-2xl">
+        <div className="p-4 border-b border-border/30 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 bg-card/10">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
+            <div className="relative flex-1">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search sender, email, content..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 rounded-xl border border-border/30 bg-background/50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/45 focus:border-brand transition"
+              />
+            </div>
+            
+            <div className="relative">
+              <Filter className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+              <select
+                value={selectedPortfolio}
+                onChange={e => setSelectedPortfolio(e.target.value)}
+                className="pl-9 pr-8 py-2 rounded-xl border border-border/30 bg-background/50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/45 cursor-pointer appearance-none min-w-[150px]"
+              >
+                <option value="all">All Portfolios</option>
+                {portfolios.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 justify-between">
+            <select
+              value={sortBy}
+              onChange={e => setSortBy(e.target.value)}
+              className="px-3 py-2 rounded-xl border border-border/30 bg-background/50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/45 cursor-pointer min-w-[130px]"
+            >
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+            </select>
+
+            <div className="flex bg-background/50 p-1 rounded-xl border border-border/30">
+              {[
+                { id: "all", label: "All" },
+                { id: "unread", label: "Unread" },
+                { id: "read", label: "Read" }
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setFilterType(tab.id)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                    filterType === tab.id ? "bg-brand text-white shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Bulk Actions floating header */}
+        <AnimatePresence>
+          {selectedIds.length > 0 && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="px-4 py-3 bg-brand/10 border-b border-border/30 flex items-center justify-between gap-4 overflow-hidden"
+            >
+              <div className="text-xs font-bold text-brand flex items-center gap-2">
+                <Check className="w-4 h-4" /> Selected {selectedIds.length} message(s)
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={() => handleBulkAction('read')} className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-background border border-border/30 hover:border-border/60 transition flex items-center gap-1.5"><MailOpen className="w-3.5 h-3.5" /> Read</button>
+                <button onClick={() => handleBulkAction('unread')} className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-background border border-border/30 hover:border-border/60 transition flex items-center gap-1.5"><Mail className="w-3.5 h-3.5" /> Unread</button>
+                <button onClick={() => handleBulkAction('delete')} className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 text-red-500 transition flex items-center gap-1.5"><Trash2 className="w-3.5 h-3.5" /> Delete</button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Split pane list and detail panels */}
+        <div className="flex-1 flex flex-col md:flex-row min-h-0">
+          <div className="w-full md:w-[360px] border-r border-border/30 flex flex-col min-h-0 bg-background/25">
+            <div 
+              onScroll={handleListScroll}
+              className="flex-1 overflow-y-auto p-2 space-y-2 min-h-0 max-h-[500px] md:max-h-none"
+            >
+              {loading && messages.length === 0 ? (
+                <div className="flex flex-col items-center justify-center p-8 text-center h-48 md:h-full">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand mb-3" />
+                  <span className="text-sm text-muted-foreground">Loading messages...</span>
+                </div>
+              ) : error ? (
+                <div className="flex flex-col items-center justify-center p-8 text-center h-48 md:h-full">
+                  <AlertCircle className="w-8 h-8 text-destructive mb-3" />
+                  <span className="text-sm font-semibold">{error}</span>
+                  <button onClick={() => fetchMessages(true)} className="mt-3 text-xs text-brand font-bold underline">Retry</button>
+                </div>
+              ) : messages.length === 0 ? (
+                <div className="flex flex-col items-center justify-center p-12 text-center h-48 md:h-full">
+                  <Inbox className="w-10 h-10 text-muted-foreground/40 mb-3" />
+                  <span className="text-sm font-semibold text-muted-foreground">Inbox is empty</span>
+                </div>
+              ) : (
+                <>
+                  <div className="px-2 py-1.5 flex items-center justify-between border-b border-border/10">
+                    <button onClick={handleToggleSelectAll} className="text-xs text-muted-foreground font-semibold hover:text-foreground transition flex items-center gap-1.5">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.length === messages.length && messages.length > 0}
+                        onChange={handleToggleSelectAll}
+                        className="rounded border-border/30 accent-brand w-3.5 h-3.5 cursor-pointer"
+                      />
+                      Select All
+                    </button>
+                    <span className="text-[10px] text-muted-foreground font-mono">{messages.length} loaded</span>
+                  </div>
+
+                  <AnimatePresence initial={false}>
+                    {messages.map((msg) => (
+                      <motion.div
+                        key={msg.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.2 }}
+                        onClick={() => setSelectedMessage(msg)}
+                        className={`p-3 rounded-xl border transition-all cursor-pointer relative group flex gap-3 ${
+                          selectedMessage?.id === msg.id ? "bg-brand/10 border-brand/50 shadow-sm" : "bg-card/5 hover:bg-card/25 border-border/20"
+                        } ${!msg.is_read ? "font-semibold text-foreground" : "text-muted-foreground"}`}
+                      >
+                        <div className="flex items-start pt-0.5" onClick={e => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.includes(msg.id)}
+                            onChange={() => {
+                              setSelectedIds(prev => prev.includes(msg.id) ? prev.filter(id => id !== msg.id) : [...prev, msg.id]);
+                            }}
+                            className="rounded border-border/30 accent-brand w-3.5 h-3.5 cursor-pointer"
+                          />
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-sm font-bold text-foreground truncate">{msg.sender_name}</span>
+                            <span className="text-[10px] text-muted-foreground/80 flex-shrink-0">{formatTimeAgo(msg.created_at)}</span>
+                          </div>
+                          <div className="text-[11px] text-brand/80 font-medium truncate mt-0.5">
+                            Portfolio: {msg.portfolio_name}
+                          </div>
+                          <p className="text-xs text-muted-foreground truncate mt-1">
+                            {msg.message}
+                          </p>
+                        </div>
+
+                        {!msg.is_read && (
+                          <div className="absolute top-4 right-3 w-1.5 h-1.5 rounded-full bg-brand shadow-glow animate-pulse" />
+                        )}
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+
+                  {hasMore && (
+                    <button
+                      onClick={loadMoreMessages}
+                      disabled={loadingMore}
+                      className="w-full py-2 border border-dashed border-border/30 rounded-xl text-xs text-muted-foreground hover:text-foreground hover:border-border/60 transition flex items-center justify-center gap-2"
+                    >
+                      {loadingMore ? (
+                        <>
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current" />
+                          Loading more...
+                        </>
+                      ) : "Load More Messages"}
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Right Pane Detail Panel */}
+          <div className="flex-1 flex flex-col bg-background/5 min-h-[300px]">
+            {selectedMessage ? (
+              <div className="flex-1 flex flex-col min-h-0">
+                <div className="p-5 border-b border-border/30 flex items-start justify-between gap-4 flex-wrap bg-card/5">
+                  <div className="flex gap-3 items-start">
+                    <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center text-white font-bold text-sm shadow-md">
+                      {selectedMessage.sender_name?.[0]?.toUpperCase() || "V"}
+                    </div>
+                    <div>
+                      <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+                        {selectedMessage.sender_name}
+                      </h2>
+                      <div className="text-xs text-muted-foreground mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <span className="font-mono">{selectedMessage.sender_email}</span>
+                        <button
+                          onClick={() => handleCopyEmail(selectedMessage.sender_email)}
+                          className="p-1 rounded hover:bg-accent hover:text-foreground text-muted-foreground transition flex items-center gap-1"
+                        >
+                          {copied ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col items-end gap-1.5 text-right">
+                    <div className="text-xs text-muted-foreground font-semibold flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5" />
+                      {formatFullDate(selectedMessage.created_at)}
+                    </div>
+                    <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand/10 border border-brand/20 text-brand">
+                      Portfolio: {selectedMessage.portfolio_name}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Detail View Toolbar */}
+                <div className="px-5 py-2.5 border-b border-border/10 flex items-center justify-between bg-card/10 gap-2 flex-wrap">
+                  <button
+                    onClick={() => toggleReadStatus(selectedMessage)}
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-background border border-border/30 hover:border-border/60 transition flex items-center gap-1.5"
+                  >
+                    {selectedMessage.is_read ? (
+                      <><Mail className="w-3.5 h-3.5" /> Mark as Unread</>
+                    ) : (
+                      <><MailOpen className="w-3.5 h-3.5" /> Mark as Read</>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={() => handleDeleteMessage(selectedMessage)}
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 text-red-500 transition flex items-center gap-1.5"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Delete permanently
+                  </button>
+                </div>
+
+                <div className="flex-1 p-6 overflow-y-auto min-h-0">
+                  <div className="bg-card/10 p-5 rounded-2xl border border-border/20 text-sm leading-relaxed whitespace-pre-wrap font-sans text-foreground" style={{ minHeight: "200px" }}>
+                    {selectedMessage.message}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-muted-foreground bg-card/2">
+                <MessageSquare className="w-12 h-12 text-muted-foreground/30 mb-3" />
+                <span className="text-sm font-semibold">Select a message</span>
+                <p className="text-xs text-muted-foreground/60 mt-1">Select an item from the inbox list pane to view full sender details.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+```
+
+---
+
+### 2. File: `src/app/layouts/DashboardLayout.jsx` (WS Setup block)
+```jsx
+import { useState, useRef, useEffect } from "react";
+import { useToast } from "../context/ToasterContext.jsx";
+import api from "../services/api.js";
+
+export default function DashboardLayout() {
+  const [unreadCount, setUnreadCount] = useState(0);
+  const wsRef = useRef(null);
+  const reconnectTimeoutRef = useRef(null);
+  const reconnectDelayRef = useRef(2000);
+  const { toast } = useToast();
+
+  const playNotificationSound = () => {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+      osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.08, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.35);
+    } catch (e) {
+      console.error("Audio synthesis failed", e);
+    }
+  };
+
+  const connectWebSocket = () => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) return;
+
+    const token = localStorage.getItem('access_token');
+    if (!token) return;
+
+    const envWsUrl = import.meta.env.VITE_WS_URL;
+    let wsUrl;
+    if (envWsUrl) {
+      wsUrl = `${envWsUrl.replace(/\/$/, '')}/ws/messages/?token=${token}`;
+    } else {
+      const apiBase = api.defaults.baseURL || 'http://localhost:8000/api';
+      const wsProtocol = apiBase.startsWith('https') ? 'wss://' : 'ws://';
+      const host = apiBase.replace(/^https?:\/\//, '').replace(/\/api$/, '').split('/')[0];
+      wsUrl = `${wsProtocol}${host}/ws/messages/?token=${token}`;
+    }
+
+    const ws = new WebSocket(wsUrl);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      reconnectDelayRef.current = 2000;
+      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+    };
+
+    ws.onmessage = (e) => {
+      try {
+        const message = JSON.parse(e.data);
+        if (message.type === 'new_message' || message.portfolio) {
+          setUnreadCount(prev => prev + 1);
+          playNotificationSound();
+          toast({
+            title: "New Message Received",
+            description: `From ${message.sender_name || message.data?.sender_name || 'Visitor'} on portfolio "${message.portfolio_name || message.data?.portfolio_name || 'Portfolio'}"`,
+            type: "success",
+            duration: 6000
+          });
+          window.dispatchEvent(new CustomEvent('newMessageReceived', { detail: message.data || message }));
+        }
+      } catch (err) {
+        console.error("Error handling WebSocket message", err);
+      }
+    };
+
+    ws.onclose = (e) => {
+      wsRef.current = null;
+      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+      
+      const delay = reconnectDelayRef.current;
+      reconnectDelayRef.current = Math.min(delay * 1.5, 30000);
+      reconnectTimeoutRef.current = setTimeout(() => {
+        connectWebSocket();
+      }, delay);
+    };
+
+    ws.onerror = (err) => {
+      ws.close();
+    };
+  };
+
+  useEffect(() => {
+    connectWebSocket();
+
+    const handleCountReset = (e) => {
+      if (typeof e.detail === 'number') {
+        setUnreadCount(e.detail);
+      }
+    };
+    window.addEventListener('updateUnreadCount', handleCountReset);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        connectWebSocket();
+      }
+    };
+    window.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('online', connectWebSocket);
+
+    return () => {
+      window.removeEventListener('updateUnreadCount', handleCountReset);
+      window.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('online', connectWebSocket);
+      if (wsRef.current) {
+        wsRef.current.onclose = null;
+        wsRef.current.close();
+      }
+      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+    };
+  }, []);
+
+  return (
+    // Render sidebar UI layout
+  );
+}
+```
+
+---
+
+### 3. File: `src/app/templates/layouts/shared.jsx` (Contact card forms component)
+```jsx
+import { useState } from "react";
+import { Mail, Phone, MapPin, Send } from "lucide-react";
+import api from "../../services/api.js";
+
+export function ContactCardSection({ u, ac, fg, bg, portfolioId }) {
+  const [form, setForm] = useState({ name: "", email: "", message: "" });
+  const [websiteUrl, setWebsiteUrl] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  if (!u || (!u.email && !u.phone && !u.location)) return null;
+
+  const contacts = [
+    { label: "EMAIL", value: u.email, icon: Mail, type: "mailto:" },
+    { label: "PHONE", value: u.phone, icon: Phone, type: "tel:" },
+    { label: "LOCATION", value: u.location, icon: MapPin }
+  ].filter(c => c.value);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.name || !form.email || !form.message) return;
+    setSending(true);
+    try {
+      const base = (api.defaults.baseURL || 'http://localhost:8000/api').replace(/\/$/, '');
+      const response = await fetch(`${base}/portfolios/public/${portfolioId}/message/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sender_name: form.name,
+          sender_email: form.email,
+          message: form.message,
+          subject: "",
+          website_url: websiteUrl // Honeypot parameter
+        })
+      });
+      if (response.ok) {
+        setSent(true);
+        setForm({ name: "", email: "", message: "" });
+        setWebsiteUrl("");
+        setTimeout(() => setSent(false), 5000);
+      } else {
+        const errData = await response.json();
+        throw new Error(errData.error || "Failed to submit message");
+      }
+    } catch (err) {
+      console.error("Failed to submit message", err);
+      alert(err.message || "Failed to submit message. Please try again.");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const btnFg = (ac && (ac.toLowerCase() === '#fafafa' || ac.toLowerCase() === '#f5f5f5' || ac.toLowerCase() === '#ffffff')) ? '#000000' : '#ffffff';
+
+  return (
+    <div style={{ marginTop: 80, borderTop: `1px solid ${fg}15`, paddingTop: 60, width: "100%" }}>
+      <div style={{ marginBottom: 48, textAlign: "left" }}>
+        <h2 style={{ fontSize: "clamp(24px, 5vw, 36px)", fontWeight: 800, color: fg, margin: "0 0 12px 0", letterSpacing: "-0.02em" }}>
+          Let's build something together.
+        </h2>
+        <p style={{ fontSize: "clamp(14px, 3vw, 15px)", color: fg, opacity: 0.7, margin: 0, lineHeight: 1.6, maxWidth: 600 }}>
+          Have an opportunity, a project idea, or just want to say hi? My inbox is open.
+        </p>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 32, alignItems: "start" }}>
+        {/* Contact info details */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {contacts.map((c, i) => {
+            const CardTag = c.type ? "a" : "div";
+            return (
+              <CardTag
+                key={i}
+                href={c.type ? `${c.type}${c.value}` : undefined}
+                target={c.type ? "_blank" : undefined}
+                rel={c.type ? "noreferrer" : undefined}
+                style={{
+                  display: "flex", alignItems: "center", gap: 20, padding: "24px",
+                  borderRadius: 16, background: `${fg}05`, border: `1px solid ${fg}10`,
+                  textDecoration: "none", color: fg, cursor: "pointer",
+                }}
+              >
+                <div style={{ width: 48, height: 48, borderRadius: "50%", background: `${ac}15`, color: ac, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <c.icon size={20} />
+                </div>
+                <div>
+                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", opacity: 0.5, display: "block", marginBottom: 4 }}>{c.label}</span>
+                  <span style={{ fontSize: 14, fontWeight: 700, display: "block" }}>{c.value}</span>
+                </div>
+              </CardTag>
+            );
+          })}
+        </div>
+
+        {/* Contact Form input */}
+        <div style={{ padding: "clamp(24px, 4vw, 32px)", borderRadius: 20, background: `${fg}05`, border: `1px solid ${fg}10` }}>
+          {sent ? (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 0", textAlign: "center" }}>
+              <div style={{ width: 60, height: 60, borderRadius: "50%", background: `${ac}20`, color: ac, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
+                <Send size={24} />
+              </div>
+              <h3 style={{ fontSize: 18, fontWeight: 700, margin: "0 0 8px 0" }}>Message Sent!</h3>
+              <p style={{ fontSize: 14, opacity: 0.7 }}>Thank you for reaching out.</p>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              {/* Invisible Honeypot input */}
+              <input 
+                type="text" 
+                name="website_url" 
+                value={websiteUrl} 
+                onChange={e => setWebsiteUrl(e.target.value)} 
+                style={{ display: 'none' }} 
+                tabIndex="-1" 
+                autoComplete="off" 
+              />
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16 }}>
+                <div>
+                  <label htmlFor="form-name" style={{ fontSize: 10, fontWeight: 700, opacity: 0.6, textTransform: "uppercase", display: "block", marginBottom: 8 }}>Your Name</label>
+                  <input
+                    id="form-name" type="text" required placeholder="Jane Doe" value={form.name}
+                    onChange={e => setForm({ ...form, name: e.target.value })}
+                    style={{ width: "100%", padding: "14px 16px", borderRadius: 12, background: bg ? `${bg}c0` : "rgba(0,0,0,0.2)", border: `1px solid ${fg}15`, color: fg }}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="form-email" style={{ fontSize: 10, fontWeight: 700, opacity: 0.6, textTransform: "uppercase", display: "block", marginBottom: 8 }}>Email</label>
+                  <input
+                    id="form-email" type="email" required placeholder="jane@company.com" value={form.email}
+                    onChange={e => setForm({ ...form, email: e.target.value })}
+                    style={{ width: "100%", padding: "14px 16px", borderRadius: 12, background: bg ? `${bg}c0` : "rgba(0,0,0,0.2)", border: `1px solid ${fg}15`, color: fg }}
+                  />
+                </div>
+              </div>
+              <div>
+                <label htmlFor="form-msg" style={{ fontSize: 10, fontWeight: 700, opacity: 0.6, textTransform: "uppercase", display: "block", marginBottom: 8 }}>Message</label>
+                <textarea
+                  id="form-msg" required rows={4} placeholder="Tell me about your project..." value={form.message}
+                  onChange={e => setForm({ ...form, message: e.target.value })}
+                  style={{ width: "100%", padding: "14px 16px", borderRadius: 12, background: bg ? `${bg}c0` : "rgba(0,0,0,0.2)", border: `1px solid ${fg}15`, color: fg, resize: "vertical" }}
+                />
+              </div>
+              <button
+                type="submit" disabled={sending}
+                style={{ padding: "14px 28px", borderRadius: 12, background: sending ? `${fg}20` : `linear-gradient(135deg, ${ac}, ${ac}cc)`, color: btnFg, border: "none", fontWeight: 700, cursor: sending ? "not-allowed" : "pointer" }}
+              >
+                {sending ? "Sending..." : "Send Message"}
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+```
+
+---
+---
+
+# 🤖 AI Reply Generation System
+
+Below is the design pattern, system prompt, and Python API views logic to implement an AI Reply generator inside your Message Center.
+
+### 1. The System Prompt (For LLMs like Gemini / Groq)
+Use this prompt inside your LLM service client:
+```text
+You are an AI assistant helping a user reply to a contact form message submitted on their personal portfolio.
+
+Context:
+- User Name: {user_name}
+- User Profession/Title: {user_profession}
+- Sender Name: {sender_name}
+- Message Content:
+"{message_content}"
+
+Tone: {tone} (professional, casual, or assertive)
+
+Goal:
+Draft a reply email response from the User to the Sender. The reply should:
+1. Address the points raised in the sender's message.
+2. Express interest in collaborating or discussing further.
+3. Conclude with a clear call to action (e.g. scheduling a call or email follow-up).
+
+Output Guidelines:
+1. Return ONLY the reply email body. Do not include subject lines, placeholders, or explanation intros.
+2. Keep it concise, friendly, and under 200 words.
+3. Do not leave placeholder brackets like "[Your Name]". Replace it directly with "{user_name}".
+```
+
+### 2. Django View Endpoint Action (Append to `MessageViewSet` inside `views.py`)
+```python
+    @action(detail=True, methods=['post'], url_path='generate-reply')
+    def generate_reply(self, request, pk=None):
+        message = self.get_object()
+        tone = request.data.get('tone', 'professional') # 'professional', 'casual', 'assertive'
+        
+        user_name = request.user.profile.name if hasattr(request.user, 'profile') else request.user.first_name or "Me"
+        user_profession = request.user.profile.title if hasattr(request.user, 'profile') else "Professional"
+        
+        system_prompt = f"""
+        You are an AI assistant helping a user reply to a contact form message submitted on their personal portfolio.
+
+        Context:
+        - User Name: {user_name}
+        - User Profession/Title: {user_profession}
+        - Sender Name: {message.sender_name}
+        - Message Content:
+        "{message.message}"
+
+        Tone: {tone}
+
+        Goal:
+        Draft a reply email response from the User to the Sender.
+        Return ONLY the reply email body. Do not include subject lines, placeholders like [Your Name], or introductions.
+        """
+        
+        # Integrate with your Gemini or Groq client wrapper here
+        # Example using a mock LLM service (replace with your active groq_service or gemini_service calls):
+        try:
+            # from core.gemini_service import gemini_client
+            # reply_draft = gemini_client.generate(system_prompt)
+            
+            # Simulated Response for blueprint illustration:
+            reply_draft = f"Hi {message.sender_name},\n\nThank you for reaching out regarding your project. I would love to connect and discuss how we can work together. Let me know if you have time for a brief call next week.\n\nBest regards,\n{user_name}"
+            
+            return Response({'reply_draft': reply_draft}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': f"AI generation failed: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+```
+
+### 3. Frontend UI Panel (Add to Details View in `Messages.jsx`)
+Insert this block inside the detail pane, letting users generate drafts in one click:
+```jsx
+// 1. Add states inside Messages component:
+const [replyTone, setReplyTone] = useState("professional");
+const [replyDraft, setReplyDraft] = useState("");
+const [generatingReply, setGeneratingReply] = useState(false);
+
+const handleGenerateReply = async () => {
+  if (!selectedMessage) return;
+  setGeneratingReply(true);
+  setReplyDraft("");
+  try {
+    const res = await api.post(`/portfolios/messages/${selectedMessage.id}/generate-reply/`, { tone: replyTone });
+    setReplyDraft(res.data.reply_draft);
+    toast({ title: "Draft Generated!", description: "AI has created a draft reply.", type: "success" });
+  } catch (err) {
+    console.error(err);
+    toast({ title: "Draft Generation Failed", description: "AI service is currently unavailable.", type: "error" });
+  } finally {
+    setGeneratingReply(false);
+  }
+};
+
+// 2. Render this inside detailed view panel under the message text card:
+<div className="mt-6 p-4 rounded-2xl border border-border/20 bg-card/5 space-y-4">
+  <div className="flex items-center justify-between flex-wrap gap-2">
+    <div className="text-xs font-bold text-foreground flex items-center gap-1.5">
+      <Info className="w-3.5 h-3.5 text-brand" /> Generate AI Draft Response
+    </div>
+    <div className="flex items-center gap-2">
+      <select 
+        value={replyTone}
+        onChange={e => setReplyTone(e.target.value)}
+        className="px-2 py-1 rounded-lg border border-border/30 bg-background/50 text-xs focus:ring-1 focus:ring-brand"
+      >
+        <option value="professional">Professional</option>
+        <option value="casual">Casual</option>
+        <option value="assertive">Assertive</option>
+      </select>
+      <Button size="xs" onClick={handleGenerateReply} disabled={generatingReply}>
+        {generatingReply ? "Drafting..." : "Generate AI Reply"}
+      </Button>
+    </div>
+  </div>
+  
+  {replyDraft && (
+    <div className="space-y-2">
+      <textarea
+        value={replyDraft}
+        onChange={e => setReplyDraft(e.target.value)}
+        className="w-full p-3 rounded-xl border border-border/20 bg-background/50 text-xs leading-relaxed font-sans focus:outline-none"
+        rows={6}
+      />
+      <div className="flex justify-end gap-2">
+        <button 
+          onClick={() => {
+            navigator.clipboard.writeText(replyDraft);
+            toast({ title: "Draft Copied!", description: "AI response copied.", type: "success" });
+          }}
+          className="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-background border border-border/30 hover:border-border/60 transition flex items-center gap-1"
+        >
+          <Copy className="w-3 h-3" /> Copy Draft
+        </button>
+        <a 
+          href={`mailto:${selectedMessage.sender_email}?subject=Re:${encodeURIComponent(selectedMessage.subject || 'Portfolio Inquiry')}&body=${encodeURIComponent(replyDraft)}`}
+          className="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-brand text-white hover:brightness-110 transition flex items-center gap-1"
+        >
+          <Mail className="w-3 h-3" /> Open in Mail App
+        </a>
+      </div>
+    </div>
+  )}
+</div>
+```

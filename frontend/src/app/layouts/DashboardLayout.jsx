@@ -1,5 +1,5 @@
 import { Outlet, NavLink, Link, useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, PenSquare, LayoutTemplate, BarChart3, Plus, ChevronDown, LogOut, Sparkles, Upload, FileText, X, Menu, Settings2, HelpCircle } from "lucide-react";
+import { LayoutDashboard, PenSquare, LayoutTemplate, BarChart3, Plus, ChevronDown, LogOut, Sparkles, Upload, FileText, X, Menu, Settings2, HelpCircle, Mail } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Logo from "../components/Logo.jsx";
@@ -17,6 +17,7 @@ const staticNav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/templates", label: "Templates", icon: LayoutTemplate },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
+  { to: "/messages", label: "Messages", icon: Mail },
   { to: "/help", label: "Help Center", icon: HelpCircle },
   { to: "/settings", label: "Settings", icon: Settings2 },
 ];
@@ -63,11 +64,10 @@ function EditorNavLink({ onClick }) {
   return (
     <button
       onClick={handleClick}
-      className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition w-full md:justify-center lg:justify-start ${
-        isActive
+      className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition w-full md:justify-center lg:justify-start ${isActive
           ? "bg-accent text-foreground shadow-card font-semibold"
           : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
-      }`}
+        }`}
     >
       <PenSquare className="w-4 h-4 flex-shrink-0" />
       <span className="md:hidden lg:inline">Editor</span>
@@ -86,6 +86,134 @@ export default function DashboardLayout() {
   const [isParsing, setIsParsing] = useState(false);
   const [hasPendingCV, setHasPendingCV] = useState(false);
 
+  const [unreadCount, setUnreadCount] = useState(0);
+  const wsRef = useRef(null);
+  const reconnectTimeoutRef = useRef(null);
+  const reconnectDelayRef = useRef(2000);
+  const { toast } = useToast();
+
+  const playNotificationSound = () => {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+      osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.08, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.35);
+    } catch (e) {
+      console.error("Audio synthesis failed", e);
+    }
+  };
+
+  const connectWebSocket = () => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) return;
+
+    const token = localStorage.getItem('access_token');
+    if (!token) return;
+
+    const envWsUrl = import.meta.env.VITE_WS_URL;
+    let wsUrl;
+    if (envWsUrl) {
+      wsUrl = `${envWsUrl.replace(/\/$/, '')}/ws/messages/?token=${token}`;
+    } else {
+      const apiBase = api.defaults.baseURL || 'http://localhost:8000/api';
+      const wsProtocol = apiBase.startsWith('https') ? 'wss://' : 'ws://';
+      const host = apiBase.replace(/^https?:\/\//, '').replace(/\/api$/, '').split('/')[0];
+      wsUrl = `${wsProtocol}${host}/ws/messages/?token=${token}`;
+    }
+
+    const ws = new WebSocket(wsUrl);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      reconnectDelayRef.current = 2000;
+      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+    };
+
+    ws.onmessage = (e) => {
+      try {
+        const message = JSON.parse(e.data);
+        if (message.type === 'new_message' || message.portfolio) {
+          setUnreadCount(prev => prev + 1);
+          playNotificationSound();
+          toast({
+            title: "New Message Received",
+            description: `From ${message.sender_name || message.data?.sender_name || 'Visitor'} on portfolio "${message.portfolio_name || message.data?.portfolio_name || 'Portfolio'}"`,
+            type: "success",
+            duration: 6000
+          });
+          window.dispatchEvent(new CustomEvent('newMessageReceived', { detail: message.data || message }));
+        }
+      } catch (err) {
+        console.error("Error handling WebSocket message", err);
+      }
+    };
+
+    ws.onclose = (e) => {
+      wsRef.current = null;
+      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+      
+      const delay = reconnectDelayRef.current;
+      reconnectDelayRef.current = Math.min(delay * 1.5, 30000);
+      reconnectTimeoutRef.current = setTimeout(() => {
+        connectWebSocket();
+      }, delay);
+    };
+
+    ws.onerror = (err) => {
+      ws.close();
+    };
+  };
+
+  useEffect(() => {
+    connectWebSocket();
+
+    const fetchInitialUnread = async () => {
+      try {
+        const token = localStorage.getItem('access_token');
+        if (token) {
+          const res = await api.get('/portfolios/messages/unread-count/');
+          setUnreadCount(res.data.unread_count);
+        }
+      } catch (err) {
+        console.error("Failed to fetch initial unread count", err);
+      }
+    };
+    fetchInitialUnread();
+
+    const handleCountReset = (e) => {
+      if (typeof e.detail === 'number') {
+        setUnreadCount(e.detail);
+      }
+    };
+    window.addEventListener('updateUnreadCount', handleCountReset);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        connectWebSocket();
+      }
+    };
+    window.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('online', connectWebSocket);
+
+    return () => {
+      window.removeEventListener('updateUnreadCount', handleCountReset);
+      window.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('online', connectWebSocket);
+      if (wsRef.current) {
+        wsRef.current.onclose = null;
+        wsRef.current.close();
+      }
+      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+    };
+  }, []);
+
   useEffect(() => {
     setMounted(true);
     setSidebarOpen(window.innerWidth >= 768);
@@ -95,7 +223,6 @@ export default function DashboardLayout() {
 
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   const lastWidth = useRef(1024);
   useEffect(() => {
@@ -202,11 +329,10 @@ export default function DashboardLayout() {
 
       {/* ── Sidebar ── */}
       <aside
-        className={`fixed inset-y-0 left-0 z-[1200] flex flex-col border-r border-border/50 bg-background/95 md:bg-background/60 backdrop-blur-xl transition-all duration-300 ${
-          sidebarOpen
+        className={`fixed inset-y-0 left-0 z-[1200] flex flex-col border-r border-border/50 bg-background/95 md:bg-background/60 backdrop-blur-xl transition-all duration-300 ${sidebarOpen
             ? "translate-x-0 w-64 md:sticky md:h-screen md:translate-x-0 md:w-16 lg:w-64 md:border-r"
             : "-translate-x-full w-64 md:sticky md:h-screen md:translate-x-0 md:w-0 md:overflow-hidden md:border-r-0"
-        }`}
+          }`}
       >
         <div className="p-5 flex items-center justify-between md:block md:p-5">
           <Logo className="flex md:justify-center lg:justify-start" to="/dashboard" />
@@ -230,15 +356,21 @@ export default function DashboardLayout() {
               end={n.to === "/dashboard"}
               onClick={() => setSidebarOpen(false)}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition md:justify-center lg:justify-start ${
-                  isActive
-                    ? "bg-accent text-foreground shadow-card font-semibold"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
+                `flex items-center justify-between px-3 py-2 rounded-lg text-sm transition md:justify-center lg:justify-between ${isActive
+                  ? "bg-accent text-foreground shadow-card font-semibold"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
                 }`
               }
             >
-              <n.icon className="w-4 h-4 flex-shrink-0" />
-              <span className="md:hidden lg:inline">{n.label}</span>
+              <div className="flex items-center gap-3 md:justify-center lg:justify-start">
+                <n.icon className="w-4 h-4 flex-shrink-0" />
+                <span className="md:hidden lg:inline">{n.label}</span>
+              </div>
+              {n.to === "/messages" && unreadCount > 0 && (
+                <span className="bg-brand text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full md:hidden lg:inline-block">
+                  {unreadCount}
+                </span>
+              )}
             </NavLink>
           ))}
         </nav>
@@ -408,25 +540,21 @@ export default function DashboardLayout() {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setSidebarOpen((open) => !open)}
-                className={`p-2 rounded-lg glass text-muted-foreground hover:text-foreground mr-1 flex flex-col justify-center items-center w-9 h-9 gap-1 transition-all duration-500 ease-in-out ${
-                  sidebarOpen ? "rotate-180 scale-105" : "hover:rotate-12"
-                }`}
+                className={`p-2 rounded-lg glass text-muted-foreground hover:text-foreground mr-1 flex flex-col justify-center items-center w-9 h-9 gap-1 transition-all duration-500 ease-in-out ${sidebarOpen ? "rotate-180 scale-105" : "hover:rotate-12"
+                  }`}
                 aria-label="Toggle sidebar"
               >
                 <span
-                  className={`block w-5 h-0.5 bg-current rounded transition-all duration-500 ease-in-out origin-center ${
-                    sidebarOpen ? "rotate-45 translate-y-1.5" : ""
-                  }`}
+                  className={`block w-5 h-0.5 bg-current rounded transition-all duration-500 ease-in-out origin-center ${sidebarOpen ? "rotate-45 translate-y-1.5" : ""
+                    }`}
                 />
                 <span
-                  className={`block w-5 h-0.5 bg-current rounded transition-all duration-500 ease-in-out ${
-                    sidebarOpen ? "opacity-0 scale-x-0" : ""
-                  }`}
+                  className={`block w-5 h-0.5 bg-current rounded transition-all duration-500 ease-in-out ${sidebarOpen ? "opacity-0 scale-x-0" : ""
+                    }`}
                 />
                 <span
-                  className={`block w-5 h-0.5 bg-current rounded transition-all duration-500 ease-in-out origin-center ${
-                    sidebarOpen ? "-rotate-45 -translate-y-1.5" : ""
-                  }`}
+                  className={`block w-5 h-0.5 bg-current rounded transition-all duration-500 ease-in-out origin-center ${sidebarOpen ? "-rotate-45 -translate-y-1.5" : ""
+                    }`}
                 />
               </button>
               <button

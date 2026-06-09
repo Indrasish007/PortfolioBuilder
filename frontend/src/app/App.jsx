@@ -20,16 +20,17 @@ function SEOManager() {
       else if (location.pathname === "/analytics") title = "Analytics | PortfolioBuilder";
       else if (location.pathname === "/help") title = "Help Center | PortfolioBuilder";
       else if (location.pathname === "/settings") title = "Settings | PortfolioBuilder";
+      else if (location.pathname === "/messages") title = "Messages | PortfolioBuilder";
 
       else if (location.pathname === "/login") title = "Login | PortfolioBuilder";
       else if (location.pathname === "/signup") title = "Sign Up | PortfolioBuilder";
-      
+
       document.title = title;
 
       // Enforce noindex, nofollow on all non-public pages
       // EXCEPT the landing page "/" and the "/demo" page!
       const isPublicLanding = location.pathname === "/" || location.pathname === "/demo";
-      
+
       let robots = document.querySelector('meta[name="robots"]');
       if (!robots) {
         robots = document.createElement("meta");
@@ -91,6 +92,7 @@ import Settings from "./pages/Settings.jsx";
 import Onboarding from "./pages/Onboarding.jsx";
 import CVPreview from "./pages/CVPreview.jsx";
 import HelpCenter from "./pages/HelpCenter.jsx";
+import Messages from "./pages/Messages.jsx";
 
 
 export default function App() {
@@ -131,6 +133,7 @@ export default function App() {
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/cv-preview" element={<CVPreview />} />
                 <Route path="/help" element={<HelpCenter />} />
+                <Route path="/messages" element={<Messages />} />
               </Route>
 
               <Route path="*" element={<NotFound />} />

@@ -340,6 +340,7 @@ export function GalleryAlbum({ images, fg }) {
 
 export function ContactSection({ u, t, id, portfolioId }) {
   const [formData, setFormData] = useState({ name: "", email: "", message: "" });
+  const [websiteUrl, setWebsiteUrl] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -356,18 +357,39 @@ export function ContactSection({ u, t, id, portfolioId }) {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) return;
 
     setIsSubmitting(true);
-    // Mock submission flow
-    setTimeout(() => {
+    try {
+      const base = (api.defaults.baseURL || 'http://localhost:8000/api').replace(/\/$/, '');
+      const response = await fetch(`${base}/portfolios/public/${portfolioId}/message/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sender_name: formData.name,
+          sender_email: formData.email,
+          message: formData.message,
+          subject: "",
+          website_url: websiteUrl // Honeypot spam-filter
+        })
+      });
+      if (response.ok) {
+        setIsSubmitted(true);
+        setFormData({ name: "", email: "", message: "" });
+        setWebsiteUrl("");
+        setTimeout(() => setIsSubmitted(false), 5000);
+      } else {
+        const errData = await response.json();
+        throw new Error(errData.error || "Failed to submit message");
+      }
+    } catch (err) {
+      console.error("Failed to submit message", err);
+      alert(err.message || "Failed to submit message. Please try again.");
+    } finally {
       setIsSubmitting(false);
-      setIsSubmitted(true);
-      setFormData({ name: "", email: "", message: "" });
-      setTimeout(() => setIsSubmitted(false), 5000);
-    }, 1200);
+    }
   };
 
   const scrollToTop = () => {
@@ -394,7 +416,7 @@ export function ContactSection({ u, t, id, portfolioId }) {
   const inputRadius = isBrutalist ? "0px" : "8px";
   const inputBorder = isBrutalist ? `2px solid ${fg}` : `1px solid color-mix(in srgb, ${fg} 15%, transparent)`;
   const inputBg = isBrutalist ? bg : `color-mix(in srgb, ${bg} 80%, transparent)`;
-  
+
   const submitRadius = isBrutalist ? "0px" : "8px";
   const submitBorder = isBrutalist ? `3px solid ${fg}` : "none";
   const submitBg = isBrutalist ? ac : `linear-gradient(135deg, ${ac} 0%, color-mix(in srgb, ${ac} 70%, #fff) 100%)`;
@@ -654,6 +676,16 @@ export function ContactSection({ u, t, id, portfolioId }) {
 
           <div className="contact-form-container">
             <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              {/* Invisible Honeypot input */}
+              <input 
+                type="text" 
+                name="website_url" 
+                value={websiteUrl} 
+                onChange={e => setWebsiteUrl(e.target.value)} 
+                style={{ display: 'none' }} 
+                tabIndex="-1" 
+                autoComplete="off" 
+              />
               <div className="contact-form-row">
                 <div className="contact-form-group">
                   <label className="contact-form-label">Your Name</label>

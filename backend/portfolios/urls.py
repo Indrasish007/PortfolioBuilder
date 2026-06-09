@@ -5,16 +5,18 @@ from .views import (
     PublicPortfolioByDomainView, PublishPortfolioView, UnpublishPortfolioView,
     AnalyticsView, DashboardStatsView, PublicPortfolioListView, ProjectSetFeaturedView,
     TrackProjectClickView, TrackVisitView, DynamicOGImageView, DynamicOGImageBySlugView,
-    ImageUploadView
+    ImageUploadView, MessageViewSet, PublicMessageSubmitView
 )
 
 router = DefaultRouter()
+router.register(r'messages', MessageViewSet, basename='message')
 router.register(r'', PortfolioViewSet, basename='portfolio')
 
 urlpatterns = [
     # Public access — by id, slug or domain
     path('public/list/', PublicPortfolioListView.as_view(), name='public_portfolios_list'),
     path('public/<int:pk>/', PublicPortfolioView.as_view(), name='public_portfolio'),
+    path('public/<int:portfolio_id>/message/', PublicMessageSubmitView.as_view(), name='public_message_submit'),
     path('public/<int:pk>/og/', DynamicOGImageView.as_view(), name='portfolio_og_image'),
     path('public/slug/<slug:slug>/', PublicPortfolioBySlugView.as_view(), name='public_portfolio_slug'),
     path('public/slug/<slug:slug>/og/', DynamicOGImageBySlugView.as_view(), name='portfolio_og_image_slug'),

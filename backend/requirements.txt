@@ -68,4 +68,6 @@ reportlab>=4.0.0
 resend
 google-generativeai
 groq
-
+channels==4.1.0
+daphne==4.1.2
+channels-redis==4.2.1

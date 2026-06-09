@@ -1001,3 +1001,167 @@ class ImageUploadView(APIView):
                 return Response({'error': f'Failed to process file: {str(e)}'}, status=http_status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+# ----------------------------------------------------
+# Real-Time Message Center Additions
+# ----------------------------------------------------
+from rest_framework import status
+from rest_framework.pagination import PageNumberPagination
+from django.db import models as django_models
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
+from django.utils import timezone
+from datetime import timedelta
+import html
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+from .models import Message
+from .serializers import MessageSerializer
+
+class StandardResultsSetPagination(PageNumberPagination):
+    page_size = 15
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+class MessageViewSet(viewsets.ModelViewSet):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = MessageSerializer
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        queryset = Message.objects.filter(user=self.request.user)
+        
+        is_read = self.request.query_params.get('is_read')
+        if is_read is not None:
+            queryset = queryset.filter(is_read=is_read.lower() == 'true')
+            
+        portfolio_id = self.request.query_params.get('portfolio_id')
+        if portfolio_id is not None:
+            queryset = queryset.filter(portfolio_id=portfolio_id)
+            
+        search_query = self.request.query_params.get('search')
+        if search_query:
+            queryset = queryset.filter(
+                django_models.Q(sender_name__icontains=search_query) |
+                django_models.Q(sender_email__icontains=search_query) |
+                django_models.Q(subject__icontains=search_query) |
+                django_models.Q(message__icontains=search_query)
+            )
+
+        sort_by = self.request.query_params.get('sort', 'newest')
+        if sort_by == 'oldest':
+            queryset = queryset.order_by('created_at')
+        else:
+            queryset = queryset.order_by('-created_at')
+
+        return queryset
+
+    @action(detail=False, methods=['get'], url_path='unread-count')
+    def unread_count(self, request):
+        count = Message.objects.filter(user=request.user, is_read=False).count()
+        return Response({'unread_count': count})
+
+    @action(detail=False, methods=['get'], url_path='stats')
+    def message_stats(self, request):
+        user = request.user
+        total = Message.objects.filter(user=user).count()
+        unread = Message.objects.filter(user=user, is_read=False).count()
+        
+        now = timezone.now()
+        this_month = Message.objects.filter(
+            user=user,
+            created_at__year=now.year,
+            created_at__month=now.month
+        ).count()
+
+        portfolios_receiving = Message.objects.filter(user=user).values('portfolio').distinct().count()
+
+        return Response({
+            'total': total,
+            'unread': unread,
+            'this_month': this_month,
+            'portfolios_receiving': portfolios_receiving
+        })
+
+    @action(detail=False, methods=['post'], url_path='bulk-actions')
+    def bulk_actions(self, request):
+        message_ids = request.data.get('ids', [])
+        action_type = request.data.get('action') # 'read', 'unread', 'delete'
+        
+        queryset = Message.objects.filter(user=request.user, id__in=message_ids)
+        
+        if action_type == 'read':
+            queryset.update(is_read=True)
+        elif action_type == 'unread':
+            queryset.update(is_read=False)
+        elif action_type == 'delete':
+            queryset.delete()
+            
+        return Response({'status': 'success'})
+
+class PublicMessageSubmitView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, portfolio_id):
+        try:
+            portfolio = Portfolio.objects.get(pk=portfolio_id)
+        except Portfolio.DoesNotExist:
+            return Response({'error': 'Portfolio not found'}, status=404)
+
+        # 1. Honeypot Check (Silently drop spam bot submissions)
+        if request.data.get('website_url'):
+            return Response({'status': 'success'}, status=201)
+
+        sender_name = request.data.get('sender_name')
+        sender_email = request.data.get('sender_email')
+        message_content = request.data.get('message')
+        subject = request.data.get('subject', '')
+
+        if not sender_name or not sender_email or not message_content:
+            return Response({'error': 'Missing required fields'}, status=400)
+
+        # 2. Prevent XSS & Length Stripping
+        sender_name = html.escape(sender_name.strip()[:100])
+        sender_email = sender_email.strip()
+        message_content = html.escape(message_content.strip()[:5000])
+        subject = html.escape(subject.strip()[:150]) if subject else ''
+
+        # 3. Email format verification
+        try:
+            validate_email(sender_email)
+        except ValidationError:
+            return Response({'error': 'Invalid email address'}, status=400)
+
+        # 4. Rate Limiting (max 3 messages per minute per email Address)
+        one_minute_ago = timezone.now() - timedelta(minutes=1)
+        recent = Message.objects.filter(sender_email=sender_email, created_at__gte=one_minute_ago).count()
+        if recent >= 3:
+            return Response({'error': 'Too many messages sent. Please wait a minute.'}, status=429)
+
+        message = Message.objects.create(
+            user=portfolio.user,
+            portfolio=portfolio,
+            portfolio_name=portfolio.name,
+            sender_name=sender_name,
+            sender_email=sender_email,
+            subject=subject,
+            message=message_content
+        )
+
+        # 5. Broadcast live message update via websocket channel layers
+        channel_layer = get_channel_layer()
+        if channel_layer:
+            serialized_msg = MessageSerializer(message).data
+            async_to_sync(channel_layer.group_send)(
+                f"user_{portfolio.user.id}",
+                {
+                    "type": "send_notification",
+                    "message": {
+                        "type": "new_message",
+                        "data": serialized_msg
+                    }
+                }
+            )
+
+        return Response(MessageSerializer(message).data, status=201)
+
+

@@ -341,3 +341,15 @@ class PortfolioSerializer(serializers.ModelSerializer):
         update_nested(Blog, 'blogs', validated_data.get('blogs'))
 
         return instance
+
+
+from .models import Message
+
+class MessageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Message
+        fields = [
+            'id', 'portfolio', 'portfolio_name', 'sender_name',
+            'sender_email', 'subject', 'message', 'is_read', 'created_at'
+        ]
+        read_only_fields = ['id', 'portfolio_name', 'created_at']
