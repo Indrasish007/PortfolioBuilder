@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { BarChart3, RefreshCw, AlertCircle } from "lucide-react";
 import api from "../services/api.js";
@@ -60,7 +60,7 @@ const CustomTooltip = ({ active, payload }) => {
   return null;
 };
 
-export default function TrafficSourcesChart({ portfolioId, total }) {
+const TrafficSourcesChart = memo(function TrafficSourcesChart({ portfolioId, total }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -218,4 +218,6 @@ export default function TrafficSourcesChart({ portfolioId, total }) {
       </div>
     </GlassCard>
   );
-}
+});
+
+export default TrafficSourcesChart;

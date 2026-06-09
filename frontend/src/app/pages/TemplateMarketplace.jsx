@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect, useCallback } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
@@ -20,7 +20,7 @@ const categoryIcons = {
 };
 
 /* ── deterministic wireframe preview SVG ───────────────────────────────── */
-function TemplatePreviewSVG({ template: t, small = false }) {
+const TemplatePreviewSVG = memo(function TemplatePreviewSVG({ template: t, small = false }) {
   const seed = t.id.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
   const rng = (i) => (((seed * (i + 7) * 13) % 60) + 30);
 
@@ -80,10 +80,10 @@ function TemplatePreviewSVG({ template: t, small = false }) {
       <rect x="110" y="105" width={rng(7) * 0.4} height="2.5" rx="1.25" fill="rgba(255,255,255,0.5)" />
     </svg>
   );
-}
+});
 
 /* ── mock page demo strips for the popup ───────────────────────────────── */
-function DemoStrips({ t }) {
+const DemoStrips = memo(function DemoStrips({ t }) {
   const seed = t.id.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
   const rng = (i) => 30 + ((seed * (i + 3) * 17) % 55);
 
@@ -132,7 +132,7 @@ function DemoStrips({ t }) {
       ))}
     </div>
   );
-}
+});
 
 /* ── template hover popup portal ──────────────────────────────────────── */
 function TemplatePopup({ t, anchorRect, onSelect, onClose }) {
@@ -245,7 +245,7 @@ function TemplatePopup({ t, anchorRect, onSelect, onClose }) {
 }
 
 /* ── template card ──────────────────────────────────────────────────────── */
-function TemplateCard({ t, isActive, onSelect, index, onHover, onHoverEnd }) {
+const TemplateCard = memo(function TemplateCard({ t, isActive, onSelect, index, onHover, onHoverEnd }) {
   const navigate = useNavigate();
   const cardRef = useRef(null);
   const [hovered, setHovered] = useState(false);
@@ -382,7 +382,7 @@ function TemplateCard({ t, isActive, onSelect, index, onHover, onHoverEnd }) {
       </div>
     </motion.div>
   );
-}
+});
 
 /* ── main page ──────────────────────────────────────────────────────────── */
 export default function TemplateMarketplace() {

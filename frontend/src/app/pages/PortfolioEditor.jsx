@@ -78,13 +78,18 @@ function FramePreview({ children, className, style, bg, fg }) {
 const sectionTypes = ["About", "Skills", "Experience", "Education", "Projects", "Services", "Languages", "Awards", "Certifications", "Volunteer", "Testimonials", "References", "Blogs", "Gallery", "Videos", "Music", "FAQ", "Contact", "Custom"];
 
 export default function PortfolioEditor() {
-  const {
-    portfolio, template, themeName,
-    setTemplate, setThemeName, updateField,
-    undo, redo,
-    fetchPortfolio, resetPortfolio, savePortfolio, loadDraftData,
-    isLoading,
-  } = usePortfolioStore();
+  const portfolio = usePortfolioStore((s) => s.portfolio);
+  const template = usePortfolioStore((s) => s.template);
+  const themeName = usePortfolioStore((s) => s.themeName);
+  const setTemplate = usePortfolioStore((s) => s.setTemplate);
+  const setThemeName = usePortfolioStore((s) => s.setThemeName);
+  const updateField = usePortfolioStore((s) => s.updateField);
+  const undo = usePortfolioStore((s) => s.undo);
+  const redo = usePortfolioStore((s) => s.redo);
+  const fetchPortfolio = usePortfolioStore((s) => s.fetchPortfolio);
+  const resetPortfolio = usePortfolioStore((s) => s.resetPortfolio);
+  const savePortfolio = usePortfolioStore((s) => s.savePortfolio);
+  const isLoading = usePortfolioStore((s) => s.isLoading);
 
   const nativePalette = TEMPLATE_PALETTE[template] || {};
   const baseTheme = TH[themeName] || TH.midnight;
@@ -674,7 +679,7 @@ export default function PortfolioEditor() {
                 ].map((s) => (
                   <div key={s.k} className="flex items-center gap-2 mb-2">
                     <s.i className="w-4 h-4 text-muted-foreground" />
-                    <input value={(user.social || {})[s.k] || ""} onChange={(e) => updateField(`user.social.${s.k}`, e.target.value)}
+                    <DebouncedInput value={(user.social || {})[s.k] || ""} onChange={(v) => updateField(`user.social.${s.k}`, v)}
                       className="flex-1 h-9 px-3 rounded-lg bg-input/40 border border-border text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
                   </div>
                 ))}
@@ -872,15 +877,111 @@ export default function PortfolioEditor() {
   );
 }
 
+function debounce(fn, delay) {
+  let timeoutId;
+  const debounced = function (...args) {
+    if (timeoutId) clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => {
+      fn(...args);
+    }, delay);
+  };
+  debounced.cancel = () => {
+    if (timeoutId) clearTimeout(timeoutId);
+  };
+  return debounced;
+}
+
+function DebouncedInput({ value: externalValue, onChange, className, ...props }) {
+  const [localValue, setLocalValue] = useState(externalValue || "");
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+
+  useEffect(() => {
+    setLocalValue(externalValue || "");
+  }, [externalValue]);
+
+  const debouncedOnChange = useRef(
+    debounce((val) => {
+      onChangeRef.current(val);
+    }, 300)
+  ).current;
+
+  useEffect(() => {
+    return () => debouncedOnChange.cancel();
+  }, [debouncedOnChange]);
+
+  const handleChange = (e) => {
+    const val = e.target.value;
+    setLocalValue(val);
+    debouncedOnChange(val);
+  };
+
+  const handleBlur = () => {
+    debouncedOnChange.cancel();
+    onChangeRef.current(localValue);
+  };
+
+  return (
+    <input
+      {...props}
+      value={localValue}
+      onChange={handleChange}
+      onBlur={handleBlur}
+      className={className}
+    />
+  );
+}
+
+function DebouncedTextarea({ value: externalValue, onChange, className, ...props }) {
+  const [localValue, setLocalValue] = useState(externalValue || "");
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+
+  useEffect(() => {
+    setLocalValue(externalValue || "");
+  }, [externalValue]);
+
+  const debouncedOnChange = useRef(
+    debounce((val) => {
+      onChangeRef.current(val);
+    }, 300)
+  ).current;
+
+  useEffect(() => {
+    return () => debouncedOnChange.cancel();
+  }, [debouncedOnChange]);
+
+  const handleChange = (e) => {
+    const val = e.target.value;
+    setLocalValue(val);
+    debouncedOnChange(val);
+  };
+
+  const handleBlur = () => {
+    debouncedOnChange.cancel();
+    onChangeRef.current(localValue);
+  };
+
+  return (
+    <textarea
+      {...props}
+      value={localValue}
+      onChange={handleChange}
+      onBlur={handleBlur}
+      className={className}
+    />
+  );
+}
+
 function Field({ label, value, onChange, multiline, hint }) {
   return (
     <div className="mb-3">
       <div className="text-xs text-muted-foreground mb-1">{label}</div>
       {multiline ? (
-        <textarea value={value} onChange={(e) => onChange(e.target.value)} rows={3}
+        <DebouncedTextarea value={value} onChange={onChange} rows={3}
           className="w-full p-2.5 rounded-lg bg-input/40 border border-border text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none" />
       ) : (
-        <input value={value} onChange={(e) => onChange(e.target.value)}
+        <DebouncedInput value={value} onChange={onChange}
           className="w-full h-9 px-3 rounded-lg bg-input/40 border border-border text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
       )}
       {hint && <div className="text-[10px] text-muted-foreground mt-1">{hint}</div>}
@@ -891,9 +992,9 @@ function Field({ label, value, onChange, multiline, hint }) {
 function SkillsEditor({ skills, updateField }) {
   return (
     <div>
-      <input 
+      <DebouncedInput 
         value={skills.join(", ")} 
-        onChange={(e) => updateField("skills", e.target.value.split(",").map(s=>s.trim()))}
+        onChange={(v) => updateField("skills", v.split(",").map(s=>s.trim()))}
         placeholder="React, Node.js, UI/UX..."
         className="w-full h-9 px-3 rounded-lg bg-input/40 border border-border text-sm focus:outline-none focus:ring-2 focus:ring-ring"
       />
@@ -953,10 +1054,10 @@ function ExperienceEditor({ experience, updateField }) {
       {experience.map((exp, i) => (
         <div key={i} className="group mb-4 last:mb-0 border-l-2 border-brand/30 pl-3">
           <div className="flex items-center justify-between">
-            <input value={exp.role || ""} onChange={(e) => updateItem(i, "role", e.target.value)} className="w-full bg-transparent text-sm font-semibold focus:outline-none" placeholder="Role" />
+            <DebouncedInput value={exp.role || ""} onChange={(v) => updateItem(i, "role", v)} className="w-full bg-transparent text-sm font-semibold focus:outline-none" placeholder="Role" />
             <button onClick={() => updateField("experience", experience.filter((_, idx) => idx !== i))} className="text-muted-foreground hover:text-destructive"><Trash2 className="w-3 h-3" /></button>
           </div>
-          <input value={exp.company || ""} onChange={(e) => updateItem(i, "company", e.target.value)} className="w-full bg-transparent text-xs mb-2 focus:outline-none" placeholder="Company" />
+          <DebouncedInput value={exp.company || ""} onChange={(v) => updateItem(i, "company", v)} className="w-full bg-transparent text-xs mb-2 focus:outline-none" placeholder="Company" />
           
           <div className="flex flex-wrap items-center gap-2 mb-2">
             <input 
@@ -991,7 +1092,7 @@ function ExperienceEditor({ experience, updateField }) {
             </label>
           </div>
 
-          <textarea value={exp.description || ""} onChange={(e) => updateItem(i, "description", e.target.value)} rows={2} className="w-full bg-input/40 border border-border rounded p-2 text-xs focus:outline-none resize-none" placeholder="Description" />
+          <DebouncedTextarea value={exp.description || ""} onChange={(v) => updateItem(i, "description", v)} rows={2} className="w-full bg-input/40 border border-border rounded p-2 text-xs focus:outline-none resize-none" placeholder="Description" />
         </div>
       ))}
     </div>
@@ -1050,10 +1151,10 @@ function EducationEditor({ education, updateField }) {
       {education.map((edu, i) => (
         <div key={i} className="group mb-4 last:mb-0 border-l-2 border-brand/30 pl-3">
           <div className="flex items-center justify-between">
-            <input value={edu.school || ""} onChange={(e) => updateItem(i, "school", e.target.value)} className="w-full bg-transparent text-sm font-semibold focus:outline-none" placeholder="School" />
+            <DebouncedInput value={edu.school || ""} onChange={(v) => updateItem(i, "school", v)} className="w-full bg-transparent text-sm font-semibold focus:outline-none" placeholder="School" />
             <button onClick={() => updateField("education", education.filter((_, idx) => idx !== i))} className="text-muted-foreground hover:text-destructive"><Trash2 className="w-3 h-3" /></button>
           </div>
-          <input value={edu.degree || ""} onChange={(e) => updateItem(i, "degree", e.target.value)} className="w-full bg-transparent text-xs mb-2 focus:outline-none" placeholder="Degree" />
+          <DebouncedInput value={edu.degree || ""} onChange={(v) => updateItem(i, "degree", v)} className="w-full bg-transparent text-xs mb-2 focus:outline-none" placeholder="Degree" />
           
           <div className="flex flex-wrap items-center gap-2 mb-2">
             <input 
@@ -1171,10 +1272,10 @@ function ProjectsEditor({ projects, updateField }) {
       {projects.map((proj, i) => (
         <div key={i} className="group mb-4 last:mb-0 border-l-2 border-brand/30 pl-3 space-y-1">
           <div className="flex items-center justify-between">
-            <input value={proj.title} onChange={(e) => updateItem(i, "title", e.target.value)} className="w-full bg-transparent text-sm font-semibold focus:outline-none" placeholder="Project title" />
+            <DebouncedInput value={proj.title} onChange={(v) => updateItem(i, "title", v)} className="w-full bg-transparent text-sm font-semibold focus:outline-none" placeholder="Project title" />
             <button onClick={() => updateField("projects", projects.filter((_, idx) => idx !== i))} className="text-muted-foreground hover:text-destructive"><Trash2 className="w-3 h-3" /></button>
           </div>
-          <textarea value={proj.description} onChange={(e) => updateItem(i, "description", e.target.value)} rows={2} className="w-full bg-input/40 border border-border rounded p-2 text-xs focus:outline-none resize-none" placeholder="Description" />
+          <DebouncedTextarea value={proj.description} onChange={(v) => updateItem(i, "description", v)} rows={2} className="w-full bg-input/40 border border-border rounded p-2 text-xs focus:outline-none resize-none" placeholder="Description" />
 
           {/* AI Rewrite button for this project's description */}
           <div className="flex flex-col gap-1">
@@ -1261,18 +1362,18 @@ function ProjectsEditor({ projects, updateField }) {
                 />
               </label>
             )}
-            <input
+            <DebouncedInput
               value={proj.image || ""}
-              onChange={(e) => updateItem(i, "image", e.target.value)}
+              onChange={(v) => updateItem(i, "image", v)}
               className="flex-1 bg-input/40 border border-border rounded p-2 text-xs focus:outline-none h-12"
               placeholder="Or paste image URL here..."
             />
           </div>
 
-          <input value={proj.tech ? proj.tech.join(", ") : ""} onChange={(e) => updateItem(i, "tech", e.target.value.split(",").map(t => t.trim()))} className="w-full bg-input/40 border border-border rounded p-2 text-xs focus:outline-none" placeholder="Tech stack (comma separated)" />
+          <DebouncedInput value={proj.tech ? proj.tech.join(", ") : ""} onChange={(v) => updateItem(i, "tech", v.split(",").map(t => t.trim()))} className="w-full bg-input/40 border border-border rounded p-2 text-xs focus:outline-none" placeholder="Tech stack (comma separated)" />
           <div className="flex gap-2">
-            <input value={proj.github} onChange={(e) => updateItem(i, "github", e.target.value)} className="w-full bg-input/40 border border-border rounded p-2 text-xs focus:outline-none" placeholder="GitHub URL" />
-            <input value={proj.live} onChange={(e) => updateItem(i, "live", e.target.value)} className="w-full bg-input/40 border border-border rounded p-2 text-xs focus:outline-none" placeholder="Live URL" />
+            <DebouncedInput value={proj.github} onChange={(v) => updateItem(i, "github", v)} className="w-full bg-input/40 border border-border rounded p-2 text-xs focus:outline-none" placeholder="GitHub URL" />
+            <DebouncedInput value={proj.live} onChange={(v) => updateItem(i, "live", v)} className="w-full bg-input/40 border border-border rounded p-2 text-xs focus:outline-none" placeholder="Live URL" />
           </div>
         </div>
       ))}
@@ -1483,11 +1584,11 @@ function TestimonialsEditor({ testimonials, updateField }) {
       {testimonials.map((t, i) => (
         <div key={i} className="group mb-4 last:mb-0 border-l-2 border-brand/30 pl-3">
            <div className="flex items-center justify-between">
-            <input value={t.name} onChange={(e) => updateItem(i, "name", e.target.value)} className="w-full bg-transparent text-sm font-semibold focus:outline-none" placeholder="Name" />
+            <DebouncedInput value={t.name} onChange={(v) => updateItem(i, "name", v)} className="w-full bg-transparent text-sm font-semibold focus:outline-none" placeholder="Name" />
             <button onClick={() => updateField("testimonials", testimonials.filter((_, idx) => idx !== i))} className="text-muted-foreground hover:text-destructive"><Trash2 className="w-3 h-3" /></button>
           </div>
-          <input value={t.role} onChange={(e) => updateItem(i, "role", e.target.value)} className="w-full bg-transparent text-xs mb-2 focus:outline-none" placeholder="Role (e.g. CEO at Acme)" />
-          <textarea value={t.quote} onChange={(e) => updateItem(i, "quote", e.target.value)} rows={2} className="w-full bg-input/40 border border-border rounded p-2 text-xs focus:outline-none resize-none" placeholder="Quote" />
+          <DebouncedInput value={t.role} onChange={(v) => updateItem(i, "role", v)} className="w-full bg-transparent text-xs mb-2 focus:outline-none" placeholder="Role (e.g. CEO at Acme)" />
+          <DebouncedTextarea value={t.quote} onChange={(v) => updateItem(i, "quote", v)} rows={2} className="w-full bg-input/40 border border-border rounded p-2 text-xs focus:outline-none resize-none" placeholder="Quote" />
         </div>
       ))}
     </div>
@@ -1522,10 +1623,10 @@ function CertificationsEditor({ certifications, updateField }) {
       {certifications.map((c, i) => (
         <div key={i} className="group mb-4 last:mb-0 border-l-2 border-brand/30 pl-3">
           <div className="flex items-center justify-between">
-            <input value={c.name || ""} onChange={(e) => updateItem(i, "name", e.target.value)} className="w-full bg-transparent text-sm font-semibold focus:outline-none" placeholder="Certification Name" />
+            <DebouncedInput value={c.name || ""} onChange={(v) => updateItem(i, "name", v)} className="w-full bg-transparent text-sm font-semibold focus:outline-none" placeholder="Certification Name" />
             <button onClick={() => updateField("certifications", certifications.filter((_, idx) => idx !== i))} className="text-muted-foreground hover:text-destructive"><Trash2 className="w-3 h-3" /></button>
           </div>
-          <input value={c.issuer || ""} onChange={(e) => updateItem(i, "issuer", e.target.value)} className="w-full bg-transparent text-xs mb-2 focus:outline-none" placeholder="Issuer" />
+          <DebouncedInput value={c.issuer || ""} onChange={(v) => updateItem(i, "issuer", v)} className="w-full bg-transparent text-xs mb-2 focus:outline-none" placeholder="Issuer" />
           
           <input 
             type="month" 
@@ -1571,7 +1672,7 @@ function BlogsEditor({ blogs, updateField }) {
       {blogs.map((b, i) => (
         <div key={i} className="group mb-4 last:mb-0 border-l-2 border-brand/30 pl-3 space-y-1">
           <div className="flex items-center justify-between">
-            <input value={b.title} onChange={(e) => updateItem(i, "title", e.target.value)} className="w-full bg-transparent text-sm font-semibold focus:outline-none" placeholder="Post Title" />
+            <DebouncedInput value={b.title} onChange={(v) => updateItem(i, "title", v)} className="w-full bg-transparent text-sm font-semibold focus:outline-none" placeholder="Post Title" />
             <button onClick={() => updateField("blogs", blogs.filter((_, idx) => idx !== i))} className="text-muted-foreground hover:text-destructive"><Trash2 className="w-3 h-3" /></button>
           </div>
           
@@ -1587,16 +1688,16 @@ function BlogsEditor({ blogs, updateField }) {
               />
             </div>
             <span className="text-[10px] text-muted-foreground">Display:</span>
-            <input 
+            <DebouncedInput 
               value={b.date || ""} 
-              onChange={(e) => updateItem(i, "date", e.target.value)} 
+              onChange={(v) => updateItem(i, "date", v)} 
               className="bg-input/40 border border-border text-xs rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-brand text-muted-foreground flex-1" 
               placeholder="Display Date (e.g. May 21, 2026)" 
             />
           </div>
 
-          <textarea value={b.excerpt} onChange={(e) => updateItem(i, "excerpt", e.target.value)} rows={2} className="w-full bg-input/40 border border-border rounded p-2 text-xs focus:outline-none resize-none" placeholder="Excerpt / Summary" />
-          <input value={b.url || ""} onChange={(e) => updateItem(i, "url", e.target.value)} className="w-full bg-input/40 border border-border rounded p-2 text-xs focus:outline-none" placeholder="Link URL" />
+          <DebouncedTextarea value={b.excerpt} onChange={(v) => updateItem(i, "excerpt", v)} rows={2} className="w-full bg-input/40 border border-border rounded p-2 text-xs focus:outline-none resize-none" placeholder="Excerpt / Summary" />
+          <DebouncedInput value={b.url || ""} onChange={(v) => updateItem(i, "url", v)} className="w-full bg-input/40 border border-border rounded p-2 text-xs focus:outline-none" placeholder="Link URL" />
         </div>
       ))}
     </div>
@@ -1606,9 +1707,9 @@ function BlogsEditor({ blogs, updateField }) {
 function SimpleListEditor({ title, fieldKey, items, updateField }) {
   return (
     <div>
-      <textarea 
+      <DebouncedTextarea 
         value={items.join("\n")} 
-        onChange={(e) => updateField(fieldKey, e.target.value.split("\n").filter(Boolean))}
+        onChange={(v) => updateField(fieldKey, v.split("\n").filter(Boolean))}
         placeholder="Paste URLs here (one per line)..."
         rows={4}
         className="w-full p-2.5 rounded-lg bg-input/40 border border-border text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none leading-relaxed"
@@ -1673,7 +1774,7 @@ function VideosEditor({ videos, updateField }) {
       {videos.map((v, i) => (
         <div key={i} className="group mb-3 last:mb-0 border-l-2 border-brand/30 pl-3">
           <div className="flex items-center justify-between gap-2">
-            <input value={v} onChange={(e) => updateItem(i, e.target.value)} className="w-full bg-input/40 border border-border rounded p-2 text-xs focus:outline-none" placeholder="YouTube or Vimeo URL" />
+            <DebouncedInput value={v} onChange={(v) => updateItem(i, v)} className="w-full bg-input/40 border border-border rounded p-2 text-xs focus:outline-none" placeholder="YouTube or Vimeo URL" />
             <button onClick={() => updateField("videos", videos.filter((_, idx) => idx !== i))} className="p-1 text-muted-foreground hover:text-destructive flex-shrink-0"><Trash2 className="w-4 h-4" /></button>
           </div>
         </div>
@@ -1696,7 +1797,7 @@ function MusicEditor({ music, updateField }) {
       {music.map((m, i) => (
         <div key={i} className="group mb-3 last:mb-0 border-l-2 border-brand/30 pl-3">
           <div className="flex items-center justify-between gap-2">
-            <input value={m} onChange={(e) => updateItem(i, e.target.value)} className="w-full bg-input/40 border border-border rounded p-2 text-xs focus:outline-none" placeholder="Spotify or SoundCloud URL" />
+            <DebouncedInput value={m} onChange={(v) => updateItem(i, v)} className="w-full bg-input/40 border border-border rounded p-2 text-xs focus:outline-none" placeholder="Spotify or SoundCloud URL" />
             <button onClick={() => updateField("music", music.filter((_, idx) => idx !== i))} className="p-1 text-muted-foreground hover:text-destructive flex-shrink-0"><Trash2 className="w-4 h-4" /></button>
           </div>
         </div>
@@ -1768,11 +1869,11 @@ function ServicesEditor({ services, updateField }) {
       {services.map((s, i) => (
         <div key={i} className="group mb-4 last:mb-0 border-l-2 border-brand/30 pl-3">
           <div className="flex items-center justify-between">
-            <input value={s.name} onChange={(e) => updateItem(i, "name", e.target.value)} className="w-full bg-transparent text-sm font-semibold focus:outline-none" placeholder="Service Name" />
+            <DebouncedInput value={s.name} onChange={(v) => updateItem(i, "name", v)} className="w-full bg-transparent text-sm font-semibold focus:outline-none" placeholder="Service Name" />
             <ItemControls index={i} total={services.length} onMoveUp={() => moveItem(services, i, 'up', updateField, 'services')} onMoveDown={() => moveItem(services, i, 'down', updateField, 'services')} onDelete={() => updateField("services", services.filter((_, idx) => idx !== i))} />
           </div>
-          <input value={s.price} onChange={(e) => updateItem(i, "price", e.target.value)} className="w-full bg-transparent text-xs text-brand mb-1 focus:outline-none" placeholder="Price (e.g. From $5k)" />
-          <textarea value={s.description} onChange={(e) => updateItem(i, "description", e.target.value)} rows={2} className="w-full bg-input/40 border border-border rounded p-2 text-xs focus:outline-none resize-none" placeholder="Description" />
+          <DebouncedInput value={s.price} onChange={(v) => updateItem(i, "price", v)} className="w-full bg-transparent text-xs text-brand mb-1 focus:outline-none" placeholder="Price (e.g. From $5k)" />
+          <DebouncedTextarea value={s.description} onChange={(v) => updateItem(i, "description", v)} rows={2} className="w-full bg-input/40 border border-border rounded p-2 text-xs focus:outline-none resize-none" placeholder="Description" />
         </div>
       ))}
     </div>
@@ -1793,8 +1894,8 @@ function LanguagesEditor({ languages, updateField }) {
       {languages.map((l, i) => (
         <div key={i} className="group flex items-center gap-2 mb-3 last:mb-0 border-l-2 border-brand/30 pl-3">
           <div className="flex-1 space-y-1">
-             <input value={l.name} onChange={(e) => updateItem(i, "name", e.target.value)} className="w-full bg-transparent text-sm font-semibold focus:outline-none" placeholder="Language" />
-             <input value={l.proficiency} onChange={(e) => updateItem(i, "proficiency", e.target.value)} className="w-full bg-transparent text-xs text-muted-foreground focus:outline-none" placeholder="Proficiency (e.g. Native, Fluent)" />
+             <DebouncedInput value={l.name} onChange={(v) => updateItem(i, "name", v)} className="w-full bg-transparent text-sm font-semibold focus:outline-none" placeholder="Language" />
+             <DebouncedInput value={l.proficiency} onChange={(v) => updateItem(i, "proficiency", v)} className="w-full bg-transparent text-xs text-muted-foreground focus:outline-none" placeholder="Proficiency (e.g. Native, Fluent)" />
           </div>
           <ItemControls index={i} total={languages.length} onMoveUp={() => moveItem(languages, i, 'up', updateField, 'languages')} onMoveDown={() => moveItem(languages, i, 'down', updateField, 'languages')} onDelete={() => updateField("languages", languages.filter((_, idx) => idx !== i))} />
         </div>
@@ -1817,12 +1918,12 @@ function VolunteerEditor({ volunteer, updateField }) {
       {volunteer.map((v, i) => (
         <div key={i} className="group mb-4 last:mb-0 border-l-2 border-brand/30 pl-3">
           <div className="flex items-center justify-between">
-            <input value={v.role} onChange={(e) => updateItem(i, "role", e.target.value)} className="w-full bg-transparent text-sm font-semibold focus:outline-none" placeholder="Role" />
+            <DebouncedInput value={v.role} onChange={(v) => updateItem(i, "role", v)} className="w-full bg-transparent text-sm font-semibold focus:outline-none" placeholder="Role" />
             <ItemControls index={i} total={volunteer.length} onMoveUp={() => moveItem(volunteer, i, 'up', updateField, 'volunteer')} onMoveDown={() => moveItem(volunteer, i, 'down', updateField, 'volunteer')} onDelete={() => updateField("volunteer", volunteer.filter((_, idx) => idx !== i))} />
           </div>
-          <input value={v.organization} onChange={(e) => updateItem(i, "organization", e.target.value)} className="w-full bg-transparent text-xs mb-1 focus:outline-none" placeholder="Organization" />
-          <input value={v.period} onChange={(e) => updateItem(i, "period", e.target.value)} className="w-full bg-transparent text-xs text-muted-foreground mb-2 focus:outline-none" placeholder="Period" />
-          <textarea value={v.description} onChange={(e) => updateItem(i, "description", e.target.value)} rows={2} className="w-full bg-input/40 border border-border rounded p-2 text-xs focus:outline-none resize-none" placeholder="Description" />
+          <DebouncedInput value={v.organization} onChange={(v) => updateItem(i, "organization", v)} className="w-full bg-transparent text-xs mb-1 focus:outline-none" placeholder="Organization" />
+          <DebouncedInput value={v.period} onChange={(v) => updateItem(i, "period", v)} className="w-full bg-transparent text-xs text-muted-foreground mb-2 focus:outline-none" placeholder="Period" />
+          <DebouncedTextarea value={v.description} onChange={(v) => updateItem(i, "description", v)} rows={2} className="w-full bg-input/40 border border-border rounded p-2 text-xs focus:outline-none resize-none" placeholder="Description" />
         </div>
       ))}
     </div>
@@ -1857,10 +1958,10 @@ function AwardsEditor({ awards, updateField }) {
       {awards.map((a, i) => (
         <div key={i} className="group mb-4 last:mb-0 border-l-2 border-brand/30 pl-3">
           <div className="flex items-center justify-between">
-            <input value={a.name || ""} onChange={(e) => updateItem(i, "name", e.target.value)} className="w-full bg-transparent text-sm font-semibold focus:outline-none" placeholder="Award Name" />
+            <DebouncedInput value={a.name || ""} onChange={(v) => updateItem(i, "name", v)} className="w-full bg-transparent text-sm font-semibold focus:outline-none" placeholder="Award Name" />
             <ItemControls index={i} total={awards.length} onMoveUp={() => moveItem(awards, i, 'up', updateField, 'awards')} onMoveDown={() => moveItem(awards, i, 'down', updateField, 'awards')} onDelete={() => updateField("awards", awards.filter((_, idx) => idx !== i))} />
           </div>
-          <input value={a.issuer || ""} onChange={(e) => updateItem(i, "issuer", e.target.value)} className="w-full bg-transparent text-xs mb-2 focus:outline-none" placeholder="Issuer" />
+          <DebouncedInput value={a.issuer || ""} onChange={(v) => updateItem(i, "issuer", v)} className="w-full bg-transparent text-xs mb-2 focus:outline-none" placeholder="Issuer" />
           
           <input 
             type="month" 
@@ -1889,11 +1990,11 @@ function ReferencesEditor({ references, updateField }) {
       {references.map((r, i) => (
         <div key={i} className="group mb-3 last:mb-0 border-l-2 border-brand/30 pl-3">
           <div className="flex items-center justify-between">
-            <input value={r.name} onChange={(e) => updateItem(i, "name", e.target.value)} className="w-full bg-transparent text-sm font-semibold focus:outline-none" placeholder="Name" />
+            <DebouncedInput value={r.name} onChange={(v) => updateItem(i, "name", v)} className="w-full bg-transparent text-sm font-semibold focus:outline-none" placeholder="Name" />
             <ItemControls index={i} total={references.length} onMoveUp={() => moveItem(references, i, 'up', updateField, 'references')} onMoveDown={() => moveItem(references, i, 'down', updateField, 'references')} onDelete={() => updateField("references", references.filter((_, idx) => idx !== i))} />
           </div>
-          <input value={r.role} onChange={(e) => updateItem(i, "role", e.target.value)} className="w-full bg-transparent text-xs mb-1 focus:outline-none" placeholder="Role/Company" />
-          <input value={r.contact} onChange={(e) => updateItem(i, "contact", e.target.value)} className="w-full bg-transparent text-xs text-muted-foreground focus:outline-none" placeholder="Contact Info" />
+          <DebouncedInput value={r.role} onChange={(v) => updateItem(i, "role", v)} className="w-full bg-transparent text-xs mb-1 focus:outline-none" placeholder="Role/Company" />
+          <DebouncedInput value={r.contact} onChange={(v) => updateItem(i, "contact", v)} className="w-full bg-transparent text-xs text-muted-foreground focus:outline-none" placeholder="Contact Info" />
         </div>
       ))}
     </div>
@@ -1914,10 +2015,10 @@ function FAQEditor({ faqs, updateField }) {
       {faqs.map((f, i) => (
         <div key={i} className="group mb-4 last:mb-0 border-l-2 border-brand/30 pl-3">
           <div className="flex items-center justify-between">
-            <input value={f.question} onChange={(e) => updateItem(i, "question", e.target.value)} className="w-full bg-transparent text-sm font-semibold focus:outline-none" placeholder="Question" />
+            <DebouncedInput value={f.question} onChange={(v) => updateItem(i, "question", v)} className="w-full bg-transparent text-sm font-semibold focus:outline-none" placeholder="Question" />
             <ItemControls index={i} total={faqs.length} onMoveUp={() => moveItem(faqs, i, 'up', updateField, 'faqs')} onMoveDown={() => moveItem(faqs, i, 'down', updateField, 'faqs')} onDelete={() => updateField("faqs", faqs.filter((_, idx) => idx !== i))} />
           </div>
-          <textarea value={f.answer} onChange={(e) => updateItem(i, "answer", e.target.value)} rows={2} className="w-full bg-input/40 border border-border rounded p-2 text-xs focus:outline-none resize-none mt-1" placeholder="Answer" />
+          <DebouncedTextarea value={f.answer} onChange={(v) => updateItem(i, "answer", v)} rows={2} className="w-full bg-input/40 border border-border rounded p-2 text-xs focus:outline-none resize-none mt-1" placeholder="Answer" />
         </div>
       ))}
     </div>

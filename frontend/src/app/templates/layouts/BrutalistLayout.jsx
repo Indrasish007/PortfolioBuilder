@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Mail, Phone, MapPin, Send, ArrowUp, Download, Github, ExternalLink, Globe, Linkedin, Twitter, Facebook, Instagram } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import { Tags, FAQList, VideoEmbed, MusicEmbed, GalleryAlbum, trackProjectClick, handleResumeDownload, handleScrollToSection, sn } from "./shared.jsx";
 import api from "../../services/api.js";
 
@@ -393,7 +393,7 @@ function MonochromeTemplate({ p, t, id, portfolioId }) {
 
         {/* Hero */}
         <div id="about" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 48, marginBottom: 120 }} className="md:grid-cols-2-override">
-          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 24 }}>
+          <m.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 24 }}>
             <span style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.3em", fontWeight: 700, color: t.fg || "#666", opacity: 0.7 }}>EDITORIAL MANUSCRIPT EDITION</span>
             <h1 style={{ fontSize: "clamp(38px, 6vw, 64px)", fontWeight: 900, lineHeight: 0.95, letterSpacing: "-0.04em", margin: 0, textTransform: "uppercase" }}>{u.name}</h1>
             <h2 style={{ fontSize: 18, color: t.fg || "#666", opacity: 0.8, margin: 0, fontStyle: "italic", fontWeight: 400 }}>{u.title}</h2>
@@ -407,13 +407,13 @@ function MonochromeTemplate({ p, t, id, portfolioId }) {
 
             <p style={{ fontSize: 15, lineHeight: 1.8, opacity: 0.8, margin: 0 }}>{u.bio}</p>
             <BrutalistSoc user={u} fg={t.fg || "#111"} portfolioId={portfolioId} isMono={true} />
-          </motion.div>
+          </m.div>
           {u.avatar && (
-            <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }} style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+            <m.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }} style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
               <div style={{ border: `1px solid ${t.fg || "#111111"}`, padding: 12, background: t.bg || "#ffffff", boxShadow: `12px 12px 0px ${t.fg || "#111111"}` }}>
                 <img src={u.avatar} alt={u.name} style={{ width: "100%", maxWidth: 280, height: "auto", aspectRatio: "4/5", objectFit: "cover", filter: "grayscale(100%) contrast(1.1)" }} />
               </div>
-            </motion.div>
+            </m.div>
           )}
         </div>
 
@@ -423,7 +423,7 @@ function MonochromeTemplate({ p, t, id, portfolioId }) {
             <h2 style={{ fontSize: 26, fontWeight: 900, textTransform: "uppercase", letterSpacing: "-0.02em", borderBottom: `2px solid ${t.fg || "#111"}`, paddingBottom: 12, marginBottom: 48 }}>Selected Works</h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(290px, 1fr))", gap: 32 }}>
               {p.projects.map((proj, i) => (
-                <motion.div key={i} className="mono-project-card" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1 }}>
+                <m.div key={i} className="mono-project-card" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1 }}>
                   {proj.image && (
                     <img src={proj.image} alt={proj.title} style={{ width: "100%", height: 180, objectFit: "cover", borderBottom: `1px solid ${t.fg || "#111111"}`, filter: "grayscale(100%)" }} />
                   )}
@@ -437,7 +437,7 @@ function MonochromeTemplate({ p, t, id, portfolioId }) {
                       {proj.live && <a href={proj.live} target="_blank" rel="noreferrer" onClick={() => trackProjectClick(proj.id, 'live')} style={{ color: t.fg || "#111", fontSize: 13, fontWeight: 700, textDecoration: "underline" }}>View Live ↗</a>}
                     </div>
                   </div>
-                </motion.div>
+                </m.div>
               ))}
             </div>
           </div>
@@ -449,7 +449,7 @@ function MonochromeTemplate({ p, t, id, portfolioId }) {
             <h2 style={{ fontSize: 26, fontWeight: 900, textTransform: "uppercase", letterSpacing: "-0.02em", borderBottom: `2px solid ${t.fg || "#111"}`, paddingBottom: 12, marginBottom: 48 }}>Works Archive</h2>
             <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
               {p.experience.map((e, i) => (
-                <motion.div key={i} className="mono-project-card md:grid-cols-4-override" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16, padding: 24 }} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+                <m.div key={i} className="mono-project-card md:grid-cols-4-override" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16, padding: 24 }} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                     <span style={{ fontSize: 12, color: t.fg || "#666", opacity: 0.6, fontWeight: "bold" }}>{e.period}</span>
                     <span style={{ fontSize: 16, fontWeight: 900, textTransform: "uppercase" }}>{e.company}</span>
@@ -458,7 +458,7 @@ function MonochromeTemplate({ p, t, id, portfolioId }) {
                     <h3 style={{ fontSize: 18, fontWeight: 900, textTransform: "uppercase", margin: "0 0 8px" }}>{e.role}</h3>
                     <p style={{ fontSize: 13, opacity: 0.8, lineHeight: 1.6, margin: 0 }}>{e.description}</p>
                   </div>
-                </motion.div>
+                </m.div>
               ))}
             </div>
           </div>

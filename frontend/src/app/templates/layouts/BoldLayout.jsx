@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Mail, Phone, MapPin, Send, ArrowUp, Download, Github, ExternalLink, Globe, Linkedin, Twitter, Facebook, Instagram } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import { Tags, FAQList, VideoEmbed, MusicEmbed, GalleryAlbum, trackProjectClick, handleResumeDownload, handleScrollToSection, sn } from "./shared.jsx";
 import api from "../../services/api.js";
 
@@ -519,7 +519,7 @@ function CyberpunkTemplate({ p, t, id, portfolioId }) {
 
         {/* Hero */}
         <div id="about" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 40, marginBottom: 100 }} className="md:grid-cols-2-override">
-          <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }} style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 20 }}>
+          <m.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }} style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 20 }}>
             <div style={{ fontSize: 12, color: "#ec4899", letterSpacing: "0.2em" }}>// AGENT DIRECTIVE STATUS: ACTIVE</div>
             <h1 style={{ fontSize: "clamp(36px, 6vw, 60px)", letterSpacing: "0.05em", margin: 0, textTransform: "uppercase", textShadow: "0 0 10px #facc15" }}>{u.name}</h1>
             <h2 style={{ fontSize: 20, color: "#ec4899", margin: 0 }}>{u.title}</h2>
@@ -533,7 +533,7 @@ function CyberpunkTemplate({ p, t, id, portfolioId }) {
 
             <p style={{ fontSize: 14, fontFamily: "monospace", opacity: 0.8, lineHeight: 1.6, margin: 0 }}>{u.bio}</p>
             <BoldSoc user={u} fg="#facc15" portfolioId={portfolioId} />
-          </motion.div>
+          </m.div>
           {u.avatar && (
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
               <div style={{ border: "2px solid #facc15", padding: 10, background: "#000", position: "relative" }}>
@@ -551,7 +551,7 @@ function CyberpunkTemplate({ p, t, id, portfolioId }) {
             <h2 style={{ fontSize: 24, letterSpacing: "0.1em", marginBottom: 36, borderLeft: "4px solid #ec4899", paddingLeft: 12 }}>// ACTIVE_MISSIONS</h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(290px, 1fr))", gap: 24 }}>
               {p.projects.map((proj, i) => (
-                <motion.div key={i} className="cyber-panel" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1 }} style={{ display: "flex", flexDirection: "column" }}>
+                <m.div key={i} className="cyber-panel" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1 }} style={{ display: "flex", flexDirection: "column" }}>
                   {proj.image && (
                     <img src={proj.image} alt={proj.title} style={{ width: "100%", height: 160, objectFit: "cover", borderBottom: "2px solid #facc15", marginBottom: 16 }} />
                   )}
@@ -562,7 +562,7 @@ function CyberpunkTemplate({ p, t, id, portfolioId }) {
                     {proj.github && <a href={proj.github} target="_blank" rel="noreferrer" onClick={() => trackProjectClick(proj.id, 'github')} style={{ color: "#ec4899", fontSize: 12, textDecoration: "none" }}>CODE_SYS ↗</a>}
                     {proj.live && <a href={proj.live} target="_blank" rel="noreferrer" onClick={() => trackProjectClick(proj.id, 'live')} style={{ color: "#facc15", fontSize: 12, textDecoration: "none" }}>LIVE_LINK ↗</a>}
                   </div>
-                </motion.div>
+                </m.div>
               ))}
             </div>
           </div>
@@ -574,7 +574,7 @@ function CyberpunkTemplate({ p, t, id, portfolioId }) {
             <h2 style={{ fontSize: 24, letterSpacing: "0.1em", marginBottom: 36, borderLeft: "4px solid #ec4899", paddingLeft: 12 }}>// DATALOGS</h2>
             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
               {p.experience.map((e, i) => (
-                <motion.div key={i} className="cyber-panel sm:grid-cols-4-override" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+                <m.div key={i} className="cyber-panel sm:grid-cols-4-override" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
                   <div>
                     <span style={{ fontSize: 12, color: "#ec4899" }}>{e.period}</span>
                     <h4 style={{ fontSize: 16, margin: "4px 0 0" }}>{e.company}</h4>
@@ -583,7 +583,7 @@ function CyberpunkTemplate({ p, t, id, portfolioId }) {
                     <h3 style={{ fontSize: 18, margin: "0 0 8px", color: "#facc15" }}>{e.role}</h3>
                     <p style={{ fontSize: 12, fontFamily: "monospace", opacity: 0.7, lineHeight: 1.6, margin: 0 }}>{e.description}</p>
                   </div>
-                </motion.div>
+                </m.div>
               ))}
             </div>
           </div>
@@ -681,7 +681,7 @@ function SpaceTemplate({ p, t, id, portfolioId }) {
 
         {/* Hero */}
         <div id="about" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 48, marginBottom: 120 }} className="md:grid-cols-2-override">
-          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 20 }}>
+          <m.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 20 }}>
             <span style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.3em", color: "#818cf8", fontWeight: 700 }}>COSMIC TELEMETRY</span>
             <h1 style={{ fontSize: "clamp(34px, 5vw, 48px)", fontWeight: 900, lineHeight: 1.1, margin: 0 }}>{u.name}</h1>
             <h2 style={{ fontSize: 18, color: "#c084fc", margin: 0, fontWeight: 600 }}>{u.title}</h2>
@@ -695,14 +695,14 @@ function SpaceTemplate({ p, t, id, portfolioId }) {
 
             <p style={{ fontSize: 15, opacity: 0.75, lineHeight: 1.7, margin: 0 }}>{u.bio}</p>
             <BoldSoc user={u} fg="#e0e7ff" size={18} portfolioId={portfolioId} />
-          </motion.div>
+          </m.div>
           {u.avatar && (
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }} style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+            <m.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }} style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
               <div style={{ position: "relative" }}>
                 <div style={{ position: "absolute", inset: -10, borderRadius: "50%", background: "linear-gradient(135deg, #818cf8, #c084fc)", opacity: 0.3, filter: "blur(15px)" }} />
                 <img src={u.avatar} alt={u.name} style={{ width: 260, height: 260, objectFit: "cover", borderRadius: "50%", border: "2px solid rgba(129, 140, 248, 0.4)", position: "relative", zIndex: 1 }} />
               </div>
-            </motion.div>
+            </m.div>
           )}
         </div>
 
@@ -712,7 +712,7 @@ function SpaceTemplate({ p, t, id, portfolioId }) {
             <h2 style={{ fontSize: 24, fontWeight: 900, marginBottom: 48, textAlign: "center", letterSpacing: "0.1em" }}>ACTIVE MISSION FILES</h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(290px, 1fr))", gap: 28 }}>
               {p.projects.map((proj, i) => (
-                <motion.div key={i} className="space-card" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1 }} style={{ display: "flex", flexDirection: "column" }}>
+                <m.div key={i} className="space-card" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1 }} style={{ display: "flex", flexDirection: "column" }}>
                   {proj.image && (
                     <img src={proj.image} alt={proj.title} style={{ width: "100%", height: 160, objectFit: "cover", borderRadius: 12, marginBottom: 16, border: "1px solid rgba(129, 140, 248, 0.2)" }} />
                   )}
@@ -723,7 +723,7 @@ function SpaceTemplate({ p, t, id, portfolioId }) {
                     {proj.github && <a href={proj.github} target="_blank" rel="noreferrer" onClick={() => trackProjectClick(proj.id, 'github')} style={{ color: "#fff", fontSize: 13, fontWeight: 700 }}>Telemetry</a>}
                     {proj.live && <a href={proj.live} target="_blank" rel="noreferrer" onClick={() => trackProjectClick(proj.id, 'live')} style={{ color: "#818cf8", fontSize: 13, fontWeight: 700 }}>Vector ↗</a>}
                   </div>
-                </motion.div>
+                </m.div>
               ))}
             </div>
           </div>
@@ -735,7 +735,7 @@ function SpaceTemplate({ p, t, id, portfolioId }) {
             <h2 style={{ fontSize: 24, fontWeight: 900, marginBottom: 48, textAlign: "center", letterSpacing: "0.1em" }}>COMMUNICATION TIMELINES</h2>
             <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
               {p.experience.map((e, i) => (
-                <motion.div key={i} className="space-card md:grid-cols-4-override" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+                <m.div key={i} className="space-card md:grid-cols-4-override" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                     <span style={{ fontSize: 12, opacity: 0.5 }}>{e.period}</span>
                     <span style={{ fontSize: 15, fontWeight: 700, color: "#818cf8" }}>{e.company}</span>
@@ -744,7 +744,7 @@ function SpaceTemplate({ p, t, id, portfolioId }) {
                     <h3 style={{ fontSize: 18, fontWeight: 800, margin: "0 0 10px" }}>{e.role}</h3>
                     <p style={{ fontSize: 13, opacity: 0.7, lineHeight: 1.7, margin: 0 }}>{e.description}</p>
                   </div>
-                </motion.div>
+                </m.div>
               ))}
             </div>
           </div>
@@ -860,7 +860,7 @@ function RetroTemplate({ p, t, id, portfolioId }) {
 
         {/* Hero */}
         <div id="about" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 48, marginBottom: 120 }} className="md:grid-cols-2-override">
-          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 20 }}>
+          <m.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 20 }}>
             <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: "0.25em", color: "#f97316", fontWeight: 800 }}>80S SYNTHWAVE FUTURE</span>
             <h1 className="retro-header" style={{ fontSize: "clamp(36px, 6vw, 54px)", fontWeight: 900, lineHeight: 1.0, letterSpacing: "-0.02em", margin: 0 }}>
               {u.name?.toUpperCase()}
@@ -876,13 +876,13 @@ function RetroTemplate({ p, t, id, portfolioId }) {
 
             <p style={{ fontSize: 15, opacity: 0.85, lineHeight: 1.7, margin: 0, fontFamily: "Courier New, Courier, monospace" }}>{u.bio}</p>
             <BoldSoc user={u} fg="#fdf4ff" size={18} portfolioId={portfolioId} />
-          </motion.div>
+          </m.div>
           {u.avatar && (
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }} style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+            <m.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }} style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
               <div style={{ border: "3px solid #ec4899", borderRadius: 8, padding: 8, background: "#000", boxShadow: "0 0 25px rgba(236,72,153,0.3)" }}>
                 <img src={u.avatar} alt={u.name} style={{ width: "100%", maxWidth: 260, height: "auto", aspectRatio: "4/5", objectFit: "cover", borderRadius: 4, filter: "brightness(1.1) contrast(1.2)" }} />
               </div>
-            </motion.div>
+            </m.div>
           )}
         </div>
 
@@ -892,7 +892,7 @@ function RetroTemplate({ p, t, id, portfolioId }) {
             <h2 className="retro-header" style={{ fontSize: 28, fontWeight: 900, marginBottom: 48, textAlign: "center" }}>ARCADE SYSTEMS & JOBS</h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(290px, 1fr))", gap: 32 }}>
               {p.projects.map((proj, i) => (
-                <motion.div key={i} className="retro-card" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1 }} style={{ display: "flex", flexDirection: "column" }}>
+                <m.div key={i} className="retro-card" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1 }} style={{ display: "flex", flexDirection: "column" }}>
                   {proj.image && (
                     <img src={proj.image} alt={proj.title} style={{ width: "100%", height: 160, objectFit: "cover", borderRadius: 4, marginBottom: 16, border: "1px solid #ec4899" }} />
                   )}
@@ -903,7 +903,7 @@ function RetroTemplate({ p, t, id, portfolioId }) {
                     {proj.github && <a href={proj.github} target="_blank" rel="noreferrer" onClick={() => trackProjectClick(proj.id, 'github')} style={{ color: "#ffe7d9", fontSize: 13, fontWeight: 700 }}>[Code]</a>}
                     {proj.live && <a href={proj.live} target="_blank" rel="noreferrer" onClick={() => trackProjectClick(proj.id, 'live')} style={{ color: "#f97316", fontSize: 13, fontWeight: 700 }}>[Live ↗]</a>}
                   </div>
-                </motion.div>
+                </m.div>
               ))}
             </div>
           </div>
@@ -915,7 +915,7 @@ function RetroTemplate({ p, t, id, portfolioId }) {
             <h2 className="retro-header" style={{ fontSize: 28, fontWeight: 900, marginBottom: 48, textAlign: "center" }}>TRACK MILESTONES</h2>
             <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
               {p.experience.map((e, i) => (
-                <motion.div key={i} className="retro-card sm:grid-cols-4-override" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+                <m.div key={i} className="retro-card sm:grid-cols-4-override" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                     <span style={{ fontSize: 12, color: "#f97316", fontWeight: "bold" }}>{e.period}</span>
                     <span style={{ fontSize: 16, fontWeight: 800, color: "#ec4899" }}>{e.company}</span>
@@ -924,7 +924,7 @@ function RetroTemplate({ p, t, id, portfolioId }) {
                     <h3 style={{ fontSize: 18, fontWeight: 800, margin: "0 0 10px" }}>{e.role}</h3>
                     <p style={{ fontSize: 13, opacity: 0.8, lineHeight: 1.7, margin: 0, fontFamily: "Courier New, Courier, monospace" }}>{e.description}</p>
                   </div>
-                </motion.div>
+                </m.div>
               ))}
             </div>
           </div>
@@ -1018,7 +1018,7 @@ function NeonTemplate({ p, t, id, portfolioId }) {
 
         {/* Hero */}
         <div id="about" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 48, marginBottom: 120 }} className="md:grid-cols-2-override">
-          <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8 }} style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 20 }}>
+          <m.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8 }} style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 20 }}>
             <span style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.3em", color: "#c084fc", fontWeight: 700 }}>NEO-NOIR DISTRICT 09</span>
             <h1 className="neon-glow-h1" style={{ fontSize: "clamp(34px, 6vw, 56px)", fontWeight: 900, lineHeight: 1.05, letterSpacing: "-0.02em", margin: 0, textTransform: "uppercase" }}>{u.name}</h1>
             <h2 style={{ fontSize: 18, color: "#22d3ee", margin: 0 }}>{u.title}</h2>
@@ -1032,13 +1032,13 @@ function NeonTemplate({ p, t, id, portfolioId }) {
 
             <p style={{ fontSize: 15, opacity: 0.75, lineHeight: 1.8, margin: 0 }}>{u.bio}</p>
             <BoldSoc user={u} fg="#ecfeff" size={18} portfolioId={portfolioId} />
-          </motion.div>
+          </m.div>
           {u.avatar && (
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }} style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+            <m.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }} style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
               <div style={{ border: "2px solid #22d3ee", padding: 8, background: "#050608", boxShadow: "0 0 20px rgba(34, 211, 238, 0.3)" }}>
                 <img src={u.avatar} alt={u.name} style={{ width: "100%", maxWidth: 260, height: "auto", aspectRatio: "4/5", objectFit: "cover", filter: "contrast(1.1) brightness(0.9) grayscale(20%)" }} />
               </div>
-            </motion.div>
+            </m.div>
           )}
         </div>
 
@@ -1048,7 +1048,7 @@ function NeonTemplate({ p, t, id, portfolioId }) {
             <h2 style={{ fontSize: 24, fontWeight: 900, marginBottom: 48, textAlign: "center", letterSpacing: "0.2em", textShadow: "0 0 8px #22d3ee" }}>DECENTRALIZED DATABASE</h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(290px, 1fr))", gap: 32 }}>
               {p.projects.map((proj, i) => (
-                <motion.div key={i} className="neon-card" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1 }} style={{ display: "flex", flexDirection: "column" }}>
+                <m.div key={i} className="neon-card" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1 }} style={{ display: "flex", flexDirection: "column" }}>
                   {proj.image && (
                     <img src={proj.image} alt={proj.title} style={{ width: "100%", height: 160, objectFit: "cover", borderRadius: 2, marginBottom: 16, border: "1px solid rgba(34, 211, 238, 0.2)" }} />
                   )}
@@ -1059,7 +1059,7 @@ function NeonTemplate({ p, t, id, portfolioId }) {
                     {proj.github && <a href={proj.github} target="_blank" rel="noreferrer" onClick={() => trackProjectClick(proj.id, 'github')} style={{ color: "#fff", fontSize: 13, fontWeight: 700 }}>Code</a>}
                     {proj.live && <a href={proj.live} target="_blank" rel="noreferrer" onClick={() => trackProjectClick(proj.id, 'live')} style={{ color: "#22d3ee", fontSize: 13, fontWeight: 700 }}>Shell ↗</a>}
                   </div>
-                </motion.div>
+                </m.div>
               ))}
             </div>
           </div>
@@ -1071,7 +1071,7 @@ function NeonTemplate({ p, t, id, portfolioId }) {
             <h2 style={{ fontSize: 24, fontWeight: 900, marginBottom: 48, textAlign: "center", letterSpacing: "0.2em", textShadow: "0 0 8px #22d3ee" }}>CHRONOLOGICAL ARCHIVES</h2>
             <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
               {p.experience.map((e, i) => (
-                <motion.div key={i} className="neon-card sm:grid-cols-4-override" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+                <m.div key={i} className="neon-card sm:grid-cols-4-override" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                     <span style={{ fontSize: 12, color: "#22d3ee" }}>{e.period}</span>
                     <span style={{ fontSize: 15, fontWeight: 800, color: "#c084fc" }}>{e.company}</span>
@@ -1080,7 +1080,7 @@ function NeonTemplate({ p, t, id, portfolioId }) {
                     <h3 style={{ fontSize: 18, fontWeight: 800, margin: "0 0 10px" }}>{e.role}</h3>
                     <p style={{ fontSize: 13, opacity: 0.7, lineHeight: 1.7, margin: 0 }}>{e.description}</p>
                   </div>
-                </motion.div>
+                </m.div>
               ))}
             </div>
           </div>
@@ -1174,7 +1174,7 @@ function QuantumTemplate({ p, t, id, portfolioId }) {
 
         {/* Hero */}
         <div id="about" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 48, marginBottom: 120 }} className="md:grid-cols-2-override">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 20 }}>
+          <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 20 }}>
             <span style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.3em", color: "#2dd4bf", fontWeight: 700 }}>ADVANCED TECHNOLOGY MATRIX</span>
             <h1 style={{ fontSize: "clamp(34px, 5vw, 48px)", fontWeight: 900, lineHeight: 1.1, margin: 0, color: "#fff" }}>{u.name}</h1>
             <h2 style={{ fontSize: 18, color: "#818cf8", margin: 0 }}>{u.title}</h2>
@@ -1188,14 +1188,14 @@ function QuantumTemplate({ p, t, id, portfolioId }) {
 
             <p style={{ fontSize: 15, opacity: 0.8, lineHeight: 1.7, margin: 0 }}>{u.bio}</p>
             <BoldSoc user={u} fg="#ede9fe" size={18} portfolioId={portfolioId} />
-          </motion.div>
+          </m.div>
           {u.avatar && (
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }} style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+            <m.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }} style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
               <div style={{ position: "relative" }}>
                 <div style={{ position: "absolute", inset: -8, borderRadius: 16, background: "linear-gradient(135deg, #818cf8, #2dd4bf)", opacity: 0.2, filter: "blur(10px)" }} />
                 <img src={u.avatar} alt={u.name} style={{ width: 260, height: 260, objectFit: "cover", borderRadius: 12, border: "1px solid rgba(129, 140, 248, 0.3)", position: "relative", zIndex: 1 }} />
               </div>
-            </motion.div>
+            </m.div>
           )}
         </div>
 
@@ -1205,7 +1205,7 @@ function QuantumTemplate({ p, t, id, portfolioId }) {
             <h2 style={{ fontSize: 24, fontWeight: 900, marginBottom: 48, textAlign: "center", letterSpacing: "0.1em", color: "#fff" }}>RESEARCH NODES</h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(290px, 1fr))", gap: 28 }}>
               {p.projects.map((proj, i) => (
-                <motion.div key={i} className="quantum-card" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1 }} style={{ display: "flex", flexDirection: "column" }}>
+                <m.div key={i} className="quantum-card" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1 }} style={{ display: "flex", flexDirection: "column" }}>
                   {proj.image && (
                     <img src={proj.image} alt={proj.title} style={{ width: "100%", height: 160, objectFit: "cover", borderRadius: 6, marginBottom: 16, border: "1px solid rgba(129, 140, 248, 0.1)" }} />
                   )}
@@ -1216,7 +1216,7 @@ function QuantumTemplate({ p, t, id, portfolioId }) {
                     {proj.github && <a href={proj.github} target="_blank" rel="noreferrer" onClick={() => trackProjectClick(proj.id, 'github')} style={{ color: "#fff", fontSize: 13, fontWeight: 600 }}>Code</a>}
                     {proj.live && <a href={proj.live} target="_blank" rel="noreferrer" onClick={() => trackProjectClick(proj.id, 'live')} style={{ color: "#2dd4bf", fontSize: 13, fontWeight: 600 }}>Node ↗</a>}
                   </div>
-                </motion.div>
+                </m.div>
               ))}
             </div>
           </div>
@@ -1228,7 +1228,7 @@ function QuantumTemplate({ p, t, id, portfolioId }) {
             <h2 style={{ fontSize: 24, fontWeight: 900, marginBottom: 48, textAlign: "center", letterSpacing: "0.1em", color: "#fff" }}>CHRONOLOGY VECTOR</h2>
             <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
               {p.experience.map((e, i) => (
-                <motion.div key={i} className="quantum-card md:grid-cols-4-override" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+                <m.div key={i} className="quantum-card md:grid-cols-4-override" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                     <span style={{ fontSize: 12, opacity: 0.5 }}>{e.period}</span>
                     <span style={{ fontSize: 15, fontWeight: 700, color: "#818cf8" }}>{e.company}</span>
@@ -1237,7 +1237,7 @@ function QuantumTemplate({ p, t, id, portfolioId }) {
                     <h3 style={{ fontSize: 18, fontWeight: 800, margin: "0 0 10px", color: "#fff" }}>{e.role}</h3>
                     <p style={{ fontSize: 13, opacity: 0.75, lineHeight: 1.7, margin: 0 }}>{e.description}</p>
                   </div>
-                </motion.div>
+                </m.div>
               ))}
             </div>
           </div>

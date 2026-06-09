@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
 
 const ThemeContext = createContext({ theme: "dark", toggle: () => {}, setTheme: () => {} });
 
@@ -12,10 +12,12 @@ export function ThemeProvider({ children }) {
     localStorage.setItem("pai-theme", theme);
   }, [theme]);
 
-  const toggle = () => setTheme((t) => (t === "dark" ? "light" : "dark"));
+  const toggle = useCallback(() => setTheme((t) => (t === "dark" ? "light" : "dark")), []);
+
+  const value = useMemo(() => ({ theme, toggle, setTheme }), [theme, toggle]);
 
   return (
-    <ThemeContext.Provider value={{ theme, toggle, setTheme }}>
+    <ThemeContext.Provider value={value}>
       {children}
     </ThemeContext.Provider>
   );

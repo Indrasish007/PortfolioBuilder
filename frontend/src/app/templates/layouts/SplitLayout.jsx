@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Mail, Phone, MapPin, Send, ArrowUp, Download, Github, ExternalLink, Globe, Linkedin, Twitter, Facebook, Instagram } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import { Tags, FAQList, VideoEmbed, MusicEmbed, GalleryAlbum, trackProjectClick, handleResumeDownload, handleScrollToSection, sn } from "./shared.jsx";
 import api from "../../services/api.js";
 
@@ -480,7 +480,7 @@ function CreativeDarkTemplate({ p, t, id, portfolioId }) {
 
         {/* Hero */}
         <div id="about" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 48, marginBottom: 120 }} className="md:grid-cols-2-override">
-          <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8 }} style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 20 }}>
+          <m.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8 }} style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 20 }}>
             <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: "0.3em", color: "#d946ef", fontWeight: 700 }}>PREMIUM CREATIVE AGENCY</span>
             <h1 style={{ fontSize: "clamp(38px, 6vw, 64px)", fontWeight: 900, lineHeight: 1.0, letterSpacing: "-0.04em", margin: 0 }}>
               Designing the <span className="grad-text">Digital Futures</span>
@@ -497,15 +497,15 @@ function CreativeDarkTemplate({ p, t, id, portfolioId }) {
             <div style={{ marginTop: 10 }}>
               <SplitSoc user={u} fg="#f8fafc" size={18} portfolioId={portfolioId} />
             </div>
-          </motion.div>
+          </m.div>
           {u.avatar && (
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }} style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+            <m.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }} style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
               <div style={{ position: "relative", width: "100%", maxWidth: 380 }}>
                 {/* Glow ring */}
                 <div style={{ position: "absolute", inset: -8, borderRadius: 32, background: "linear-gradient(135deg, #fb923c, #d946ef)", opacity: 0.3, filter: "blur(12px)", zIndex: 0 }} />
                 <img src={u.avatar} alt={u.name} style={{ width: "100%", height: "auto", aspectRatio: "4/5", objectFit: "cover", borderRadius: 24, border: "1px solid rgba(255, 255, 255, 0.1)", position: "relative", zIndex: 1 }} />
               </div>
-            </motion.div>
+            </m.div>
           )}
         </div>
 
@@ -515,7 +515,7 @@ function CreativeDarkTemplate({ p, t, id, portfolioId }) {
             <h2 style={{ fontSize: 32, fontWeight: 900, letterSpacing: "-0.03em", marginBottom: 48 }}>Selected Cases</h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 32 }}>
               {p.projects.map((proj, i) => (
-                <motion.div key={i} className="creative-glass" initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: i * 0.1 }} style={{ display: "flex", flexDirection: "column" }}>
+                <m.div key={i} className="creative-glass" initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: i * 0.1 }} style={{ display: "flex", flexDirection: "column" }}>
                   {proj.image && (
                     <div style={{ overflow: "hidden", borderRadius: 16, marginBottom: 24 }}>
                       <img src={proj.image} alt={proj.title} style={{ width: "100%", height: 200, objectFit: "cover", transition: "transform 0.5s" }} onMouseEnter={e => e.currentTarget.style.transform = "scale(1.05)"} onMouseLeave={e => e.currentTarget.style.transform = "none"} />
@@ -528,7 +528,7 @@ function CreativeDarkTemplate({ p, t, id, portfolioId }) {
                     {proj.github && <a href={proj.github} target="_blank" rel="noreferrer" onClick={() => trackProjectClick(proj.id, 'github')} style={{ color: "#fff", fontSize: 13, fontWeight: 700, textDecoration: "none" }}>Code ↗</a>}
                     {proj.live && <a href={proj.live} target="_blank" rel="noreferrer" onClick={() => trackProjectClick(proj.id, 'live')} style={{ color: "#d946ef", fontSize: 13, fontWeight: 700, textDecoration: "none" }}>Live ↗</a>}
                   </div>
-                </motion.div>
+                </m.div>
               ))}
             </div>
           </div>
@@ -540,7 +540,7 @@ function CreativeDarkTemplate({ p, t, id, portfolioId }) {
             <h2 style={{ fontSize: 32, fontWeight: 900, letterSpacing: "-0.03em", marginBottom: 48 }}>Agency History</h2>
             <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
               {p.experience.map((e, i) => (
-                <motion.div key={i} className="creative-glass md:grid-cols-3-override" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+                <m.div key={i} className="creative-glass md:grid-cols-3-override" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                     <span style={{ fontSize: 12, opacity: 0.4 }}>{e.period}</span>
                     <span style={{ fontSize: 18, fontWeight: 800, color: "#d946ef" }}>{e.company}</span>
@@ -549,7 +549,7 @@ function CreativeDarkTemplate({ p, t, id, portfolioId }) {
                     <h3 style={{ fontSize: 20, fontWeight: 800, margin: "0 0 12px" }}>{e.role}</h3>
                     <p style={{ fontSize: 14, opacity: 0.6, lineHeight: 1.7, margin: 0 }}>{e.description}</p>
                   </div>
-                </motion.div>
+                </m.div>
               ))}
             </div>
           </div>
@@ -685,7 +685,7 @@ function SakuraTemplate({ p, t, id, portfolioId }) {
 
         {/* Hero */}
         <div id="about" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 48, marginBottom: 100 }} className="md:grid-cols-2-override">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 20 }}>
+          <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 20 }}>
             <span style={{ fontSize: 13, textTransform: "uppercase", letterSpacing: "0.25em", color: "#fb7185", fontWeight: 700 }}>ELEGANT ARTISTRY</span>
             <h1 style={{ fontSize: "clamp(34px, 5vw, 48px)", fontWeight: 800, lineHeight: 1.1, margin: 0 }}>{u.name}</h1>
             <h2 style={{ fontSize: 18, color: "#fb7185", margin: 0, fontWeight: 500 }}>{u.title}</h2>
@@ -699,13 +699,13 @@ function SakuraTemplate({ p, t, id, portfolioId }) {
 
             <p style={{ fontSize: 15, lineHeight: 1.8, opacity: 0.8, margin: 0 }}>{u.bio}</p>
             <SplitSoc user={u} fg="#4c111e" portfolioId={portfolioId} />
-          </motion.div>
+          </m.div>
           {u.avatar && (
-            <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }} style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+            <m.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }} style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
               <div style={{ padding: 12, background: "rgba(255, 255, 255, 0.4)", borderRadius: 32, border: "1px solid rgba(251, 113, 133, 0.15)" }}>
                 <img src={u.avatar} alt={u.name} style={{ width: "100%", maxWidth: 300, height: "auto", aspectRatio: "4/5", objectFit: "cover", borderRadius: 24 }} />
               </div>
-            </motion.div>
+            </m.div>
           )}
         </div>
 
@@ -715,7 +715,7 @@ function SakuraTemplate({ p, t, id, portfolioId }) {
             <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 36, textAlign: "center" }}>Selected Works</h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 24 }}>
               {p.projects.map((proj, i) => (
-                <motion.div key={i} className="sakura-card" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.08 }}>
+                <m.div key={i} className="sakura-card" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.08 }}>
                   {proj.image && (
                     <img src={proj.image} alt={proj.title} style={{ width: "100%", height: 160, objectFit: "cover", borderRadius: 12, marginBottom: 16 }} />
                   )}
@@ -726,7 +726,7 @@ function SakuraTemplate({ p, t, id, portfolioId }) {
                     {proj.github && <a href={proj.github} target="_blank" rel="noreferrer" onClick={() => trackProjectClick(proj.id, 'github')} style={{ color: "#4c111e", fontSize: 13, fontWeight: 700 }}>Code</a>}
                     {proj.live && <a href={proj.live} target="_blank" rel="noreferrer" onClick={() => trackProjectClick(proj.id, 'live')} style={{ color: "#fb7185", fontSize: 13, fontWeight: 700 }}>Live</a>}
                   </div>
-                </motion.div>
+                </m.div>
               ))}
             </div>
           </div>
@@ -738,7 +738,7 @@ function SakuraTemplate({ p, t, id, portfolioId }) {
             <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 36, textAlign: "center" }}>Professional Journey</h2>
             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
               {p.experience.map((e, i) => (
-                <motion.div key={i} className="sakura-card sm:grid-cols-4-override" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+                <m.div key={i} className="sakura-card sm:grid-cols-4-override" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                     <span style={{ fontSize: 12, opacity: 0.6 }}>{e.period}</span>
                     <span style={{ fontSize: 15, fontWeight: 700, color: "#fb7185" }}>{e.company}</span>
@@ -747,7 +747,7 @@ function SakuraTemplate({ p, t, id, portfolioId }) {
                     <h3 style={{ fontSize: 17, fontWeight: 700, margin: "0 0 8px" }}>{e.role}</h3>
                     <p style={{ fontSize: 13, opacity: 0.8, lineHeight: 1.6, margin: 0 }}>{e.description}</p>
                   </div>
-                </motion.div>
+                </m.div>
               ))}
             </div>
           </div>
@@ -842,7 +842,7 @@ function CoralTemplate({ p, t, id, portfolioId }) {
 
         {/* Hero */}
         <div id="about" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 48, marginBottom: 120 }} className="md:grid-cols-2-override">
-          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 20 }}>
+          <m.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 20 }}>
             <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: "0.2em", color: "#f97316", fontWeight: 700 }}>OCEAN IMMERSION EXPERIENCE</span>
             <h1 style={{ fontSize: "clamp(36px, 6vw, 56px)", fontWeight: 900, lineHeight: 1.1, letterSpacing: "-0.02em", margin: 0 }}>
               Hi, I'm <span className="coral-glow-text">{u.name}</span>
@@ -858,13 +858,13 @@ function CoralTemplate({ p, t, id, portfolioId }) {
 
             <p style={{ fontSize: 16, lineHeight: 1.8, opacity: 0.7, margin: 0 }}>{u.bio}</p>
             <SplitSoc user={u} fg="#e2e8f0" size={18} portfolioId={portfolioId} />
-          </motion.div>
+          </m.div>
           {u.avatar && (
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }} style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+            <m.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }} style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
               <div style={{ padding: 12, background: "rgba(10, 30, 45, 0.5)", borderRadius: "60px 20px 60px 20px", border: "1px solid rgba(249, 115, 22, 0.2)", width: "100%", maxWidth: 320 }}>
                 <img src={u.avatar} alt={u.name} style={{ width: "100%", height: "auto", aspectRatio: "4/5", objectFit: "cover", borderRadius: "50px 10px 50px 10px" }} />
               </div>
-            </motion.div>
+            </m.div>
           )}
         </div>
 
@@ -874,7 +874,7 @@ function CoralTemplate({ p, t, id, portfolioId }) {
             <h2 style={{ fontSize: 28, fontWeight: 900, marginBottom: 48, textAlign: "center" }}>Creative Projects</h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(290px, 1fr))", gap: 32 }}>
               {p.projects.map((proj, i) => (
-                <motion.div key={i} className="coral-pebble-card" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1 }} style={{ display: "flex", flexDirection: "column" }}>
+                <m.div key={i} className="coral-pebble-card" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1 }} style={{ display: "flex", flexDirection: "column" }}>
                   {proj.image && (
                     <img src={proj.image} alt={proj.title} style={{ width: "100%", height: 160, objectFit: "cover", borderRadius: "20px 5px 20px 5px", marginBottom: 20 }} />
                   )}
@@ -885,7 +885,7 @@ function CoralTemplate({ p, t, id, portfolioId }) {
                     {proj.github && <a href={proj.github} target="_blank" rel="noreferrer" onClick={() => trackProjectClick(proj.id, 'github')} style={{ color: "#fff", fontSize: 13, fontWeight: 700 }}>Code ↗</a>}
                     {proj.live && <a href={proj.live} target="_blank" rel="noreferrer" onClick={() => trackProjectClick(proj.id, 'live')} style={{ color: "#f97316", fontSize: 13, fontWeight: 700 }}>Live ↗</a>}
                   </div>
-                </motion.div>
+                </m.div>
               ))}
             </div>
           </div>
@@ -897,7 +897,7 @@ function CoralTemplate({ p, t, id, portfolioId }) {
             <h2 style={{ fontSize: 28, fontWeight: 900, marginBottom: 48, textAlign: "center" }}>Experience Journey</h2>
             <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
               {p.experience.map((e, i) => (
-                <motion.div key={i} className="coral-pebble-card md:grid-cols-4-override" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+                <m.div key={i} className="coral-pebble-card md:grid-cols-4-override" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                     <span style={{ fontSize: 12, opacity: 0.5 }}>{e.period}</span>
                     <span style={{ fontSize: 16, fontWeight: 800, color: "#f97316" }}>{e.company}</span>
@@ -906,7 +906,7 @@ function CoralTemplate({ p, t, id, portfolioId }) {
                     <h3 style={{ fontSize: 18, fontWeight: 800, margin: "0 0 10px" }}>{e.role}</h3>
                     <p style={{ fontSize: 14, opacity: 0.7, lineHeight: 1.7, margin: 0 }}>{e.description}</p>
                   </div>
-                </motion.div>
+                </m.div>
               ))}
             </div>
           </div>
@@ -1001,7 +1001,7 @@ function DuskTemplate({ p, t, id, portfolioId }) {
 
         {/* Hero */}
         <div id="about" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 48, marginBottom: 120 }} className="md:grid-cols-2-override">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 20 }}>
+          <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 20 }}>
             <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: "0.2em", color: "#f59e0b", fontWeight: 700 }}>GOLDEN HOUR LUXURY</span>
             <h1 style={{ fontSize: "clamp(36px, 6vw, 54px)", fontWeight: 900, lineHeight: 1.05, letterSpacing: "-0.03em", margin: 0 }}>
               Creative Work by <span className="dusk-text-grad">{u.name}</span>
@@ -1017,14 +1017,14 @@ function DuskTemplate({ p, t, id, portfolioId }) {
 
             <p style={{ fontSize: 16, lineHeight: 1.8, opacity: 0.7, margin: 0 }}>{u.bio}</p>
             <SplitSoc user={u} fg="#ffe7d9" size={18} portfolioId={portfolioId} />
-          </motion.div>
+          </m.div>
           {u.avatar && (
-            <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }} style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+            <m.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }} style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
               <div style={{ position: "relative" }}>
                 <div style={{ position: "absolute", inset: -6, borderRadius: 24, background: "linear-gradient(135deg, #f59e0b, #f43f5e)", opacity: 0.3, filter: "blur(8px)" }} />
                 <img src={u.avatar} alt={u.name} style={{ width: "100%", maxWidth: 300, height: "auto", aspectRatio: "4/5", objectFit: "cover", borderRadius: 16, border: "1px solid rgba(245, 158, 11, 0.2)", position: "relative", zIndex: 1 }} />
               </div>
-            </motion.div>
+            </m.div>
           )}
         </div>
 
@@ -1034,7 +1034,7 @@ function DuskTemplate({ p, t, id, portfolioId }) {
             <h2 style={{ fontSize: 26, fontWeight: 900, marginBottom: 40, textAlign: "center" }}>Sunset Showcase</h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(290px, 1fr))", gap: 24 }}>
               {p.projects.map((proj, i) => (
-                <motion.div key={i} className="dusk-card" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1 }} style={{ display: "flex", flexDirection: "column" }}>
+                <m.div key={i} className="dusk-card" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1 }} style={{ display: "flex", flexDirection: "column" }}>
                   {proj.image && (
                     <img src={proj.image} alt={proj.title} style={{ width: "100%", height: 160, objectFit: "cover", borderRadius: 12, marginBottom: 16 }} />
                   )}
@@ -1045,7 +1045,7 @@ function DuskTemplate({ p, t, id, portfolioId }) {
                     {proj.github && <a href={proj.github} target="_blank" rel="noreferrer" onClick={() => trackProjectClick(proj.id, 'github')} style={{ color: "#ffe7d9", fontSize: 13, fontWeight: 700 }}>Code</a>}
                     {proj.live && <a href={proj.live} target="_blank" rel="noreferrer" onClick={() => trackProjectClick(proj.id, 'live')} style={{ color: "#f59e0b", fontSize: 13, fontWeight: 700 }}>Live</a>}
                   </div>
-                </motion.div>
+                </m.div>
               ))}
             </div>
           </div>
@@ -1057,7 +1057,7 @@ function DuskTemplate({ p, t, id, portfolioId }) {
             <h2 style={{ fontSize: 26, fontWeight: 900, marginBottom: 40, textAlign: "center" }}>Milestones</h2>
             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
               {p.experience.map((e, i) => (
-                <motion.div key={i} className="dusk-card sm:grid-cols-4-override" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+                <m.div key={i} className="dusk-card sm:grid-cols-4-override" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                     <span style={{ fontSize: 12, opacity: 0.5 }}>{e.period}</span>
                     <span style={{ fontSize: 15, fontWeight: 800, color: "#f59e0b" }}>{e.company}</span>
@@ -1066,7 +1066,7 @@ function DuskTemplate({ p, t, id, portfolioId }) {
                     <h3 style={{ fontSize: 17, fontWeight: 800, margin: "0 0 8px" }}>{e.role}</h3>
                     <p style={{ fontSize: 14, opacity: 0.7, lineHeight: 1.7, margin: 0 }}>{e.description}</p>
                   </div>
-                </motion.div>
+                </m.div>
               ))}
             </div>
           </div>

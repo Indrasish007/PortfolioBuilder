@@ -167,6 +167,7 @@
     filter: blur(80px);
     animation: aurora-rotate 35s linear infinite;
     opacity: 0.85;
+    will-change: transform;
   }
 
   /* Grid overlay (scoped out of public portfolios) */

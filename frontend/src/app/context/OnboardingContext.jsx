@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback } from "react";
+import { createContext, useContext, useState, useCallback, useMemo } from "react";
 
 /**
  * OnboardingContext — global state that persists extracted + reviewed resume
@@ -45,18 +45,18 @@ export function OnboardingProvider({ children }) {
     setIsFromResume(false);
   }, []);
 
+  const value = useMemo(() => ({
+    parsedData,
+    reviewedData,
+    isFromResume,
+    setParsedData,
+    setReviewedData,
+    initFromParsed,
+    resetOnboarding,
+  }), [parsedData, reviewedData, isFromResume, initFromParsed, resetOnboarding]);
+
   return (
-    <OnboardingContext.Provider
-      value={{
-        parsedData,
-        reviewedData,
-        isFromResume,
-        setParsedData,
-        setReviewedData,
-        initFromParsed,
-        resetOnboarding,
-      }}
-    >
+    <OnboardingContext.Provider value={value}>
       {children}
     </OnboardingContext.Provider>
   );

@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useState } from "react";
+import { createContext, useCallback, useContext, useState, useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { CheckCircle2, Info, X, AlertTriangle } from "lucide-react";
 
@@ -14,8 +14,10 @@ export function ToasterProvider({ children }) {
     setTimeout(() => setToasts((arr) => arr.filter((x) => x.id !== id)), t.duration);
   }, []);
 
+  const value = useMemo(() => ({ toast }), [toast]);
+
   return (
-    <ToasterContext.Provider value={{ toast }}>
+    <ToasterContext.Provider value={value}>
       {children}
       <div className="pointer-events-none fixed top-[calc(var(--header-height)+1rem)] right-4 z-[9999] flex flex-col gap-2 w-[min(92vw,360px)]">
         <AnimatePresence>

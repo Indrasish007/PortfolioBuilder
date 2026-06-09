@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles,
@@ -48,7 +48,7 @@ const getPriorityStyles = (priority) => {
   }
 };
 
-export default function AIInsights({ portfolioId }) {
+const AIInsights = memo(function AIInsights({ portfolioId }) {
   const [insights, setInsights] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -191,4 +191,6 @@ export default function AIInsights({ portfolioId }) {
       </div>
     </div>
   );
-}
+});
+
+export default AIInsights;

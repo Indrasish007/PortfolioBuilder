@@ -10,7 +10,7 @@ import CommandPalette from "../components/CommandPalette.jsx";
 import NotificationBell from "../components/NotificationBell.jsx";
 import api from "../services/api.js";
 import { useToast } from "../context/ToasterContext.jsx";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import logoImg from "../assets/logo.png";
 
 const staticNav = [
@@ -64,6 +64,7 @@ function EditorNavLink({ onClick }) {
   return (
     <button
       onClick={handleClick}
+      onMouseEnter={() => import("../pages/PortfolioEditor.jsx")}
       className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition w-full md:justify-center lg:justify-start ${isActive
           ? "bg-accent text-foreground shadow-card font-semibold"
           : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
@@ -320,19 +321,26 @@ export default function DashboardLayout() {
       <div className="absolute inset-0 -z-10 hero-bg opacity-40" />
 
       {/* Backdrop overlay on mobile */}
-      {sidebarOpen && (
-        <div
-          onClick={() => setSidebarOpen(false)}
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[1190] md:hidden transition-opacity duration-300"
-        />
-      )}
+      <AnimatePresence>
+        {sidebarOpen && (
+          <m.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => setSidebarOpen(false)}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[1190] md:hidden"
+          />
+        )}
+      </AnimatePresence>
 
       {/* ── Sidebar ── */}
       <aside
-        className={`fixed inset-y-0 left-0 z-[1200] flex flex-col border-r border-border/50 bg-background/95 md:bg-background/60 backdrop-blur-xl transition-all duration-300 ${sidebarOpen
+        className={`fixed inset-y-0 left-0 z-[1200] flex flex-col border-r border-border/50 bg-background/95 md:bg-background/60 backdrop-blur-xl transition-[transform,width,opacity,background-color] duration-300 ease-in-out ${sidebarOpen
             ? "translate-x-0 w-64 md:sticky md:h-screen md:translate-x-0 md:w-16 lg:w-64 md:border-r"
             : "-translate-x-full w-64 md:sticky md:h-screen md:translate-x-0 md:w-0 md:overflow-hidden md:border-r-0"
           }`}
+        style={{ willChange: "transform, width" }}
       >
         <div className="p-5 flex items-center justify-between md:block md:p-5">
           <Logo className="flex md:justify-center lg:justify-start" to="/dashboard" />
@@ -354,6 +362,14 @@ export default function DashboardLayout() {
               key={n.to}
               to={n.to}
               end={n.to === "/dashboard"}
+              onMouseEnter={() => {
+                if (n.to === "/dashboard") import("../pages/Dashboard.jsx");
+                else if (n.to === "/templates") import("../pages/TemplateMarketplace.jsx");
+                else if (n.to === "/analytics") import("../pages/Analytics.jsx");
+                else if (n.to === "/messages") import("../pages/Messages.jsx");
+                else if (n.to === "/help") import("../pages/HelpCenter.jsx");
+                else if (n.to === "/settings") import("../pages/Settings.jsx");
+              }}
               onClick={() => setSidebarOpen(false)}
               className={({ isActive }) =>
                 `flex items-center justify-between px-3 py-2 rounded-lg text-sm transition md:justify-center lg:justify-between ${isActive
@@ -540,21 +556,25 @@ export default function DashboardLayout() {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setSidebarOpen((open) => !open)}
-                className={`p-2 rounded-lg glass text-muted-foreground hover:text-foreground mr-1 flex flex-col justify-center items-center w-9 h-9 gap-1 transition-all duration-500 ease-in-out ${sidebarOpen ? "rotate-180 scale-105" : "hover:rotate-12"
+                className={`p-2 rounded-lg glass text-muted-foreground hover:text-foreground mr-1 flex flex-col justify-center items-center w-9 h-9 gap-1 transition-[transform,opacity,background-color] duration-500 ease-in-out ${sidebarOpen ? "rotate-180 scale-105" : "hover:rotate-12"
                   }`}
+                style={{ willChange: "transform, opacity" }}
                 aria-label="Toggle sidebar"
               >
                 <span
-                  className={`block w-5 h-0.5 bg-current rounded transition-all duration-500 ease-in-out origin-center ${sidebarOpen ? "rotate-45 translate-y-1.5" : ""
+                  className={`block w-5 h-0.5 bg-current rounded transition-[transform,opacity,background-color] duration-500 ease-in-out origin-center ${sidebarOpen ? "rotate-45 translate-y-1.5" : ""
                     }`}
+                  style={{ willChange: "transform, opacity" }}
                 />
                 <span
-                  className={`block w-5 h-0.5 bg-current rounded transition-all duration-500 ease-in-out ${sidebarOpen ? "opacity-0 scale-x-0" : ""
+                  className={`block w-5 h-0.5 bg-current rounded transition-[transform,opacity,background-color] duration-500 ease-in-out ${sidebarOpen ? "opacity-0 scale-x-0" : ""
                     }`}
+                  style={{ willChange: "transform, opacity" }}
                 />
                 <span
-                  className={`block w-5 h-0.5 bg-current rounded transition-all duration-500 ease-in-out origin-center ${sidebarOpen ? "-rotate-45 -translate-y-1.5" : ""
+                  className={`block w-5 h-0.5 bg-current rounded transition-[transform,opacity,background-color] duration-500 ease-in-out origin-center ${sidebarOpen ? "-rotate-45 -translate-y-1.5" : ""
                     }`}
+                  style={{ willChange: "transform, opacity" }}
                 />
               </button>
               <button
@@ -697,14 +717,14 @@ export default function DashboardLayout() {
       {mounted && createPortal(
         <AnimatePresence>
           {logoPopupOpen && (
-            <motion.div
+            <m.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="fixed top-[var(--header-height)] bottom-0 left-0 right-0 z-[100] flex items-center justify-center bg-black/75 backdrop-blur-md p-4"
               onClick={() => setLogoPopupOpen(false)}
             >
-              <motion.div
+              <m.div
                 initial={{ scale: 0.95, opacity: 0, y: -20 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.95, opacity: 0, y: -20 }}
@@ -734,8 +754,8 @@ export default function DashboardLayout() {
                 <div className="text-xs text-muted-foreground/60 leading-relaxed border-t border-border/40 pt-4">
                   Thank you for using PortfolioBuilder. Create, customize, and share stunning portfolios instantly with AI.
                 </div>
-              </motion.div>
-            </motion.div>
+              </m.div>
+            </m.div>
           )}
         </AnimatePresence>,
         document.body

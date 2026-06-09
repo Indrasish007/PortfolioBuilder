@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, memo } from "react";
 import { TH, getLayoutFonts } from "./layouts/shared.jsx";
 import MinimalLayout   from "./layouts/MinimalLayout.jsx";
 import SidebarLayout   from "./layouts/SidebarLayout.jsx";
@@ -90,7 +90,7 @@ export const TEMPLATE_PALETTE = {
   monochrome:    { bg: "#f8f8f8",  fg: "#111111",  ac: "#374151" },
 };
 
-export default function LivePortfolio({ portfolio, template, themeName }) {
+const LivePortfolio = memo(function LivePortfolio({ portfolio, template, themeName }) {
   if (!portfolio) return null;
 
   const containerRef = useRef(null);
@@ -242,4 +242,6 @@ export default function LivePortfolio({ portfolio, template, themeName }) {
       {layoutContent}
     </div>
   );
-}
+});
+
+export default LivePortfolio;

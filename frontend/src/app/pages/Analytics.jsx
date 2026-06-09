@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import GlassCard from "../components/GlassCard.jsx";
 import Badge from "../components/Badge.jsx";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, memo } from "react";
 import api from "../services/api.js";
 import FeaturedProjectSuggestion from "../components/FeaturedProjectSuggestion.jsx";
 import BackButton from "../components/BackButton.jsx";
@@ -91,7 +91,7 @@ const SCORE_BG = {
   Excellent: "rgba(168,85,247,0.10)",
 };
 
-function PortfolioScorePanel({ scoreData, accent }) {
+const PortfolioScorePanel = memo(function PortfolioScorePanel({ scoreData, accent }) {
   const { score, label, suggestions } = scoreData;
   const color = SCORE_COLORS[label] || "#a78bfa";
   const glow  = SCORE_GLOWS[label]  || "rgba(167,139,250,0.3)";
@@ -248,9 +248,9 @@ function PortfolioScorePanel({ scoreData, accent }) {
       )}
     </div>
   );
-}
+});
 
-function PortfolioAnalyticsCard({ portfolio, index }) {
+const PortfolioAnalyticsCard = memo(function PortfolioAnalyticsCard({ portfolio, index }) {
   const [open, setOpen] = useState(false);
   const accent = COUNTRY_COLORS[index % COUNTRY_COLORS.length];
 
@@ -392,9 +392,9 @@ function PortfolioAnalyticsCard({ portfolio, index }) {
       )}
     </GlassCard>
   );
-}
+});
 
-function ProjectClicksAnalyticsCard({ projects }) {
+const ProjectClicksAnalyticsCard = memo(function ProjectClicksAnalyticsCard({ projects }) {
   const [showAll, setShowAll] = useState(false);
   if (!projects || projects.length === 0) return null;
 
@@ -517,7 +517,7 @@ function ProjectClicksAnalyticsCard({ projects }) {
       )}
     </GlassCard>
   );
-}
+});
 
 export default function Analytics() {
   const [data, setData] = useState(null);
@@ -1031,7 +1031,7 @@ const MOBILE_APP_PLATFORMS = [
   { name: "Reddit App",     emoji: "🔴", fix: "?utm_source=reddit" },
 ];
 
-function AttributionLimitations() {
+const AttributionLimitations = memo(function AttributionLimitations() {
   const [open, setOpen] = useState(false);
 
   return (
@@ -1116,4 +1116,4 @@ function AttributionLimitations() {
       )}
     </section>
   );
-}
+});

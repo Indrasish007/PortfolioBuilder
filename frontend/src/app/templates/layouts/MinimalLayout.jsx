@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Mail, Phone, MapPin, Send, ArrowUp, Download, ChevronUp, ChevronDown, Github, ExternalLink, Globe, Linkedin, Twitter, Facebook, Instagram } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import { Tags, FAQList, VideoEmbed, MusicEmbed, GalleryAlbum, trackProjectClick, handleResumeDownload, handleScrollToSection, sn } from "./shared.jsx";
 import api from "../../services/api.js";
 
@@ -332,7 +332,7 @@ function MinimalTemplate({ p, t, id, portfolioId }) {
 
       <div style={{ maxWidth: 800, margin: "0 auto" }}>
         {/* Hero */}
-        <motion.div id="about" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} style={{ display: "flex", flexDirection: "column", gap: 16, marginTop: 40, marginBottom: 100 }}>
+        <m.div id="about" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} style={{ display: "flex", flexDirection: "column", gap: 16, marginTop: 40, marginBottom: 100 }}>
           {u.avatar && (
             <img src={u.avatar} alt={u.name} style={{ width: 80, height: 80, borderRadius: "50%", objectFit: "cover", border: `1px solid ${t.fg}15`, marginBottom: 16 }} />
           )}
@@ -351,7 +351,7 @@ function MinimalTemplate({ p, t, id, portfolioId }) {
           <div style={{ marginTop: 8 }}>
             <MiniSoc user={u} fg={t.fg} portfolioId={portfolioId} />
           </div>
-        </motion.div>
+        </m.div>
 
         {/* Projects */}
         {p.projects?.length > 0 && (
@@ -359,7 +359,7 @@ function MinimalTemplate({ p, t, id, portfolioId }) {
             <span className="minimal-title-label">01 / Featured Projects</span>
             <div style={{ display: "flex", flexDirection: "column" }}>
               {p.projects.map((proj, i) => (
-                <motion.div key={i} className="minimal-project-strip" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }}>
+                <m.div key={i} className="minimal-project-strip" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }}>
                   <div>
                     <h3 style={{ fontSize: 20, fontWeight: 400, margin: "0 0 8px" }}>{proj.title}</h3>
                     <p style={{ fontSize: 14, opacity: 0.6, lineHeight: 1.6, margin: "0 0 16px", maxWidth: 500 }}>{proj.description}</p>
@@ -369,7 +369,7 @@ function MinimalTemplate({ p, t, id, portfolioId }) {
                     {proj.github && <a href={proj.github} target="_blank" rel="noreferrer" onClick={() => trackProjectClick(proj.id, 'github')} style={{ color: t.fg, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.1em", textDecoration: "none" }}>Code ↗</a>}
                     {proj.live && <a href={proj.live} target="_blank" rel="noreferrer" onClick={() => trackProjectClick(proj.id, 'live')} style={{ color: t.fg, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.1em", textDecoration: "none" }}>Live ↗</a>}
                   </div>
-                </motion.div>
+                </m.div>
               ))}
             </div>
           </div>
@@ -381,13 +381,13 @@ function MinimalTemplate({ p, t, id, portfolioId }) {
             <span className="minimal-title-label">02 / Experience</span>
             <div style={{ display: "flex", flexDirection: "column", gap: 40 }}>
               {p.experience.map((e, i) => (
-                <motion.div key={i} initial={{ opacity: 0, x: -10 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} style={{ display: "grid", gridTemplateColumns: "1fr", gap: 8 }}>
+                <m.div key={i} initial={{ opacity: 0, x: -10 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} style={{ display: "grid", gridTemplateColumns: "1fr", gap: 8 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", borderBottom: `1px solid ${t.fg}06`, paddingBottom: 12 }}>
                     <h3 style={{ fontSize: 16, fontWeight: 500, margin: 0 }}>{e.role} <span style={{ opacity: 0.4, fontWeight: 300 }}>· {e.company}</span></h3>
                     <span style={{ fontSize: 12, opacity: 0.4 }}>{e.period}</span>
                   </div>
                   <p style={{ fontSize: 14, opacity: 0.6, lineHeight: 1.7, margin: 0, maxWidth: 650 }}>{e.description}</p>
-                </motion.div>
+                </m.div>
               ))}
             </div>
           </div>
@@ -587,7 +587,7 @@ function ScandinavianTemplate({ p, t, id, portfolioId }) {
 
       <div style={{ maxWidth: 900, margin: "0 auto" }}>
         {/* Hero Section */}
-        <motion.div id="about" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} style={{ display: "grid", gridTemplateColumns: "1fr", gap: 48, marginBottom: 80 }} className="md:grid-cols-2-override">
+        <m.div id="about" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} style={{ display: "grid", gridTemplateColumns: "1fr", gap: 48, marginBottom: 80 }} className="md:grid-cols-2-override">
           <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 24 }}>
             <span style={{ fontSize: 13, textTransform: "uppercase", letterSpacing: "0.1em", color: t.ac, fontWeight: 600 }}>Hello, I'm {u.name?.split(" ")[0]}</span>
             <h1 style={{ fontSize: "clamp(36px, 6vw, 54px)", fontWeight: 800, letterSpacing: "-0.03em", margin: 0, lineHeight: 1.1 }}>{u.title}</h1>
@@ -607,7 +607,7 @@ function ScandinavianTemplate({ p, t, id, portfolioId }) {
               <img src={u.avatar} alt={u.name} style={{ width: "100%", maxHeight: 380, objectFit: "cover", borderRadius: 32, border: `8px solid color-mix(in srgb, ${t.fg} 2%, ${t.bg})`, boxShadow: "0 20px 60px rgba(0,0,0,0.05)" }} />
             </div>
           )}
-        </motion.div>
+        </m.div>
 
         {/* Projects Section */}
         {p.projects?.length > 0 && (
@@ -618,7 +618,7 @@ function ScandinavianTemplate({ p, t, id, portfolioId }) {
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 24 }}>
               {p.projects.map((proj, i) => (
-                <motion.div key={i} className="scand-card" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1 }}>
+                <m.div key={i} className="scand-card" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1 }}>
                   {proj.image && (
                     <img src={proj.image} alt={proj.title} style={{ width: "100%", height: 160, objectFit: "cover", borderRadius: 16, marginBottom: 20 }} />
                   )}
@@ -629,7 +629,7 @@ function ScandinavianTemplate({ p, t, id, portfolioId }) {
                     {proj.github && <a href={proj.github} target="_blank" rel="noreferrer" onClick={() => trackProjectClick(proj.id, 'github')} style={{ color: t.fg, fontSize: 13, fontWeight: 600 }}>GitHub ↗</a>}
                     {proj.live && <a href={proj.live} target="_blank" rel="noreferrer" onClick={() => trackProjectClick(proj.id, 'live')} style={{ color: t.ac, fontSize: 13, fontWeight: 600 }}>Live View ↗</a>}
                   </div>
-                </motion.div>
+                </m.div>
               ))}
             </div>
           </div>
@@ -641,7 +641,7 @@ function ScandinavianTemplate({ p, t, id, portfolioId }) {
             <h2 className="scand-title">Background & Path</h2>
             <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
               {p.experience.map((e, i) => (
-                <motion.div key={i} className="scand-card" style={{ display: "flex", flexDirection: "column", gap: 12 }} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+                <m.div key={i} className="scand-card" style={{ display: "flex", flexDirection: "column", gap: 12 }} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
                     <div>
                       <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>{e.role}</h3>
@@ -650,7 +650,7 @@ function ScandinavianTemplate({ p, t, id, portfolioId }) {
                     <span style={{ fontSize: 12, opacity: 0.5, background: `color-mix(in srgb, ${t.fg} 6%, ${t.bg})`, padding: "4px 12px", borderRadius: 99 }}>{e.period}</span>
                   </div>
                   <p style={{ fontSize: 14, opacity: 0.65, lineHeight: 1.7, margin: 0 }}>{e.description}</p>
-                </motion.div>
+                </m.div>
               ))}
             </div>
           </div>

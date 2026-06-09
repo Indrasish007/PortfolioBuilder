@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Mail, Phone, MapPin, Send, ArrowUp, Download, Github, ExternalLink, Globe, Linkedin, Twitter, Facebook, Instagram } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import { Tags, FAQList, VideoEmbed, MusicEmbed, GalleryAlbum, trackProjectClick, handleResumeDownload, handleScrollToSection, sn } from "./shared.jsx";
 import api from "../../services/api.js";
 
@@ -436,7 +436,7 @@ function StartupPitchTemplate({ p, t, id, portfolioId }) {
 
         {/* Hero */}
         <div id="about" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 48, marginBottom: 100 }} className="md:grid-cols-2-override">
-          <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8 }} style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 24 }}>
+          <m.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8 }} style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 24 }}>
             <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: "0.2em", color: "#3b82f6", fontWeight: 700 }}>INVESTOR READY PORTFOLIO</span>
             <h1 style={{ fontSize: "clamp(36px, 6vw, 56px)", fontWeight: 900, lineHeight: 1.05, letterSpacing: "-0.03em", margin: 0 }}>
               Pitching Creative Solutions with <span className="kpi-num">{u.name}</span>
@@ -451,24 +451,24 @@ function StartupPitchTemplate({ p, t, id, portfolioId }) {
 
             <p style={{ fontSize: 16, lineHeight: 1.8, opacity: 0.6, margin: 0 }}>{u.bio}</p>
             <BizSoc user={u} fg="#f8fafc" portfolioId={portfolioId} />
-          </motion.div>
+          </m.div>
           {u.avatar && (
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }} style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+            <m.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }} style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
               <div style={{ position: "relative", width: "100%", maxWidth: 320 }}>
                 <div style={{ position: "absolute", inset: -8, borderRadius: 24, background: "linear-gradient(135deg, #3b82f6, #818cf8)", opacity: 0.2, filter: "blur(12px)" }} />
                 <img src={u.avatar} alt={u.name} style={{ width: "100%", height: "auto", aspectRatio: "4/5", objectFit: "cover", borderRadius: 20, border: "1px solid rgba(255, 255, 255, 0.1)", position: "relative", zIndex: 1 }} />
               </div>
-            </motion.div>
+            </m.div>
           )}
         </div>
 
         {/* KPI Stats Grid */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 24, marginBottom: 100 }}>
           {metrics.map((m, i) => (
-            <motion.div key={i} className="startup-kpi-card" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.08 }}>
+            <m.div key={i} className="startup-kpi-card" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.08 }}>
               <div className="kpi-num" style={{ fontSize: 36, fontWeight: 900, marginBottom: 8 }}>{m.value}</div>
               <div style={{ fontSize: 13, opacity: 0.6, fontWeight: 500 }}>{m.label}</div>
-            </motion.div>
+            </m.div>
           ))}
         </div>
 
@@ -478,7 +478,7 @@ function StartupPitchTemplate({ p, t, id, portfolioId }) {
             <h2 style={{ fontSize: 28, fontWeight: 900, marginBottom: 48, textAlign: "center", letterSpacing: "-0.02em" }}>Product & Engineering Features</h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(290px, 1fr))", gap: 32 }}>
               {p.projects.map((proj, i) => (
-                <motion.div key={i} className="startup-project-card" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1 }} style={{ display: "flex", flexDirection: "column" }}>
+                <m.div key={i} className="startup-project-card" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1 }} style={{ display: "flex", flexDirection: "column" }}>
                   {proj.image && (
                     <img src={proj.image} alt={proj.title} style={{ width: "100%", height: 180, objectFit: "cover", borderBottom: "1px solid rgba(255,255,255,0.05)" }} />
                   )}
@@ -491,7 +491,7 @@ function StartupPitchTemplate({ p, t, id, portfolioId }) {
                       {proj.live && <a href={proj.live} target="_blank" rel="noreferrer" onClick={() => trackProjectClick(proj.id, 'live')} style={{ color: "#3b82f6", fontSize: 13, fontWeight: 700 }}>Live Deploy ↗</a>}
                     </div>
                   </div>
-                </motion.div>
+                </m.div>
               ))}
             </div>
           </div>
@@ -503,7 +503,7 @@ function StartupPitchTemplate({ p, t, id, portfolioId }) {
             <h2 style={{ fontSize: 28, fontWeight: 900, marginBottom: 48, textAlign: "center", letterSpacing: "-0.02em" }}>Company Roadmap</h2>
             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
               {p.experience.map((e, i) => (
-                <motion.div key={i} className="startup-kpi-card md:grid-cols-4-override" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16, textAlign: "left" }} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+                <m.div key={i} className="startup-kpi-card md:grid-cols-4-override" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16, textAlign: "left" }} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                     <span style={{ fontSize: 12, opacity: 0.5 }}>{e.period}</span>
                     <span style={{ fontSize: 15, fontWeight: 800, color: "#3b82f6" }}>{e.company}</span>
@@ -512,7 +512,7 @@ function StartupPitchTemplate({ p, t, id, portfolioId }) {
                     <h3 style={{ fontSize: 18, fontWeight: 800, margin: "0 0 10px" }}>{e.role}</h3>
                     <p style={{ fontSize: 13, opacity: 0.65, lineHeight: 1.7, margin: 0 }}>{e.description}</p>
                   </div>
-                </motion.div>
+                </m.div>
               ))}
             </div>
           </div>

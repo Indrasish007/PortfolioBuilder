@@ -1,10 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { ThemeProvider, useTheme } from "./context/ThemeContext.jsx";
 import { ToasterProvider } from "./context/ToasterContext.jsx";
 import { OnboardingProvider } from "./context/OnboardingContext.jsx";
 import CursorGlow from "./components/CursorGlow.jsx";
 import ScrollToTop from "./components/ScrollToTop.jsx";
+import { LazyMotion, domAnimation } from "framer-motion";
 
 function SEOManager() {
   const location = useLocation();
@@ -75,72 +76,79 @@ import PublicLayout from "./layouts/PublicLayout.jsx";
 import AuthLayout from "./layouts/AuthLayout.jsx";
 import DashboardLayout from "./layouts/DashboardLayout.jsx";
 
-import Landing from "./pages/Landing.jsx";
-import Login from "./pages/Login.jsx";
-import Signup from "./pages/Signup.jsx";
-import ForgotPassword from "./pages/ForgotPassword.jsx";
-import ResetPassword from "./pages/ResetPassword.jsx";
-import DemoPortfolio from "./pages/DemoPortfolio.jsx";
-import PublicPortfolio from "./pages/PublicPortfolio.jsx";
-import NotFound from "./pages/NotFound.jsx";
+const Landing = lazy(() => import("./pages/Landing.jsx"));
+const Login = lazy(() => import("./pages/Login.jsx"));
+const Signup = lazy(() => import("./pages/Signup.jsx"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword.jsx"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword.jsx"));
+const DemoPortfolio = lazy(() => import("./pages/DemoPortfolio.jsx"));
+const PublicPortfolio = lazy(() => import("./pages/PublicPortfolio.jsx"));
+const NotFound = lazy(() => import("./pages/NotFound.jsx"));
 
-import Dashboard from "./pages/Dashboard.jsx";
-import PortfolioEditor from "./pages/PortfolioEditor.jsx";
-import TemplateMarketplace from "./pages/TemplateMarketplace.jsx";
-import Analytics from "./pages/Analytics.jsx";
-import Settings from "./pages/Settings.jsx";
-import Onboarding from "./pages/Onboarding.jsx";
-import CVPreview from "./pages/CVPreview.jsx";
-import HelpCenter from "./pages/HelpCenter.jsx";
-import Messages from "./pages/Messages.jsx";
-
+const Dashboard = lazy(() => import("./pages/Dashboard.jsx"));
+const PortfolioEditor = lazy(() => import("./pages/PortfolioEditor.jsx"));
+const TemplateMarketplace = lazy(() => import("./pages/TemplateMarketplace.jsx"));
+const Analytics = lazy(() => import("./pages/Analytics.jsx"));
+const Settings = lazy(() => import("./pages/Settings.jsx"));
+const Onboarding = lazy(() => import("./pages/Onboarding.jsx"));
+const CVPreview = lazy(() => import("./pages/CVPreview.jsx"));
+const HelpCenter = lazy(() => import("./pages/HelpCenter.jsx"));
+const Messages = lazy(() => import("./pages/Messages.jsx"));
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <ToasterProvider>
-        <OnboardingProvider>
-          <BrowserRouter>
-            <ScrollToTop />
-            <CursorGlow />
-            <SEOManager />
-            <ThemeRouteManager />
-            <Routes>
-              <Route element={<PublicLayout />}>
-                <Route path="/" element={<Landing />} />
-                <Route path="/demo" element={<DemoPortfolio />} />
-              </Route>
+    <LazyMotion features={domAnimation}>
+      <ThemeProvider>
+        <ToasterProvider>
+          <OnboardingProvider>
+            <BrowserRouter>
+              <ScrollToTop />
+              <CursorGlow />
+              <SEOManager />
+              <ThemeRouteManager />
+              <Suspense fallback={
+                <div className="flex items-center justify-center min-h-[50vh]">
+                  <div className="w-8 h-8 rounded-full border-2 border-brand border-t-transparent animate-spin" />
+                </div>
+              }>
+                <Routes>
+                  <Route element={<PublicLayout />}>
+                    <Route path="/" element={<Landing />} />
+                    <Route path="/demo" element={<DemoPortfolio />} />
+                  </Route>
 
-              {/* Standalone - no Navbar/Footer wrapper */}
-              <Route path="/p/:idOrSlug" element={<PublicPortfolio />} />
-              <Route path="/u/:username" element={<PublicPortfolio />} />
+                  {/* Standalone - no Navbar/Footer wrapper */}
+                  <Route path="/p/:idOrSlug" element={<PublicPortfolio />} />
+                  <Route path="/u/:username" element={<PublicPortfolio />} />
 
-              <Route element={<AuthLayout />}>
-                <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<Signup />} />
-                <Route path="/forgot-password" element={<ForgotPassword />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-              </Route>
+                  <Route element={<AuthLayout />}>
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/signup" element={<Signup />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
+                  </Route>
 
-              <Route element={<DashboardLayout />}>
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/resume-builder" element={<Navigate to="/dashboard" replace />} />
-                <Route path="/onboarding" element={<Onboarding />} />
-                <Route path="/editor" element={<PortfolioEditor />} />
-                <Route path="/editor/:id" element={<PortfolioEditor />} />
-                <Route path="/templates" element={<TemplateMarketplace />} />
-                <Route path="/analytics" element={<Analytics />} />
-                <Route path="/settings" element={<Settings />} />
-                <Route path="/cv-preview" element={<CVPreview />} />
-                <Route path="/help" element={<HelpCenter />} />
-                <Route path="/messages" element={<Messages />} />
-              </Route>
+                  <Route element={<DashboardLayout />}>
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/resume-builder" element={<Navigate to="/dashboard" replace />} />
+                    <Route path="/onboarding" element={<Onboarding />} />
+                    <Route path="/editor" element={<PortfolioEditor />} />
+                    <Route path="/editor/:id" element={<PortfolioEditor />} />
+                    <Route path="/templates" element={<TemplateMarketplace />} />
+                    <Route path="/analytics" element={<Analytics />} />
+                    <Route path="/settings" element={<Settings />} />
+                    <Route path="/cv-preview" element={<CVPreview />} />
+                    <Route path="/help" element={<HelpCenter />} />
+                    <Route path="/messages" element={<Messages />} />
+                  </Route>
 
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </OnboardingProvider>
-      </ToasterProvider>
-    </ThemeProvider>
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
+            </BrowserRouter>
+          </OnboardingProvider>
+        </ToasterProvider>
+      </ThemeProvider>
+    </LazyMotion>
   );
 }

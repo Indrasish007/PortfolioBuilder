@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { Github, Twitter, Linkedin, Facebook, Instagram, Globe, FileText, ChevronDown, ChevronUp, Download, Mail, Phone, MapPin, Send, ArrowUp } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import api from "../../services/api.js";
 import { detectTrafficSource } from "../../utils/attribution.js";
 
@@ -209,7 +209,7 @@ export function Soc({ user, fg, size = 15, portfolioId }) {
   );
 }
 
-export function Tags({ items = [], bg, fg, radius = "999px", border }) {
+export const Tags = memo(function Tags({ items = [], bg, fg, radius = "999px", border }) {
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
       {items.map((s, i) => (
@@ -234,20 +234,22 @@ export function Tags({ items = [], bg, fg, radius = "999px", border }) {
       ))}
     </div>
   );
-}
+});
 
-export function ScrollReveal({ children, delay = 0 }) {
+export const ScrollReveal = memo(function ScrollReveal({ children, delay = 0 }) {
+  const shouldReduceMotion = useReducedMotion();
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
+      initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
+      whileInView={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-60px" }}
-      transition={{ duration: 0.7, delay, ease: [0.16, 1, 0.3, 1] }}
+      transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.7, delay, ease: [0.16, 1, 0.3, 1] }}
     >
       {children}
     </motion.div>
   );
-}
+});
 
 export function FAQList({ faqs = [], fg }) {
   return faqs.map((f, i) => <FAQItem key={i} f={f} fg={fg} />);
