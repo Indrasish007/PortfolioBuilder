@@ -283,15 +283,15 @@ function TemplateCard({ t, isActive, onSelect, index, onHover, onHoverEnd }) {
       onMouseLeave={handleMouseLeave}
     >
       <div
-        className={`group rounded-2xl overflow-hidden border transition-all duration-300 cursor-pointer ${
+        className={`group rounded-2xl overflow-hidden border transition-all duration-300 cursor-pointer bg-card/40 ${
           isActive
             ? "border-brand shadow-glow"
-            : "border-border/50 hover:border-white/20 hover:shadow-2xl"
+            : "border-border/50 hover:border-white/20"
         }`}
         style={{
-          transform: hovered ? "translateY(-4px) scale(1.015)" : "translateY(0) scale(1)",
-          transition: "all 0.25s cubic-bezier(0.22, 1, 0.36, 1)",
-          boxShadow: hovered ? `0 20px 60px rgba(0,0,0,0.4), 0 0 30px ${t.accent}22` : undefined,
+          transform: hovered ? "translateY(-6px) scale(1.02) rotateX(1deg) rotateY(-1deg)" : "translateY(0) scale(1) rotateX(0deg) rotateY(0deg)",
+          transition: "all 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
+          boxShadow: hovered ? `0 20px 48px rgba(0,0,0,0.55), 0 0 30px ${t.accent}25` : undefined,
         }}
       >
         {/* Preview area */}
@@ -300,21 +300,30 @@ function TemplateCard({ t, isActive, onSelect, index, onHover, onHoverEnd }) {
           <div className="absolute inset-0 opacity-30"
             style={{ background: "radial-gradient(ellipse at 30% 40%, rgba(255,255,255,0.2) 0%, transparent 70%)" }} />
 
-          {/* SVG wireframe */}
-          <div className="absolute inset-0 p-2">
+          {/* SVG wireframe with preview zoom effect */}
+          <motion.div 
+            animate={{ scale: hovered ? 1.08 : 1 }} 
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute inset-0 p-2 origin-center"
+          >
             <TemplatePreviewSVG template={t} />
-          </div>
+          </motion.div>
+
+          {/* Shimmer overlay */}
+          {hovered && (
+            <div className="absolute inset-0 gradient-shimmer opacity-20 pointer-events-none" />
+          )}
 
           {/* Hover overlay */}
           <motion.div
             animate={{ opacity: hovered ? 1 : 0 }}
             transition={{ duration: 0.15 }}
-            className="absolute inset-0 flex items-center justify-center gap-2"
-            style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+            className="absolute inset-0 flex items-center justify-center gap-2 z-10"
+            style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)" }}
           >
             <button
               onClick={handleSelect}
-              className="px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition hover:opacity-90 active:scale-[0.97]"
+              className="px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition hover:opacity-90 active:scale-[0.97] cursor-pointer shadow-md"
               style={{ background: "#fff", color: "#000" }}
             >
               {isActive ? <Check className="w-3 h-3" /> : <ArrowRight className="w-3 h-3" />}
@@ -323,7 +332,7 @@ function TemplateCard({ t, isActive, onSelect, index, onHover, onHoverEnd }) {
           </motion.div>
 
           {/* Tag badge */}
-          <div className="absolute top-3 left-3 flex gap-1.5">
+          <div className="absolute top-3 left-3 flex gap-1.5 z-10">
             <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-black/30 backdrop-blur-sm text-white border border-white/10">
               {t.tag}
             </span>
@@ -331,7 +340,7 @@ function TemplateCard({ t, isActive, onSelect, index, onHover, onHoverEnd }) {
 
           {/* Active indicator */}
           {isActive && (
-            <div className="absolute top-3 right-3">
+            <div className="absolute top-3 right-3 z-10">
               <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500 text-white flex items-center gap-1">
                 <Check className="w-2.5 h-2.5" /> Active
               </span>
@@ -343,7 +352,7 @@ function TemplateCard({ t, isActive, onSelect, index, onHover, onHoverEnd }) {
             <motion.div
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
-              className="absolute bottom-3 right-3 text-[9px] text-white/50 font-medium"
+              className="absolute bottom-3 right-3 text-[9px] text-white/50 font-medium z-10"
             >
               Preview →
             </motion.div>
@@ -351,10 +360,10 @@ function TemplateCard({ t, isActive, onSelect, index, onHover, onHoverEnd }) {
         </div>
 
         {/* Card body */}
-        <div className="p-4 bg-card/60 backdrop-blur-sm">
+        <div className="p-4 bg-card/65 backdrop-blur-md border-t border-border/25">
           <div className="flex items-start justify-between mb-1">
             <span className="font-semibold text-sm leading-tight">{t.name}</span>
-            <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-accent text-muted-foreground ml-2 shrink-0">
+            <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-accent/40 text-muted-foreground ml-2 shrink-0">
               {t.category}
             </span>
           </div>

@@ -100,6 +100,13 @@ export default function LivePortfolio({ portfolio, template, themeName }) {
   const { body: bodyFont, heading: headingFont } = getLayoutFonts(typography);
 
   useEffect(() => {
+    document.body.classList.add("public-portfolio");
+    return () => {
+      document.body.classList.remove("public-portfolio");
+    };
+  }, []);
+
+  useEffect(() => {
     if (!containerRef.current) return;
     const doc = containerRef.current.ownerDocument;
     

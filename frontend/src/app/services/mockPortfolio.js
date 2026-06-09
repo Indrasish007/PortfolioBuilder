@@ -35,7 +35,28 @@ export const defaultPortfolio = {
 };
 
 export const mockPortfolios = [
-  { id: "1", name: "Personal Portfolio", template: "Developer", views: 12483, status: "Published", updated: "2h ago" },
-  { id: "2", name: "Freelance Site", template: "Creative", views: 4218, status: "Draft", updated: "Yesterday" },
-  { id: "3", name: "Resume Page", template: "Minimal", views: 891, status: "Published", updated: "3d ago" },
+  {
+    id: "1",
+    name: "Personal Portfolio",
+    template: "Developer",
+    views: 12483,
+    status: "Published",
+    updated: "2h ago",
+  },
+  {
+    id: "2",
+    name: "Freelance Site",
+    template: "Creative",
+    views: 4218,
+    status: "Draft",
+    updated: "Yesterday",
+  },
+  {
+    id: "3",
+    name: "Resume Page",
+    template: "Minimal",
+    views: 891,
+    status: "Published",
+    updated: "3d ago",
+  },
 ];

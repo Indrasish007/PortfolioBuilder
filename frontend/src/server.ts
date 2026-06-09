@@ -12,7 +12,7 @@ let serverEntryPromise: Promise<ServerEntry> | undefined;
 async function getServerEntry(): Promise<ServerEntry> {
   if (!serverEntryPromise) {
     serverEntryPromise = import("@tanstack/react-start/server-entry").then(
-      (m) => ((m as { default?: ServerEntry }).default ?? (m as unknown as ServerEntry)),
+      (m) => (m as { default?: ServerEntry }).default ?? (m as unknown as ServerEntry),
     );
   }
   return serverEntryPromise;
@@ -67,12 +67,13 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 }
 
 async function fetchPortfolioData(identifier: string) {
-  const apiBase = (typeof process !== "undefined" && process.env?.VITE_API_URL) || "http://localhost:8000/api";
+  const apiBase =
+    (typeof process !== "undefined" && process.env?.VITE_API_URL) || "http://localhost:8000/api";
   const isNumeric = /^\d+$/.test(identifier);
-  const url = isNumeric 
-    ? `${apiBase}/portfolios/public/${identifier}/` 
+  const url = isNumeric
+    ? `${apiBase}/portfolios/public/${identifier}/`
     : `${apiBase}/portfolios/public/slug/${identifier}/`;
-  
+
   const res = await fetch(url);
   if (!res.ok) {
     throw new Error(`Backend returned status ${res.status}`);
@@ -108,7 +109,9 @@ Sitemap: ${origin}/sitemap.xml
       if (url.pathname === "/sitemap.xml") {
         const origin = url.origin;
         try {
-          const apiBase = (typeof process !== "undefined" && process.env?.VITE_API_URL) || "http://localhost:8000/api";
+          const apiBase =
+            (typeof process !== "undefined" && process.env?.VITE_API_URL) ||
+            "http://localhost:8000/api";
           const res = await fetch(`${apiBase}/portfolios/public/list/`);
           if (!res.ok) throw new Error(`Backend list returned status ${res.status}`);
           const portfolios = (await res.json()) as { slug: string; updated_at: string | null }[];
@@ -153,9 +156,9 @@ Sitemap: ${origin}/sitemap.xml
               return new Response(null, {
                 status: 301,
                 headers: {
-                  "Location": `${url.origin}/u/${data.slug}`,
-                  "Cache-Control": "public, max-age=31536000"
-                }
+                  Location: `${url.origin}/u/${data.slug}`,
+                  "Cache-Control": "public, max-age=31536000",
+                },
               });
             }
           } catch (err) {
@@ -174,10 +177,10 @@ Sitemap: ${origin}/sitemap.xml
             if (portfolio && portfolio.seo) {
               const handler = await getServerEntry();
               const response = await handler.fetch(request, env, ctx);
-              
+
               if (response.status === 200) {
                 let html = await response.text();
-                
+
                 // 1. Inject Head SEO Meta Tags
                 const canonical = portfolio.seo.canonical_url || `${url.origin}/u/${username}`;
                 const metaTags = `
@@ -186,28 +189,28 @@ Sitemap: ${origin}/sitemap.xml
   <link rel="alternate" hreflang="en" href="${canonical}" />
   <link rel="alternate" hreflang="x-default" href="${canonical}" />
   <meta name="description" content="${portfolio.seo.description}" />
-  <meta property="og:title" content="${portfolio.seo.open_graph['og:title']}" />
-  <meta property="og:description" content="${portfolio.seo.open_graph['og:description']}" />
-  <meta property="og:type" content="${portfolio.seo.open_graph['og:type']}" />
-  <meta property="og:url" content="${portfolio.seo.open_graph['og:url']}" />
-  <meta property="og:image" content="${portfolio.seo.open_graph['og:image']}" />
+  <meta property="og:title" content="${portfolio.seo.open_graph["og:title"]}" />
+  <meta property="og:description" content="${portfolio.seo.open_graph["og:description"]}" />
+  <meta property="og:type" content="${portfolio.seo.open_graph["og:type"]}" />
+  <meta property="og:url" content="${portfolio.seo.open_graph["og:url"]}" />
+  <meta property="og:image" content="${portfolio.seo.open_graph["og:image"]}" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta property="og:site_name" content="PortfolioBuilder" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="${portfolio.seo.twitter_card['twitter:title']}" />
-  <meta name="twitter:description" content="${portfolio.seo.twitter_card['twitter:description']}" />
-  <meta name="twitter:image" content="${portfolio.seo.twitter_card['twitter:image']}" />
+  <meta name="twitter:title" content="${portfolio.seo.twitter_card["twitter:title"]}" />
+  <meta name="twitter:description" content="${portfolio.seo.twitter_card["twitter:description"]}" />
+  <meta name="twitter:image" content="${portfolio.seo.twitter_card["twitter:image"]}" />
   <script id="portfolio-schema-jsonld" type="application/ld+json">${JSON.stringify(portfolio.seo.schema)}</script>
 `;
                 html = html.replace(/<title>.*?<\/title>/, "");
                 html = html.replace("</head>", `${metaTags}</head>`);
-                
+
                 // 2. Compile Visible Prerendered Semantic HTML Content inside body
                 const name = portfolio.user?.name || portfolio.name || "";
                 const headline = portfolio.user?.title || "";
                 const bio = portfolio.user?.bio || "";
-                
+
                 let skillsHtml = "";
                 if (portfolio.skills && portfolio.skills.length > 0) {
                   skillsHtml = `
@@ -225,13 +228,17 @@ Sitemap: ${origin}/sitemap.xml
   <section style="margin-bottom: 25px;">
     <h3 style="font-size: 20px; color: #818cf8; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px; margin-bottom: 12px;">Experience</h3>
     <div style="display: flex; flex-direction: column; gap: 15px;">
-      ${portfolio.experience.map((exp: any) => `
+      ${portfolio.experience
+        .map(
+          (exp: any) => `
         <div style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.03); padding: 12px; border-radius: 10px;">
           <h4 style="margin: 0; font-size: 16px; color: #fff; font-weight: 600;">${exp.role} — <span style="color: #cbd5e1;">${exp.company}</span></h4>
           <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">${exp.period || ""}</div>
           <p style="margin: 8px 0 0; font-size: 13px; color: #94a3b8; line-height: 1.5;">${exp.description || ""}</p>
         </div>
-      `).join("")}
+      `,
+        )
+        .join("")}
     </div>
   </section>`;
                 }
@@ -242,7 +249,9 @@ Sitemap: ${origin}/sitemap.xml
   <section style="margin-bottom: 25px;">
     <h3 style="font-size: 20px; color: #818cf8; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px; margin-bottom: 12px;">Projects</h3>
     <div style="display: grid; grid-template-columns: 1fr; gap: 15px;">
-      ${portfolio.projects.map((proj: any) => `
+      ${portfolio.projects
+        .map(
+          (proj: any) => `
         <div style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.03); padding: 12px; border-radius: 10px;">
           <h4 style="margin: 0; font-size: 16px; color: #fff; font-weight: 600;">${proj.title}</h4>
           <div style="font-size: 11px; color: #818cf8; font-weight: 600; margin-top: 4px;">${proj.tech || ""}</div>
@@ -252,7 +261,9 @@ Sitemap: ${origin}/sitemap.xml
             ${proj.live ? `<a href="${proj.live}" style="font-size: 12px; color: #38bdf8; text-decoration: none; font-weight: 600;">Live Demo</a>` : ""}
           </div>
         </div>
-      `).join("")}
+      `,
+        )
+        .join("")}
     </div>
   </section>`;
                 }
@@ -278,9 +289,9 @@ Sitemap: ${origin}/sitemap.xml
 </script>
 `;
                 html = html.replace("<body>", `<body>${semanticContent}`);
-                
+
                 return new Response(html, {
-                  headers: response.headers
+                  headers: response.headers,
                 });
               }
             }

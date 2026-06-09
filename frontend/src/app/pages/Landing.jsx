@@ -48,46 +48,152 @@ export default function Landing() {
 }
 
 function Hero() {
+  const [arrowHovered, setArrowHovered] = useState(false);
+
+  const titleContainer = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.12,
+        delayChildren: 0.2
+      }
+    }
+  };
+
+  const titleWord = {
+    hidden: { opacity: 0, y: 20 },
+    show: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.8,
+        ease: [0.16, 1, 0.3, 1]
+      }
+    }
+  };
+
   return (
     <section className="relative pt-20 pb-24 overflow-hidden">
       <div className="absolute inset-0 hero-bg pointer-events-none" />
       <div className="absolute inset-0 grid-pattern opacity-60 pointer-events-none" />
-      <div className="relative max-w-7xl mx-auto px-5 text-center">
-        <motion.div initial="hidden" animate="show" variants={fadeUp} className="inline-flex items-center gap-2 glass rounded-full pl-1 pr-3 py-1 text-xs">
+      
+      {/* Floating Light Particles */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {[
+          { size: 14, top: "20%", left: "12%", delay: 0 },
+          { size: 10, top: "55%", left: "85%", delay: 2 },
+          { size: 18, top: "12%", left: "70%", delay: 1.5 },
+          { size: 12, top: "65%", left: "18%", delay: 3 }
+        ].map((p, idx) => (
+          <motion.div
+            key={idx}
+            className="absolute rounded-full bg-brand/30 blur-md"
+            style={{
+              width: p.size,
+              height: p.size,
+              top: p.top,
+              left: p.left,
+            }}
+            animate={{
+              y: [0, -35, 0],
+              x: [0, 15, 0],
+              opacity: [0.3, 0.7, 0.3],
+            }}
+            transition={{
+              duration: 9 + idx * 3,
+              repeat: Infinity,
+              delay: p.delay,
+              ease: "easeInOut"
+            }}
+          />
+        ))}
+      </div>
+
+      <div className="relative max-w-7xl mx-auto px-5 text-center z-10">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="inline-flex items-center gap-2 glass rounded-full pl-1 pr-3 py-1 text-xs"
+        >
           <Badge variant="brand">NEW</Badge>
           <span className="text-muted-foreground">Build stunning portfolios in minutes</span>
           <ChevronRight className="w-3 h-3 text-muted-foreground" />
         </motion.div>
+
+        {/* Word-by-word reveal heading */}
         <motion.h1
-          initial="hidden" animate="show" variants={fadeUp} custom={1}
+          variants={titleContainer}
+          initial="hidden"
+          animate="show"
           className="mt-6 text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold tracking-tight leading-[1.05] max-w-4xl mx-auto"
         >
-          The portfolio you'd build,<br />
-          <span className="gradient-text">if you had time.</span>
+          {"The portfolio you'd build,".split(" ").map((word, i) => (
+            <motion.span key={i} variants={titleWord} className="inline-block mr-2.5 sm:mr-3.5">
+              {word}
+            </motion.span>
+          ))}
+          <br />
+          {"if you had time.".split(" ").map((word, i) => (
+            <motion.span key={i} variants={titleWord} className="inline-block mr-2.5 sm:mr-3.5 gradient-text">
+              {word}
+            </motion.span>
+          ))}
         </motion.h1>
+
         <motion.p
-          initial="hidden" animate="show" variants={fadeUp} custom={2}
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto"
         >
           Pick a template, edit visually, and ship a polished site in under 5 minutes. Let the AI co-pilot refine your story.
         </motion.p>
-        <motion.div initial="hidden" animate="show" variants={fadeUp} custom={3} className="mt-8 flex items-center justify-center gap-3 flex-wrap">
-          <Button as={Link} to="/signup" size="lg">
-            Build mine free <ArrowRight className="w-4 h-4" />
+
+        <motion.div 
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.75, ease: [0.16, 1, 0.3, 1] }}
+          className="mt-8 flex items-center justify-center gap-3 flex-wrap"
+        >
+          <Button 
+            as={Link} 
+            to="/signup" 
+            size="lg" 
+            magnetic 
+            onMouseEnter={() => setArrowHovered(true)}
+            onMouseLeave={() => setArrowHovered(false)}
+            className="gradient-shimmer shadow-glow hover:scale-[1.02] font-semibold"
+          >
+            Build mine free 
+            <motion.span 
+              animate={{ x: arrowHovered ? 4 : 0 }} 
+              transition={{ type: "spring", stiffness: 300, damping: 15 }}
+              className="inline-block"
+            >
+              <ArrowRight className="w-4 h-4 ml-1" />
+            </motion.span>
           </Button>
         </motion.div>
-        <motion.div initial="hidden" animate="show" variants={fadeUp} custom={4} className="mt-3 text-xs text-muted-foreground">
+        
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.9, duration: 0.5 }}
+          className="mt-3 text-xs text-muted-foreground"
+        >
           No credit card · 100% free forever · No paywalls
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, y: 60 }}
+          initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.9, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 1, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
           className="relative mt-16 max-w-5xl mx-auto"
         >
-          <div className="absolute -inset-4 bg-gradient-to-r from-brand/30 via-brand-3/20 to-brand-2/30 blur-3xl rounded-3xl" />
-          <GlassCard className="relative p-2 rounded-3xl">
+          <div className="absolute -inset-4 bg-gradient-to-r from-brand/25 via-brand-3/15 to-brand-2/25 blur-3xl rounded-3xl" />
+          <GlassCard className="relative p-2 rounded-3xl" glow>
             <div className="rounded-2xl border border-border bg-background/80 overflow-hidden">
               <div className="h-9 px-4 flex items-center gap-2 border-b border-border/60 bg-background/60">
                 <span className="w-2.5 h-2.5 rounded-full bg-red-400/80" />
@@ -96,8 +202,8 @@ function Hero() {
                 <div className="ml-3 text-xs text-muted-foreground">portfolio.ai/u/alexcarter</div>
               </div>
               <div className="grid md:grid-cols-[1fr_320px]">
-                <div className="p-8">
-                  <div className="text-xs text-muted-foreground">Senior Product Designer</div>
+                <div className="p-8 text-left">
+                  <div className="text-xs text-muted-foreground font-medium">Senior Product Designer</div>
                   <h3 className="text-3xl md:text-4xl font-bold mt-1">Hi, I'm <span className="gradient-text">Alex.</span></h3>
                   <p className="text-sm text-muted-foreground mt-3 max-w-md">
                     I design human-centered products at the intersection of AI, design systems and motion.
@@ -106,15 +212,15 @@ function Hero() {
                     {["NebulaUI", "PromptForge", "Cartograph", "Lumen Notes"].map((p, i) => (
                       <motion.div key={p}
                         initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 + i * 0.1 }}
-                        className="rounded-xl border border-border p-3 text-left hover:shadow-glow transition">
+                        className="rounded-xl border border-border p-3 text-left hover:shadow-glow hover:border-brand/40 transition-all cursor-default">
                         <div className="text-sm font-medium">{p}</div>
                         <div className="text-[10px] text-muted-foreground mt-1">React · Motion</div>
                       </motion.div>
                     ))}
                   </div>
                 </div>
-                <div className="border-t md:border-t-0 md:border-l border-border/60 p-4 space-y-3 bg-secondary/30">
-                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">AI co-pilot</div>
+                <div className="border-t md:border-t-0 md:border-l border-border/60 p-4 space-y-3 bg-secondary/30 text-left">
+                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">AI co-pilot</div>
                   {[
                     "Rewriting hero in a confident voice…",
                     "Suggesting 3 projects to feature",
@@ -215,17 +321,24 @@ function BentoFeatures() {
           {items.map((it, i) => (
             <motion.div
               key={it.title}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.5, delay: i * 0.05 }}
-              className={`relative rounded-2xl glass p-6 overflow-hidden hover:shadow-glow transition group ${it.className || ""}`}
+              whileHover={{ y: -6, scale: 1.015, boxShadow: "var(--shadow-glow)" }}
+              transition={{ 
+                type: "spring", 
+                stiffness: 280, 
+                damping: 22,
+                opacity: { duration: 0.5, delay: i * 0.05 },
+                y: { duration: 0.5, delay: i * 0.05 }
+              }}
+              className={`relative rounded-2xl glass p-6 overflow-hidden transition-all group ${it.className || ""}`}
             >
-              <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-brand/20 blur-3xl group-hover:bg-brand/40 transition" />
+              <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-brand/20 blur-3xl group-hover:bg-brand/35 transition-all duration-500" />
               <div className="relative">
-                <div className="w-10 h-10 rounded-lg gradient-bg flex items-center justify-center text-white"><it.icon className="w-5 h-5" /></div>
+                <div className="w-10 h-10 rounded-lg gradient-bg flex items-center justify-center text-white shadow-sm"><it.icon className="w-5 h-5" /></div>
                 <div className="text-lg font-semibold mt-4">{it.title}</div>
-                <div className="text-sm text-muted-foreground mt-1">{it.desc}</div>
+                <div className="text-sm text-muted-foreground mt-1 leading-relaxed">{it.desc}</div>
               </div>
             </motion.div>
           ))}

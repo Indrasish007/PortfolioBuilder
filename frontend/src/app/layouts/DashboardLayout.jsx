@@ -189,7 +189,7 @@ export default function DashboardLayout() {
   };
 
   return (
-    <div className="relative min-h-screen flex bg-background">
+    <div className="relative min-h-screen flex bg-transparent">
       <div className="absolute inset-0 -z-10 hero-bg opacity-40" />
 
       {/* Backdrop overlay on mobile */}

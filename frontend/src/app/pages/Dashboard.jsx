@@ -23,12 +23,72 @@ function relativeTime(dateStr) {
   return `${d}d ago`;
 }
 
-// stats will be fetched from backend
+/* ── Animated Counter Component ── */
+function AnimatedCounter({ value }) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    let start = 0;
+    const end = parseInt(value, 10);
+    if (isNaN(end) || end === 0) {
+      setCount(value);
+      return;
+    }
+    
+    const duration = 1000; // ms
+    const increment = end / (duration / 16); // ~60fps
+    let current = 0;
+
+    const timer = setInterval(() => {
+      current += increment;
+      if (current >= end) {
+        clearInterval(timer);
+        setCount(end);
+      } else {
+        setCount(Math.floor(current));
+      }
+    }, 16);
+
+    return () => clearInterval(timer);
+  }, [value]);
+
+  return <span>{count}</span>;
+}
+
+/* ── Skeleton Loaders ── */
+function StatSkeleton() {
+  return (
+    <div className="relative rounded-2xl glass p-5 overflow-hidden border border-border/40">
+      <div className="flex items-center justify-between">
+        <div className="h-3.5 w-24 rounded skeleton-loader" />
+        <div className="h-4.5 w-4.5 rounded-full skeleton-loader" />
+      </div>
+      <div className="h-8 w-16 rounded mt-3.5 skeleton-loader" />
+      <div className="h-3 w-10 rounded mt-2.5 skeleton-loader" />
+    </div>
+  );
+}
+
+export function PortfolioRowSkeleton() {
+  return (
+    <div className="p-4 flex items-center gap-3">
+      <div className="w-5 h-5 rounded skeleton-loader shrink-0" />
+      <div className="w-10 h-10 rounded-xl skeleton-loader shrink-0" />
+      <div className="flex-1 space-y-2">
+        <div className="h-4 w-44 rounded skeleton-loader" />
+        <div className="h-3 w-32 rounded skeleton-loader" />
+      </div>
+      <div className="h-9 w-16 rounded-lg skeleton-loader shrink-0" />
+      <div className="h-9 w-9 rounded-lg skeleton-loader shrink-0" />
+    </div>
+  );
+}
 
 export default function Dashboard() {
   const user = useAuthStore((s) => s.user);
   const [portfolios, setPortfolios] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(true);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -61,11 +121,14 @@ export default function Dashboard() {
         setLoading(false);
       }
 
+      setStatsLoading(true);
       try {
         const statsRes = await api.get('/portfolios/stats/dashboard/');
         setStatsData(statsRes.data);
       } catch (err) {
         console.error('Failed to load dashboard stats:', err);
+      } finally {
+        setStatsLoading(false);
       }
     }
     load();
@@ -197,24 +260,34 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {[
-          { label: "Total views", value: statsData.total_views, delta: "--", up: true, icon: Eye },
-          { label: "Unique visitors", value: statsData.unique_visitors, delta: "--", up: true, icon: MousePointerClick },
-          { label: "Resume downloads", value: statsData.resume_downloads, delta: "--", up: true, icon: Download },
-        ].map((s, i) => (
-          <motion.div key={s.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-            <GlassCard className="p-5">
-              <div className="flex items-center justify-between">
-                <div className="text-xs text-muted-foreground">{s.label}</div>
-                <s.icon className="w-4 h-4 text-muted-foreground" />
-              </div>
-              <div className="text-2xl font-bold mt-2">{s.value}</div>
-              <div className={`text-xs mt-1 inline-flex items-center gap-1 ${s.up ? "text-emerald-400" : "text-red-400"}`}>
-                <ArrowUp className="w-3 h-3" /> {s.delta}
-              </div>
-            </GlassCard>
-          </motion.div>
-        ))}
+        {statsLoading ? (
+          <>
+            <StatSkeleton />
+            <StatSkeleton />
+            <StatSkeleton />
+          </>
+        ) : (
+          [
+            { label: "Total views", value: statsData.total_views, delta: "--", up: true, icon: Eye },
+            { label: "Unique visitors", value: statsData.unique_visitors, delta: "--", up: true, icon: MousePointerClick },
+            { label: "Resume downloads", value: statsData.resume_downloads, delta: "--", up: true, icon: Download },
+          ].map((s, i) => (
+            <motion.div key={s.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+              <GlassCard className="p-5" hover={true}>
+                <div className="flex items-center justify-between">
+                  <div className="text-xs text-muted-foreground">{s.label}</div>
+                  <s.icon className="w-4 h-4 text-muted-foreground" />
+                </div>
+                <div className="text-2xl font-bold mt-2">
+                  <AnimatedCounter value={s.value} />
+                </div>
+                <div className={`text-xs mt-1 inline-flex items-center gap-1 ${s.up ? "text-emerald-400" : "text-red-400"}`}>
+                  <ArrowUp className="w-3 h-3" /> {s.delta}
+                </div>
+              </GlassCard>
+            </motion.div>
+          ))
+        )}
       </div>
 
       <div>
@@ -269,7 +342,11 @@ export default function Dashboard() {
           </div>
           <div className="divide-y divide-border/50">
             {loading ? (
-              <div className="p-6 text-center text-muted-foreground text-sm">Loading portfolios...</div>
+              <div className="divide-y divide-border/50 bg-background/5">
+                <PortfolioRowSkeleton />
+                <PortfolioRowSkeleton />
+                <PortfolioRowSkeleton />
+              </div>
             ) : filteredPortfolios.length === 0 ? (
               <div className="p-6 text-center text-muted-foreground text-sm">
                 No portfolios found.{" "}

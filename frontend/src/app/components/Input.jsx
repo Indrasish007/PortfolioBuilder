@@ -1,3 +1,5 @@
+import { motion, AnimatePresence } from "framer-motion";
+
 export default function Input({ label, hint, error, className = "", icon: Icon, ...props }) {
   return (
     <label className="block w-full">
@@ -10,7 +12,20 @@ export default function Input({ label, hint, error, className = "", icon: Icon, 
         />
       </div>
       {hint && !error && <span className="text-xs text-muted-foreground mt-1 block">{hint}</span>}
-      {error && <span className="text-xs text-destructive mt-1 block">{error}</span>}
+      
+      <AnimatePresence>
+        {error && (
+          <motion.span
+            initial={{ opacity: 0, height: 0, y: -4 }}
+            animate={{ opacity: 1, height: "auto", y: 0 }}
+            exit={{ opacity: 0, height: 0, y: -4 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+            className="text-xs text-destructive mt-1 block overflow-hidden font-medium"
+          >
+            {error}
+          </motion.span>
+        )}
+      </AnimatePresence>
     </label>
   );
 }

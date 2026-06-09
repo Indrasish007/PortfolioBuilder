@@ -1,5 +1,5 @@
 // frontend/src/hooks/usePortfolioSEO.js
-import { useEffect } from 'react';
+import { useEffect } from "react";
 
 /**
  * Dynamically injects all SEO meta tags for a public portfolio page.
@@ -22,11 +22,11 @@ export function usePortfolioSEO(seo) {
       const selector = `meta[${key}="${value}"]`;
       let el = document.querySelector(selector);
       if (!el) {
-        el = document.createElement('meta');
+        el = document.createElement("meta");
         el.setAttribute(key, value);
         document.head.appendChild(el);
       }
-      el.setAttribute('content', attrs.content);
+      el.setAttribute("content", attrs.content);
     };
 
     // ── Helper: upsert <link> tag ───────────────────────────
@@ -34,21 +34,21 @@ export function usePortfolioSEO(seo) {
       const selector = `link[rel="${attrs.rel}"]`;
       let el = document.querySelector(selector);
       if (!el) {
-        el = document.createElement('link');
-        el.setAttribute('rel', attrs.rel);
+        el = document.createElement("link");
+        el.setAttribute("rel", attrs.rel);
         document.head.appendChild(el);
       }
-      el.setAttribute('href', attrs.href);
+      el.setAttribute("href", attrs.href);
     };
 
     // ── Helper: upsert JSON-LD <script> ─────────────────────
     const setJsonLd = (schema) => {
-      const id = 'portfolio-schema-jsonld';
+      const id = "portfolio-schema-jsonld";
       let el = document.getElementById(id);
       if (!el) {
-        el = document.createElement('script');
+        el = document.createElement("script");
         el.id = id;
-        el.type = 'application/ld+json';
+        el.type = "application/ld+json";
         document.head.appendChild(el);
       }
       el.textContent = JSON.stringify(schema, null, 2);
@@ -56,12 +56,12 @@ export function usePortfolioSEO(seo) {
 
     // ── Meta Description ────────────────────────────────────
     if (seo.description) {
-      setMeta({ name: 'description', content: seo.description });
+      setMeta({ name: "description", content: seo.description });
     }
 
     // ── Canonical URL ───────────────────────────────────────
     if (seo.canonical_url) {
-      setLink({ rel: 'canonical', href: seo.canonical_url });
+      setLink({ rel: "canonical", href: seo.canonical_url });
     }
 
     // ── Open Graph Tags ─────────────────────────────────────
@@ -90,8 +90,8 @@ export function usePortfolioSEO(seo) {
 
     // ── Cleanup on unmount ──────────────────────────────────
     return () => {
-      document.title = 'PortfolioBuilder';
-      const schemaEl = document.getElementById('portfolio-schema-jsonld');
+      document.title = "PortfolioBuilder";
+      const schemaEl = document.getElementById("portfolio-schema-jsonld");
       if (schemaEl) schemaEl.remove();
       // Note: meta tags are intentionally left — overwritten by the next portfolio load
     };

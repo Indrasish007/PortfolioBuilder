@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Github, Twitter, Linkedin, Facebook, Instagram, Globe, FileText, ChevronDown, ChevronUp, Download } from "lucide-react";
+import { motion } from "framer-motion";
 import api from "../../services/api.js";
 import { detectTrafficSource } from "../../utils/attribution.js";
 
@@ -212,11 +213,39 @@ export function Tags({ items = [], bg, fg, radius = "999px", border }) {
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
       {items.map((s, i) => (
-        <span key={i} style={{ background: bg, color: fg, padding: "4px 12px", borderRadius: radius, fontSize: 12, border: border || "none", lineHeight: 1.5 }}>
+        <motion.span 
+          key={i} 
+          whileHover={{ y: -2, scale: 1.03, filter: "brightness(1.15)" }}
+          transition={{ type: "spring", stiffness: 400, damping: 15 }}
+          style={{ 
+            background: bg, 
+            color: fg, 
+            padding: "4px 12px", 
+            borderRadius: radius, 
+            fontSize: 12, 
+            border: border || "none", 
+            lineHeight: 1.5,
+            display: "inline-block",
+            cursor: "default"
+          }}
+        >
           {typeof s === "object" ? s.name : s}
-        </span>
+        </motion.span>
       ))}
     </div>
+  );
+}
+
+export function ScrollReveal({ children, delay = 0 }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-60px" }}
+      transition={{ duration: 0.7, delay, ease: [0.16, 1, 0.3, 1] }}
+    >
+      {children}
+    </motion.div>
   );
 }
 

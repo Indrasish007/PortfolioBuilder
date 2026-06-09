@@ -1,5 +1,5 @@
 import { Mail, Github, ExternalLink, Phone } from "lucide-react";
-import { Soc, Tags, FAQList, SectionLabel, sn, VideoEmbed, MusicEmbed, GalleryAlbum, trackProjectClick, handleScrollToSection } from "./shared.jsx";
+import { Soc, Tags, FAQList, SectionLabel, sn, VideoEmbed, MusicEmbed, GalleryAlbum, trackProjectClick, handleScrollToSection, ScrollReveal } from "./shared.jsx";
 
 // developer, obsidian, architect, terminal
 export default function SidebarLayout({ p, t, id, portfolioId }) {
@@ -176,7 +176,15 @@ export default function SidebarLayout({ p, t, id, portfolioId }) {
           {/* Mobile: horizontal layout */}
           <div className="sidebar-layout-aside-content">
             {u.avatar && (
-              <img src={u.avatar} alt={`${u.name || "User"} profile picture`} loading="lazy" className="sidebar-layout-avatar" />
+              <img 
+                src={u.avatar} 
+                alt={`${u.name || "User"} profile picture`} 
+                loading="lazy" 
+                className="sidebar-layout-avatar" 
+                style={{ transition: "transform 0.5s ease" }}
+                onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.03)"}
+                onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
+              />
             )}
             <div className="sidebar-layout-aside-info">
               <h1 className="sidebar-layout-name">{u.name}</h1>
@@ -208,7 +216,7 @@ export default function SidebarLayout({ p, t, id, portfolioId }) {
                 { label: "Experience", id: "experience", show: p.experience?.length > 0 },
                 { label: "Contact", id: "contact", show: !!(u.email || u.phone) }
               ].filter(item => item.show).map(s => (
-                <a key={s.label} href={`#${s.id}`} onClick={(e) => handleScrollToSection(e, s.id)} style={{ fontSize:12, color:"#fff", opacity:0.5, textDecoration:"none" }}
+                <a key={s.label} href={`#${s.id}`} onClick={(e) => handleScrollToSection(e, s.id)} style={{ fontSize:12, color:"#fff", opacity:0.5, textDecoration:"none", transition: "opacity 0.2s" }}
                   onMouseEnter={e=>e.currentTarget.style.opacity=1}
                   onMouseLeave={e=>e.currentTarget.style.opacity=0.5}>
                   {s.label}
@@ -221,239 +229,353 @@ export default function SidebarLayout({ p, t, id, portfolioId }) {
         {/* ── Main ── */}
         <main className="sidebar-layout-main">
 
-        {/* About / bio */}
-        {id === "terminal" ? (
-          <div id="about" style={{ marginBottom:36, padding:20, background:"#000", border:`1px solid ${ac}30`, borderRadius:4 }}>
-            <div style={{ color:ac, fontFamily:"ui-monospace,monospace", fontSize:12, lineHeight:2 }}>
-              <div><span style={{ opacity:0.4 }}>$ </span>cat about.txt</div>
-              <div style={{ marginTop:8, color:"#fff", opacity:0.8, whiteSpace: "pre-wrap" }}>{u.bio}</div>
-            </div>
-          </div>
-        ) : (
-          <div id="about" style={{ marginBottom:40 }}>
-            <p style={{ opacity:0.7, lineHeight:1.85, maxWidth:580, fontSize:15, whiteSpace: "pre-wrap" }}>{u.bio}</p>
-          </div>
-        )}
-
-        {/* Skills */}
-        {p.skills?.length > 0 && (
-          <div style={{ marginBottom:36 }} id="skills">
-            {lbl("Skills")}
-            {id === "terminal"
-              ? <div style={{ fontFamily:"ui-monospace,monospace", fontSize:12 }}>
-                  {p.skills.map((s,i)=><span key={i} style={{ marginRight:16, color:ac }}>{sn(s)}</span>)}
+          {/* About / bio */}
+          {id === "terminal" ? (
+            <ScrollReveal>
+              <div id="about" style={{ marginBottom:36, padding:20, background:"#000", border:`1px solid ${ac}30`, borderRadius:4 }}>
+                <div style={{ color:ac, fontFamily:"ui-monospace,monospace", fontSize:12, lineHeight:2 }}>
+                  <div><span style={{ opacity:0.4 }}>$ </span>cat about.txt</div>
+                  <div style={{ marginTop:8, color:"#fff", opacity:0.8, whiteSpace: "pre-wrap" }}>{u.bio}</div>
                 </div>
-              : <Tags items={p.skills} bg={`${ac}18`} fg={ac} radius={radius} />
-            }
-          </div>
-        )}
-
-        {/* Languages */}
-        {p.languages?.length > 0 && (
-          <div style={{ marginBottom:36 }}>
-            {lbl("Languages")}
-            {id === "terminal"
-              ? <div style={{ fontFamily:"ui-monospace,monospace", fontSize:12 }}>
-                  {p.languages.map((l,i)=><span key={i} style={{ marginRight:16, color:ac }}>{l.name} ({l.proficiency})</span>)}
-                </div>
-              : <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                  {p.languages.map((l, i) => (
-                    <span key={i} style={{ background: `${ac}08`, color: t.fg, padding: "4px 12px", borderRadius: radius, fontSize: 12, border: `1px solid ${ac}20`, lineHeight: 1.5 }}>
-                      {l.name} <span style={{ opacity: 0.5, fontSize: 11 }}>({l.proficiency})</span>
-                    </span>
-                  ))}
-                </div>
-            }
-          </div>
-        )}
-
-        {/* Experience */}
-        {p.experience?.length > 0 && (
-          <div style={{ marginBottom:36 }} id="experience">
-            {lbl("Experience")}
-            {p.experience.map((e,i) => (
-              <div key={i} style={{ marginBottom:24, paddingLeft:14, borderLeft:`2px solid ${ac}50` }}>
-                <div style={{ display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:4 }}>
-                  <h3 style={{ fontWeight:700, fontSize:"inherit", margin:0 }}>{e.role}</h3>
-                  <div style={{ fontSize:11, opacity:0.45 }}>{e.period}</div>
-                </div>
-                <div style={{ fontSize:12, color:ac, marginBottom:6 }}>{e.company}</div>
-                <div style={{ fontSize:13, opacity:0.7, lineHeight:1.75 }}>{e.description}</div>
               </div>
-            ))}
-          </div>
-        )}
+            </ScrollReveal>
+          ) : (
+            <ScrollReveal>
+              <div id="about" style={{ marginBottom:40 }}>
+                <p style={{ opacity:0.7, lineHeight:1.85, maxWidth:580, fontSize:15, whiteSpace: "pre-wrap" }}>{u.bio}</p>
+              </div>
+            </ScrollReveal>
+          )}
 
-        {/* Projects */}
-        {p.projects?.length > 0 && (
-          <div style={{ marginBottom:36 }} id="projects">
-            {lbl("Projects")}
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(min(260px,100%),1fr))", gap:16 }}>
-              {p.projects.map((proj,i) => (
-                <div key={i} style={{
-                  border: `1px solid ${ac}25`,
-                  borderTop: `2px solid ${ac}`,
-                  borderRadius: radius,
-                  padding: proj.image ? 0 : 18,
-                  background: `${ac}06`,
-                  transition:"transform 0.2s",
-                  overflow: "hidden", display: "flex", flexDirection: "column"
-                }}
-                  onMouseEnter={e=>e.currentTarget.style.transform="translateY(-2px)"}
-                  onMouseLeave={e=>e.currentTarget.style.transform="translateY(0)"}>
-                  {proj.image && (
-                    <img src={proj.image} alt={proj.title} loading="lazy" style={{ width: "100%", height: 140, objectFit: "cover", borderBottom: `1px solid ${ac}25` }} />
-                  )}
-                  <div style={{ padding: proj.image ? 18 : 0, flex: 1, display: "flex", flexDirection: "column" }}>
-                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
-                      <h3 style={{ fontWeight:700, fontSize:14, margin:0 }}>{proj.title}</h3>
-                      <div style={{ display:"flex", gap:8, opacity:0.5 }}>
-                        {proj.github && <a href={proj.github} target="_blank" rel="noreferrer" onClick={() => trackProjectClick(proj.id, 'github')} style={{ color:t.fg }}><Github size={12}/></a>}
-                        {proj.live   && <a href={proj.live}   target="_blank" rel="noreferrer" onClick={() => trackProjectClick(proj.id, 'live')} style={{ color:t.fg }}><ExternalLink size={12}/></a>}
+          {/* Skills */}
+          {p.skills?.length > 0 && (
+            <ScrollReveal>
+              <div style={{ marginBottom:36 }} id="skills">
+                {lbl("Skills")}
+                {id === "terminal"
+                  ? <div style={{ fontFamily:"ui-monospace,monospace", fontSize:12 }}>
+                      {p.skills.map((s,i)=><span key={i} style={{ marginRight:16, color:ac }}>{sn(s)}</span>)}
+                    </div>
+                  : <Tags items={p.skills} bg={`${ac}18`} fg={ac} radius={radius} />
+                }
+              </div>
+            </ScrollReveal>
+          )}
+
+          {/* Languages */}
+          {p.languages?.length > 0 && (
+            <ScrollReveal>
+              <div style={{ marginBottom:36 }}>
+                {lbl("Languages")}
+                {id === "terminal"
+                  ? <div style={{ fontFamily:"ui-monospace,monospace", fontSize:12 }}>
+                      {p.languages.map((l,i)=><span key={i} style={{ marginRight:16, color:ac }}>{l.name} ({l.proficiency})</span>)}
+                    </div>
+                  : <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                      {p.languages.map((l, i) => (
+                        <span key={i} style={{ background: `${ac}08`, color: t.fg, padding: "4px 12px", borderRadius: radius, fontSize: 12, border: `1px solid ${ac}20`, lineHeight: 1.5 }}>
+                          {l.name} <span style={{ opacity: 0.5, fontSize: 11 }}>({l.proficiency})</span>
+                        </span>
+                      ))}
+                    </div>
+                }
+              </div>
+            </ScrollReveal>
+          )}
+
+          {/* Experience */}
+          {p.experience?.length > 0 && (
+            <ScrollReveal>
+              <div style={{ marginBottom:36 }} id="experience">
+                {lbl("Experience")}
+                {p.experience.map((e,i) => (
+                  <div key={i} style={{ marginBottom:24, paddingLeft:14, borderLeft:`2px solid ${ac}50` }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:4 }}>
+                      <h3 style={{ fontWeight:700, fontSize:"inherit", margin:0 }}>{e.role}</h3>
+                      <div style={{ fontSize:11, opacity:0.45 }}>{e.period}</div>
+                    </div>
+                    <div style={{ fontSize:12, color:ac, marginBottom:6 }}>{e.company}</div>
+                    <div style={{ fontSize:13, opacity:0.7, lineHeight:1.75 }}>{e.description}</div>
+                  </div>
+                ))}
+              </div>
+            </ScrollReveal>
+          )}
+
+          {/* Projects */}
+          {p.projects?.length > 0 && (
+            <ScrollReveal>
+              <div style={{ marginBottom:36 }} id="projects">
+                {lbl("Projects")}
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(min(260px,100%),1fr))", gap:16 }}>
+                  {p.projects.map((proj,i) => (
+                    <div 
+                      key={i} 
+                      className="project-card-zoom-container"
+                      style={{
+                        border: `1px solid ${ac}25`,
+                        borderTop: `2px solid ${ac}`,
+                        borderRadius: radius,
+                        padding: proj.image ? 0 : 18,
+                        background: `${ac}06`,
+                        transition:"transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease, border-color 0.4s ease",
+                        overflow: "hidden", display: "flex", flexDirection: "column"
+                      }}
+                      onMouseEnter={e=>{
+                        e.currentTarget.style.transform="translateY(-4px)";
+                        e.currentTarget.style.borderColor=ac;
+                        e.currentTarget.style.boxShadow=`0 12px 28px ${ac}20`;
+                      }}
+                      onMouseLeave={e=>{
+                        e.currentTarget.style.transform="translateY(0)";
+                        e.currentTarget.style.borderColor=`${ac}25`;
+                        e.currentTarget.style.boxShadow="none";
+                      }}>
+                      {proj.image && (
+                        <img src={proj.image} alt={proj.title} loading="lazy" style={{ width: "100%", height: 140, objectFit: "cover", borderBottom: `1px solid ${ac}25` }} />
+                      )}
+                      <div style={{ padding: proj.image ? 18 : 0, flex: 1, display: "flex", flexDirection: "column" }}>
+                        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
+                          <h3 style={{ fontWeight:700, fontSize:14, margin:0 }}>{proj.title}</h3>
+                          <div style={{ display:"flex", gap:8, opacity:0.5 }}>
+                            {proj.github && <a href={proj.github} target="_blank" rel="noreferrer" onClick={() => trackProjectClick(proj.id, 'github')} style={{ color:t.fg }}><Github size={12}/></a>}
+                            {proj.live   && <a href={proj.live}   target="_blank" rel="noreferrer" onClick={() => trackProjectClick(proj.id, 'live')} style={{ color:t.fg }}><ExternalLink size={12}/></a>}
+                          </div>
+                        </div>
+                        <p style={{ fontSize:12, opacity:0.65, lineHeight:1.65, marginBottom:10 }}>{proj.description}</p>
+                        <div style={{ marginTop: "auto" }}>
+                          <Tags items={proj.tech||[]} bg={`${ac}15`} fg={ac} radius={radius} />
+                        </div>
                       </div>
                     </div>
-                    <p style={{ fontSize:12, opacity:0.65, lineHeight:1.65, marginBottom:10 }}>{proj.description}</p>
-                    <div style={{ marginTop: "auto" }}>
-                      <Tags items={proj.tech||[]} bg={`${ac}15`} fg={ac} radius={radius} />
-                    </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Blogs */}
-        {p.blogs?.length > 0 && (
-          <div style={{ marginBottom:36 }} id="blogs">
-            {lbl("Blogs")}
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(min(260px,100%),1fr))", gap:16 }}>
-              {p.blogs.map((b,i) => (
-                <div key={i} style={{
-                  border: `1px solid ${ac}25`,
-                  borderTop: `2px solid ${ac}`,
-                  borderRadius: radius,
-                  padding:18,
-                  background: `${ac}06`,
-                  transition:"transform 0.2s",
-                }}
-                  onMouseEnter={e=>e.currentTarget.style.transform="translateY(-2px)"}
-                  onMouseLeave={e=>e.currentTarget.style.transform="translateY(0)"}>
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
-                    <h3 style={{ fontWeight:700, fontSize:14, margin:0 }}>{b.title}</h3>
-                    {b.url && <a href={b.url} target="_blank" rel="noreferrer" style={{ color:t.fg }}><ExternalLink size={12}/></a>}
-                  </div>
-                  {b.date && <div style={{ fontSize:11, color:ac, marginBottom:6 }}>{b.date}</div>}
-                  <p style={{ fontSize:12, opacity:0.65, lineHeight:1.65 }}>{b.excerpt}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Education */}
-        {p.education?.length > 0 && (
-          <div style={{ marginBottom:36 }} id="education">
-            {lbl("Education")}
-            {p.education.map((e,i) => (
-              <div key={i} style={{ marginBottom:18, paddingLeft:14, borderLeft:`2px solid ${t.fg}15` }}>
-                <h3 style={{ fontWeight:600, fontSize:"inherit", margin:0 }}>{e.school}</h3>
-                <div style={{ fontSize:12, color:ac }}>{e.degree}</div>
-                <div style={{ fontSize:11, opacity:0.45 }}>{e.period}</div>
               </div>
-            ))}
-          </div>
-        )}
+            </ScrollReveal>
+          )}
 
-        {/* Services */}
-        {p.services?.length > 0 && (
-          <div style={{ marginBottom:36 }}>
-            {lbl("Services")}
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(min(220px,100%),1fr))", gap:16 }}>
-              {p.services.map((s,i) => (
-                <div key={i} style={{ border:`1px solid ${ac}20`, borderRadius:radius, padding:16 }}>
-                  <h3 style={{ fontWeight:600, fontSize:14, marginBottom:4, margin:0 }}>{s.name}</h3>
-                  {s.price && <div style={{ fontSize:12, color:ac, marginBottom:8 }}>{s.price}</div>}
-                  <p style={{ fontSize:12, opacity:0.65, lineHeight:1.65 }}>{s.description}</p>
+          {/* Blogs */}
+          {p.blogs?.length > 0 && (
+            <ScrollReveal>
+              <div style={{ marginBottom:36 }} id="blogs">
+                {lbl("Blogs")}
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(min(260px,100%),1fr))", gap:16 }}>
+                  {p.blogs.map((b,i) => (
+                    <div key={i} style={{
+                      border: `1px solid ${ac}25`,
+                      borderTop: `2px solid ${ac}`,
+                      borderRadius: radius,
+                      padding:18,
+                      background: `${ac}06`,
+                      transition:"transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease, border-color 0.4s ease",
+                    }}
+                      onMouseEnter={e=>{
+                        e.currentTarget.style.transform="translateY(-4px)";
+                        e.currentTarget.style.borderColor=ac;
+                        e.currentTarget.style.boxShadow=`0 12px 28px ${ac}20`;
+                      }}
+                      onMouseLeave={e=>{
+                        e.currentTarget.style.transform="translateY(0)";
+                        e.currentTarget.style.borderColor=`${ac}25`;
+                        e.currentTarget.style.boxShadow="none";
+                      }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
+                        <h3 style={{ fontWeight:700, fontSize:14, margin:0 }}>{b.title}</h3>
+                        {b.url && <a href={b.url} target="_blank" rel="noreferrer" style={{ color:t.fg }}><ExternalLink size={12}/></a>}
+                      </div>
+                      {b.date && <div style={{ fontSize:11, color:ac, marginBottom:6 }}>{b.date}</div>}
+                      <p style={{ fontSize:12, opacity:0.65, lineHeight:1.65 }}>{b.excerpt}</p>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
+              </div>
+            </ScrollReveal>
+          )}
 
-        {/* Testimonials */}
-        {p.testimonials?.length > 0 && (
-          <div style={{ marginBottom:36 }}>
-            {lbl("Testimonials")}
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(min(260px,100%),1fr))", gap:16 }}>
-              {p.testimonials.map((tt,i) => (
-                <blockquote key={i} style={{ border:`1px solid ${ac}20`, borderRadius:radius, padding:16, margin:0, fontStyle:"italic", fontSize:13, lineHeight:1.75 }}>
-                  "{tt.quote}"
-                  <div style={{ marginTop:10, fontStyle:"normal", fontSize:11, color:ac }}>— {tt.name}, {tt.role}</div>
-                </blockquote>
-              ))}
-            </div>
-          </div>
-        )}
+          {/* Education */}
+          {p.education?.length > 0 && (
+            <ScrollReveal>
+              <div style={{ marginBottom:36 }} id="education">
+                {lbl("Education")}
+                {p.education.map((e,i) => (
+                  <div key={i} style={{ marginBottom:18, paddingLeft:14, borderLeft:`2px solid ${t.fg}15` }}>
+                    <h3 style={{ fontWeight:600, fontSize:"inherit", margin:0 }}>{e.school}</h3>
+                    <div style={{ fontSize:12, color:ac }}>{e.degree}</div>
+                    <div style={{ fontSize:11, opacity:0.45 }}>{e.period}</div>
+                  </div>
+                ))}
+              </div>
+            </ScrollReveal>
+          )}
 
-        {/* FAQ */}
-        {p.faqs?.length > 0 && (
-          <div style={{ marginBottom:36 }}>
-            {lbl("FAQ")}
-            <FAQList faqs={p.faqs} fg={t.fg} />
-          </div>
-        )}
+          {/* Services */}
+          {p.services?.length > 0 && (
+            <ScrollReveal>
+              <div style={{ marginBottom:36 }}>
+                {lbl("Services")}
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(min(220px,100%),1fr))", gap:16 }}>
+                  {p.services.map((s,i) => (
+                    <div key={i} style={{ border:`1px solid ${ac}20`, borderRadius:radius, padding:16, transition: "all 0.3s ease" }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = ac;
+                        e.currentTarget.style.transform = "translateY(-2px)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = `${ac}20`;
+                        e.currentTarget.style.transform = "none";
+                      }}
+                    >
+                      <h3 style={{ fontWeight:600, fontSize:14, marginBottom:4, margin:0 }}>{s.name}</h3>
+                      {s.price && <div style={{ fontSize:12, color:ac, marginBottom:8 }}>{s.price}</div>}
+                      <p style={{ fontSize:12, opacity:0.65, lineHeight:1.65 }}>{s.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </ScrollReveal>
+          )}
 
-        {/* Gallery */}
-        {p.gallery?.length > 0 && (
-          <div style={{ marginBottom:36 }}>
-            {lbl("Gallery")}
-            <GalleryAlbum images={p.gallery} fg={t.fg} />
-          </div>
-        )}
+          {/* Testimonials */}
+          {p.testimonials?.length > 0 && (
+            <ScrollReveal>
+              <div style={{ marginBottom:36 }}>
+                {lbl("Testimonials")}
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(min(260px,100%),1fr))", gap:16 }}>
+                  {p.testimonials.map((tt,i) => (
+                    <blockquote key={i} style={{ border:`1px solid ${ac}20`, borderRadius:radius, padding:16, margin:0, fontStyle:"italic", fontSize:13, lineHeight:1.75, transition: "all 0.3s ease" }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = ac;
+                        e.currentTarget.style.transform = "translateY(-2px)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = `${ac}20`;
+                        e.currentTarget.style.transform = "none";
+                      }}
+                    >
+                      "{tt.quote}"
+                      <div style={{ marginTop:10, fontStyle:"normal", fontSize:11, color:ac }}>— {tt.name}, {tt.role}</div>
+                    </blockquote>
+                  ))}
+                </div>
+              </div>
+            </ScrollReveal>
+          )}
 
-        {/* Videos */}
-        {p.videos?.length > 0 && (
-          <div style={{ marginBottom:36 }}>
-            {lbl("Videos")}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
-              {p.videos.map((v, i) => <VideoEmbed key={i} url={v} />)}
-            </div>
-          </div>
-        )}
+          {/* FAQ */}
+          {p.faqs?.length > 0 && (
+            <ScrollReveal>
+              <div style={{ marginBottom:36 }}>
+                {lbl("FAQ")}
+                <FAQList faqs={p.faqs} fg={t.fg} />
+              </div>
+            </ScrollReveal>
+          )}
 
-        {/* Music */}
-        {p.music?.length > 0 && (
-          <div style={{ marginBottom:36 }}>
-            {lbl("Music")}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
-              {p.music.map((m, i) => <MusicEmbed key={i} url={m} />)}
-            </div>
-          </div>
-        )}
+          {/* Gallery */}
+          {p.gallery?.length > 0 && (
+            <ScrollReveal>
+              <div style={{ marginBottom:36 }}>
+                {lbl("Gallery")}
+                <GalleryAlbum images={p.gallery} fg={t.fg} />
+              </div>
+            </ScrollReveal>
+          )}
 
-        {/* Contact */}
-        {(u.email || u.phone) && (
-          <div id="contact">
-            {lbl("Contact")}
-            <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>
-              {u.email && (
-                <a href={`mailto:${u.email}`}
-                  style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 24px",
-                    background: ac, color:"#000", borderRadius:radius, fontSize:13, textDecoration:"none", fontWeight:700 }}>
-                  <Mail size={14}/> {u.email}
-                </a>
-              )}
-              {u.phone && (
-                <a href={`tel:${u.phone}`}
-                  style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 24px",
-                    background: "transparent", color:ac, border:`1px solid ${ac}`, borderRadius:radius, fontSize:13, textDecoration:"none", fontWeight:700 }}>
-                  <Phone size={14}/> {u.phone}
-                </a>
-              )}
-            </div>
-          </div>
-        )}
+          {/* Videos */}
+          {p.videos?.length > 0 && (
+            <ScrollReveal>
+              <div style={{ marginBottom:36 }}>
+                {lbl("Videos")}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
+                  {p.videos.map((v, i) => <VideoEmbed key={i} url={v} />)}
+                </div>
+              </div>
+            </ScrollReveal>
+          )}
+
+          {/* Music */}
+          {p.music?.length > 0 && (
+            <ScrollReveal>
+              <div style={{ marginBottom:36 }}>
+                {lbl("Music")}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
+                  {p.music.map((m, i) => <MusicEmbed key={i} url={m} />)}
+                </div>
+              </div>
+            </ScrollReveal>
+          )}
+
+          {/* Contact */}
+          {(u.email || u.phone) && (
+            <ScrollReveal>
+              <div id="contact">
+                {lbl("Contact")}
+                <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>
+                  {u.email && (
+                    <a href={`mailto:${u.email}`}
+                      style={{ 
+                        display:"inline-flex", 
+                        alignItems:"center", 
+                        gap:8, 
+                        padding:"11px 24px",
+                        background: ac, 
+                        color: t.bg, 
+                        borderRadius:radius, 
+                        fontSize:13, 
+                        textDecoration:"none", 
+                        fontWeight:700,
+                        boxShadow: `0 4px 14px ${ac}35`,
+                        transition: "all 0.3s ease"
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = "translateY(-2px)";
+                        e.currentTarget.style.filter = "brightness(1.08)";
+                        e.currentTarget.style.boxShadow = `0 8px 24px ${ac}55`;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = "none";
+                        e.currentTarget.style.filter = "none";
+                        e.currentTarget.style.boxShadow = `0 4px 14px ${ac}35`;
+                      }}
+                    >
+                      <Mail size={14}/> {u.email}
+                    </a>
+                  )}
+                  {u.phone && (
+                    <a href={`tel:${u.phone}`}
+                      style={{ 
+                        display:"inline-flex", 
+                        alignItems:"center", 
+                        gap:8, 
+                        padding:"11px 24px",
+                        background: "transparent", 
+                        color:ac, 
+                        border:`1px solid ${ac}`, 
+                        borderRadius:radius, 
+                        fontSize:13, 
+                        textDecoration:"none", 
+                        fontWeight:700,
+                        boxShadow: `0 4px 14px ${ac}15`,
+                        transition: "all 0.3s ease"
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = "translateY(-2px)";
+                        e.currentTarget.style.background = `color-mix(in srgb, ${ac} 10%, transparent)`;
+                        e.currentTarget.style.boxShadow = `0 8px 24px ${ac}30`;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = "none";
+                        e.currentTarget.style.background = "transparent";
+                        e.currentTarget.style.boxShadow = `0 4px 14px ${ac}15`;
+                      }}
+                    >
+                      <Phone size={14}/> {u.phone}
+                    </a>
+                  )}
+                </div>
+              </div>
+            </ScrollReveal>
+          )}
         </main>
       </div>
     </div>
