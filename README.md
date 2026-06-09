@@ -62,6 +62,9 @@ A comprehensive settings page for managing account info, linked social profiles 
 ### 📄 8. CV Preview & Export
 A dedicated CV/resume preview page that renders a printable, exportable version of the user's portfolio data — formatted as a clean resume document.
 
+### ✉️ 9. Real-Time Message Center & WebSocket Inbox
+Keep visitor inquiries organized with a fully-integrated Message Center. A live Django Channels & Daphne WebSocket pipeline broadcasts new incoming contact messages to the dashboard in real-time, complete with instant browser notifications, sound alerts, and live unread badges. The Message Center features search, portfolio-specific filtering, read/unread states, bulk delete/mark actions, and a premium double-pane layout with responsive sliding panels.
+
 ---
 
 ## 🏗️ System Architecture
@@ -71,13 +74,16 @@ The following diagram illustrates how the frontend app, backend API, databases, 
 ```mermaid
 graph TD
     A[Client Browser] <-->|HTTPS / JSON / JWT| B[React 19 + Vite Frontend]
+    A <-->|WS / JSON| Daphne[Daphne / ASGI Server]
     B <-->|Axios + Auto JWT Refresh| C[Django REST API Gateway]
+    Daphne <--> Channels[Django Channels]
     
     subgraph Django Backend Services
         C <--> D[Authentication Engine]
         C <--> E[Portfolio & Analytics Controller]
         C <--> F[AI Services / CV Parser]
         C <--> SEO[SEO & OG Image Service]
+        Channels <--> MSG[Message Consumer & Stats]
         
         F -->|pdfplumber / mammoth| F1[Resume Extraction]
     end
@@ -90,11 +96,11 @@ graph TD
     end
     
     subgraph Databases & Cache
-        D & E <--> I[(PostgreSQL / SQLite)]
+        D & E & MSG <--> I[(PostgreSQL / SQLite)]
     end
 
     classDef tech fill:#1f2937,stroke:#38bdf8,stroke-width:1px,color:#fff;
-    class A,B,C,G,GQ,H,I tech;
+    class A,B,C,G,GQ,H,I,Daphne,Channels tech;
 ```
 
 ---
@@ -121,6 +127,8 @@ graph TD
 | | [Django REST Framework](https://www.django-rest-framework.org/) | Clean RESTful API design, views, and serialization |
 | | [dj-rest-auth](https://dj-rest-auth.readthedocs.io/) & [SimpleJWT](https://django-rest-framework-simplejwt.readthedocs.io/) | Stateless JWT token-based authorization |
 | | [django-allauth](https://django-allauth.readthedocs.io/) | Advanced registration & social auth flows |
+| | [Django Channels](https://channels.readthedocs.io/) | ASGI WebSocket extension framework for real-time inbox pipeline |
+| | [Daphne](https://github.com/django/daphne) | Production ASGI server for serving HTTP and WebSockets |
 | | [Gunicorn](https://gunicorn.org/) | Production WSGI server |
 | **AI / Parsers** | [Google GenAI SDK](https://github.com/google/generative-ai-python) & [Groq SDK](https://github.com/groq/groq-python) | Dual-engine AI completions with automatic Gemini/Llama failover |
 | | [pdfplumber](https://github.com/jasonmc/pdfplumber) & [mammoth](https://github.com/mwilliamson/python-mammoth) | Rich text extractors for PDF & DOCX resumes |
@@ -147,7 +155,9 @@ PortfolioBuilder/
 │   │   ├── settings.py         # Django core settings
 │   │   └── urls.py             # Root URL API mapping
 │   ├── portfolios/             # Portfolio models, custom fields, and views
-│   │   ├── models.py           # Portfolio, Project, Experience, Analytics models
+│   │   ├── consumers.py        # WebSocket connection & live event dispatch handlers
+│   │   ├── models.py           # Portfolio, Project, Experience, Analytics, and Messages models
+│   │   ├── routing.py          # WebSocket URL routing pattern mapping
 │   │   ├── serializers.py      # DRF serializers with nested model support
 │   │   ├── services/           # seo.py, og_image.py, sitemap.py
 │   │   └── views.py            # CRUD views, geolocation trackers, slug routing
@@ -204,6 +214,7 @@ PortfolioBuilder/
 | `/templates` | `TemplateMarketplace.jsx` | Browse and apply portfolio layouts |
 | `/analytics` | `Analytics.jsx` | Real-time visitor analytics dashboard |
 | `/cv-preview` | `CVPreview.jsx` | Printable CV/resume preview & export |
+| `/messages` | `Messages.jsx` | Real-time WebSocket-powered message inbox |
 | `/settings` | `Settings.jsx` | Account, profile & email settings |
 | `/help` | `HelpCenter.jsx` | Support docs & contact ticket form |
 
@@ -274,6 +285,9 @@ Make sure you have the following installed on your machine:
     EMAIL_USE_TLS=True
     EMAIL_HOST_USER=your_email@gmail.com
     EMAIL_HOST_PASSWORD=your_app_password
+
+    # Optional: Redis URL for WebSocket Channel Layer (falls back to InMemory in local dev if empty)
+    REDIS_URL=redis://127.0.0.1:6379
     ```
 
 5.  **Run migrations**:
@@ -314,6 +328,7 @@ Make sure you have the following installed on your machine:
     Create a `.env` file in the `frontend/` directory:
     ```env
     VITE_API_URL=http://localhost:8000/api
+    VITE_WS_URL=ws://localhost:8000  # optional, falls back to converting VITE_API_URL protocol
     ```
 
 4.  **Start the frontend development server**:
@@ -338,13 +353,16 @@ To deploy on Render:
 3. Connect your repository. Render will automatically:
    - Deploy the Django application as a web service.
    - Run `build.sh` (installing packages and collecting static assets).
-   - Execute `run_migrations.py` before starting the Gunicorn WSGI server.
+   - Execute `run_migrations.py` before starting the Gunicorn WSGI server or Daphne ASGI server.
 4. Set the following environment variables in Render's dashboard:
    - `GROQ_API_KEY`, `GEMINI_API_KEY` (optional), `RESEND_API_KEY` (optional)
    - `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
    - `CORS_ALLOWED_ORIGINS` (your deployed frontend URL)
    - `DATABASE_URL` (Render managed PostgreSQL)
+   - `REDIS_URL` or `REDIS_PRIVATE_URL` (Render managed Redis for WebSocket sync)
    - `DEBUG=False`
+
+> **Note**: For WebSockets to function in production, Daphne must be used as the start command instead of Gunicorn. Update your Render web service start command to: `python run_migrations.py && daphne -b 0.0.0.0 -p $PORT core.asgi:application`
 
 ### 2. Railway Deploy (`railway.json`)
 For quick, low-latency deployments:
