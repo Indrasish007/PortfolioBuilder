@@ -45,17 +45,6 @@ export const templates = [
     preview: { lines: [4, 6, 5, 7], dots: "emerald" },
   },
   {
-    id: "bold",
-    name: "Bold Typography",
-    tag: "Creative",
-    category: "Creative",
-    price: "Free",
-    color: "from-fuchsia-500 to-cyan-500",
-    accent: "#d946ef",
-    desc: "Glitch motion, neon grid, retro CRT vibes.",
-    preview: { lines: [7, 3, 8, 4], dots: "fuchsia" },
-  },
-  {
     id: "developer",
     name: "Developer / Tech",
     tag: "Code-first",

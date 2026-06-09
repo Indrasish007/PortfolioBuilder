@@ -19,7 +19,6 @@ const FAMILIES = {
   architect:     "sidebar",
   terminal:      "sidebar",
 
-  bold:          "bold",
   cyberpunk:     "bold",
   space:         "bold",
   retro:         "bold",
@@ -62,7 +61,6 @@ export const TEMPLATE_PALETTE = {
   terminal:      { bg: "#0d0d0d",  fg: "#e2e8f0",  ac: "#22c55e" },
 
   // ── Bold family ─────────────────────────────────────────────────────────
-  bold:          { bg: "#0f0814",  fg: "#faf5ff",  ac: "#f97316" },
   cyberpunk:     { bg: "#0d0a00",  fg: "#fefce8",  ac: "#facc15" },
   space:         { bg: "#0f0a1e",  fg: "#eef2ff",  ac: "#818cf8" },
   retro:         { bg: "#0d0020",  fg: "#fdf4ff",  ac: "#ec4899" },

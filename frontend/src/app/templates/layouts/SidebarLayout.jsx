@@ -19,7 +19,7 @@ export default function SidebarLayout({ p, t, id, portfolioId }) {
   );
 
   return (
-    <div style={{ background: t.bg, color: t.fg, fontFamily: font, minHeight: "100%" }}>
+    <div style={{ background: t.bg, color: t.fg, fontFamily: font, minHeight: "100%", overflowX: "hidden" }}>
       <style>{`
         .sidebar-layout-container {
           display: flex;

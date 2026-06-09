@@ -54,17 +54,11 @@ function FramePreview({ children, className, style, bg, fg }) {
         height: 100%;
         background-color: ${bg || "transparent"} !important;
         color: ${fg || "inherit"} !important;
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
       }
       ::-webkit-scrollbar {
-        width: 6px;
-        height: 6px;
-      }
-      ::-webkit-scrollbar-track {
-        background: transparent;
-      }
-      ::-webkit-scrollbar-thumb {
-        background: rgba(155, 155, 155, 0.3);
-        border-radius: 4px;
+        display: none !important;
       }
     `;
   }, [headNode, bg, fg]);

@@ -12,7 +12,6 @@ const TEMPLATE_DEFAULT_THEME = {
   obsidian: "noir",
   architect: "slate",
   terminal: "forest",
-  bold: "twilight",
   cyberpunk: "neon",
   space: "twilight",
   retro: "twilight",

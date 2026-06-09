@@ -497,3 +497,12 @@ input:focus, select:focus, textarea:focus {
 .project-card-zoom-container:hover img {
   transform: scale(1.08) !important;
 }
+
+/* Hide scrollbar on public portfolios */
+.public-portfolio {
+  scrollbar-width: none !important; /* Firefox */
+  -ms-overflow-style: none !important; /* IE/Edge */
+}
+.public-portfolio::-webkit-scrollbar {
+  display: none !important; /* Chrome/Safari/Webkit */
+}
