@@ -12,6 +12,7 @@ import {
   Globe,
   Star
 } from "lucide-react";
+import { motion } from "framer-motion";
 import GlassCard from "./GlassCard.jsx";
 import Badge from "./Badge.jsx";
 
@@ -158,10 +159,82 @@ export default function AboutSection() {
   ];
 
   return (
-    <section id="about" className="relative py-24 overflow-hidden border-y border-border/50 bg-background/50">
+    <section id="about" className="relative py-24 border-b border-border/50">
+      {/* Translucent background with top fade out to allow hero glows to flow behind */}
+      <div className="absolute inset-0 bg-gradient-to-b from-background/50 to-background/50 pointer-events-none -z-20"
+           style={{
+             maskImage: 'linear-gradient(to bottom, transparent 0%, black 200px)',
+             WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 200px)'
+           }}
+      />
+
+      {/* Extremely subtle blurred divider line */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-[1px] bg-gradient-to-r from-transparent via-border/5 to-transparent blur-[3px] opacity-30 pointer-events-none" />
+
+      {/* Top transition blend from Hero section (radial + linear gradient) */}
+      <div className="absolute top-0 left-0 right-0 h-[400px] pointer-events-none -z-10"
+           style={{
+             background: `
+               radial-gradient(circle at 50% 0%, rgba(168, 85, 247, 0.18), rgba(59, 130, 246, 0.12), transparent 70%),
+               linear-gradient(180deg, transparent, rgba(124, 58, 237, 0.08), rgba(6, 182, 212, 0.06), transparent)
+             `
+           }}
+      />
+
+      {/* Grid pattern continuation */}
+      <div className="absolute inset-x-0 top-0 h-[250px] grid-pattern pointer-events-none -z-10"
+           style={{
+             opacity: 0.3,
+             maskImage: 'linear-gradient(to bottom, black, transparent)',
+             WebkitMaskImage: 'linear-gradient(to bottom, black, transparent)'
+           }}
+      />
+
+      {/* Floating Ambient Glow Blobs */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden -z-10">
+        {/* Purple blob top-left */}
+        <div className="absolute top-[15%] left-[-10%] w-[450px] h-[450px] rounded-full bg-brand/8 blur-[120px] pointer-events-none animate-float" style={{ animationDelay: '0s', animationDuration: '12s' }} />
+        {/* Cyan blob middle-right */}
+        <div className="absolute top-[40%] right-[-10%] w-[500px] h-[500px] rounded-full bg-brand-2/6 blur-[140px] pointer-events-none animate-float" style={{ animationDelay: '-4s', animationDuration: '15s' }} />
+        {/* Indigo/Pink blob bottom-left */}
+        <div className="absolute bottom-[10%] left-[5%] w-[400px] h-[400px] rounded-full bg-brand-3/8 blur-[110px] pointer-events-none animate-float" style={{ animationDelay: '-8s', animationDuration: '10s' }} />
+      </div>
+
+      {/* Floating Light Particles matching Hero */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden -z-10">
+        {[
+          { size: 12, top: "15%", left: "80%", delay: 1 },
+          { size: 16, top: "45%", left: "15%", delay: 3.5 },
+          { size: 10, top: "75%", left: "75%", delay: 2 },
+          { size: 14, top: "85%", left: "25%", delay: 0.5 }
+        ].map((p, idx) => (
+          <motion.div
+            key={idx}
+            className="absolute rounded-full bg-brand/25 blur-sm"
+            style={{
+              width: p.size,
+              height: p.size,
+              top: p.top,
+              left: p.left,
+            }}
+            animate={{
+              y: [0, -40, 0],
+              x: [0, 20, 0],
+              opacity: [0.2, 0.6, 0.2],
+            }}
+            transition={{
+              duration: 10 + idx * 4,
+              repeat: Infinity,
+              delay: p.delay,
+              ease: "easeInOut"
+            }}
+          />
+        ))}
+      </div>
+
       {/* Background radial gradient glow for a premium look */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-brand/5 to-transparent pointer-events-none" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-brand-2/5 blur-3xl pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-brand/5 to-transparent pointer-events-none -z-10" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-brand-2/5 blur-3xl pointer-events-none -z-10" />
 
       <div className="relative max-w-7xl mx-auto px-5">
 
