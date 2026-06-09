@@ -334,7 +334,7 @@ function MinimalTemplate({ p, t, id, portfolioId }) {
         {/* Hero */}
         <m.div id="about" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} style={{ display: "flex", flexDirection: "column", gap: 16, marginTop: 40, marginBottom: 100 }}>
           {u.avatar && (
-            <img src={u.avatar} alt={u.name} style={{ width: 80, height: 80, borderRadius: "50%", objectFit: "cover", border: `1px solid ${t.fg}15`, marginBottom: 16 }} />
+            <img src={u.avatar} alt={u.name} style={{ width: 140, height: 140, borderRadius: "50%", objectFit: "cover", border: `1px solid ${t.fg}15`, marginBottom: 16 }} />
           )}
           <span style={{ fontSize: 12, letterSpacing: "0.2em", textTransform: "uppercase", opacity: 0.5 }}>{u.title}</span>
           <h1 style={{ fontSize: "clamp(32px, 8vw, 64px)", fontWeight: 300, letterSpacing: "-0.05em", margin: 0, lineHeight: 1 }}>{u.name}</h1>
@@ -604,7 +604,16 @@ function ScandinavianTemplate({ p, t, id, portfolioId }) {
           </div>
           {u.avatar && (
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-              <img src={u.avatar} alt={u.name} style={{ width: "100%", maxHeight: 380, objectFit: "cover", borderRadius: 32, border: `8px solid color-mix(in srgb, ${t.fg} 2%, ${t.bg})`, boxShadow: "0 20px 60px rgba(0,0,0,0.05)" }} />
+              <img src={u.avatar} alt={u.name} style={{ 
+                maxWidth: "200px", 
+                maxHeight: "240px", 
+                width: "auto", 
+                height: "auto", 
+                objectFit: "contain", 
+                borderRadius: 24, 
+                border: `6px solid color-mix(in srgb, ${t.fg} 2%, ${t.bg})`, 
+                boxShadow: "0 20px 60px rgba(0,0,0,0.05)" 
+              }} />
             </div>
           )}
         </m.div>
@@ -1080,8 +1089,16 @@ function PaperTemplate({ p, t, id, portfolioId }) {
         {/* Hero Bio */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 32, marginBottom: 40 }} className="md:grid-cols-3-override">
           {u.avatar && (
-            <div style={{ gridColumn: "span 1" }}>
-              <img src={u.avatar} alt={u.name} style={{ width: "100%", height: "auto", objectFit: "cover", border: `1px solid ${t.fg}`, filter: "sepia(0.2) contrast(1.1)" }} />
+            <div style={{ gridColumn: "span 1", display: "flex", justifyContent: "center", alignItems: "center" }}>
+              <img src={u.avatar} alt={u.name} style={{ 
+                maxWidth: "180px", 
+                maxHeight: "220px", 
+                width: "auto", 
+                height: "auto", 
+                objectFit: "contain", 
+                border: `1px solid ${t.fg}`, 
+                filter: "sepia(0.2) contrast(1.1)" 
+              }} />
             </div>
           )}
           <div style={{ gridColumn: u.avatar ? "span 2" : "span 3" }}>

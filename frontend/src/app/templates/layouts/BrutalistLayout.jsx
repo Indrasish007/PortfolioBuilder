@@ -508,7 +508,24 @@ function BrutalistTemplate({ p, t, id, portfolioId }) {
             </div>
             {u.avatar && (
               <div style={{ gridColumn: "span 1", display: "flex", justifyContent: "center", alignItems: "center" }}>
-                <img src={u.avatar} alt={u.name} style={{ width: "100%", maxHeight: 240, objectFit: "cover", border: border, boxShadow: `6px 6px 0px ${ac}` }} />
+                <div style={{ 
+                  background: t.bg, 
+                  border: border, 
+                  padding: 8, 
+                  boxShadow: `6px 6px 0px ${ac}`,
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  width: "fit-content"
+                }}>
+                  <img src={u.avatar} alt={u.name} style={{ 
+                    maxWidth: "100%", 
+                    maxHeight: 240, 
+                    width: "auto",
+                    height: "auto",
+                    objectFit: "contain"
+                  }} />
+                </div>
               </div>
             )}
           </div>

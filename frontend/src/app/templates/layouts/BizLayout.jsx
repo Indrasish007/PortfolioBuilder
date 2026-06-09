@@ -464,10 +464,10 @@ function StartupPitchTemplate({ p, t, id, portfolioId }) {
 
         {/* KPI Stats Grid */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 24, marginBottom: 100 }}>
-          {metrics.map((m, i) => (
+          {metrics.map((metric, i) => (
             <m.div key={i} className="startup-kpi-card" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.08 }}>
-              <div className="kpi-num" style={{ fontSize: 36, fontWeight: 900, marginBottom: 8 }}>{m.value}</div>
-              <div style={{ fontSize: 13, opacity: 0.6, fontWeight: 500 }}>{m.label}</div>
+              <div className="kpi-num" style={{ fontSize: 36, fontWeight: 900, marginBottom: 8 }}>{metric.value}</div>
+              <div style={{ fontSize: 13, opacity: 0.6, fontWeight: 500 }}>{metric.label}</div>
             </m.div>
           ))}
         </div>
@@ -569,8 +569,27 @@ function ClassicTemplate({ p, t, id, portfolioId }) {
             <BizSoc user={u} fg={t.fg} portfolioId={portfolioId} />
           </div>
           {u.avatar && (
-            <div style={{ gridColumn: "span 1", display: "flex", justifyContent: "center" }}>
-              <img src={u.avatar} alt={u.name} style={{ width: "100%", maxHeight: 280, objectFit: "cover", borderRadius: 8, border: `1px solid ${ac}40` }} />
+            <div style={{ gridColumn: "span 1", display: "flex", justifyContent: "center", alignItems: "center" }}>
+              <div style={{ 
+                background: `color-mix(in srgb, ${ac} 5%, ${t.bg})`, 
+                border: `1px solid ${ac}25`, 
+                borderRadius: 12, 
+                padding: 12, 
+                boxShadow: "0 20px 25px -5px rgba(0,0,0,0.15), 0 10px 10px -5px rgba(0,0,0,0.1)",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                width: "fit-content"
+              }}>
+                <img src={u.avatar} alt={u.name} style={{ 
+                  maxWidth: "100%", 
+                  maxHeight: 280, 
+                  width: "auto",
+                  height: "auto",
+                  objectFit: "contain", 
+                  borderRadius: 6 
+                }} />
+              </div>
             </div>
           )}
         </div>
@@ -637,7 +656,26 @@ function ForestTemplate({ p, t, id, portfolioId }) {
           </div>
           {u.avatar && (
             <div style={{ gridColumn: "span 1", display: "flex", justifyContent: "center", alignItems: "center" }}>
-              <img src={u.avatar} alt={u.name} style={{ width: "100%", maxHeight: 240, objectFit: "cover", borderRadius: 12, border: `2px solid ${ac}40` }} />
+              <div style={{ 
+                background: "rgba(255, 255, 255, 0.02)", 
+                border: `1px solid ${ac}30`, 
+                borderRadius: 16, 
+                padding: 12, 
+                boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                width: "fit-content"
+              }}>
+                <img src={u.avatar} alt={u.name} style={{ 
+                  maxWidth: "100%", 
+                  maxHeight: 240, 
+                  width: "auto",
+                  height: "auto",
+                  objectFit: "contain", 
+                  borderRadius: 10 
+                }} />
+              </div>
             </div>
           )}
         </div>
@@ -698,7 +736,26 @@ function OceanicTemplate({ p, t, id, portfolioId }) {
           </div>
           {u.avatar && (
             <div style={{ gridColumn: "span 1", display: "flex", justifyContent: "center", alignItems: "center" }}>
-              <img src={u.avatar} alt={u.name} style={{ width: "100%", maxHeight: 240, objectFit: "cover", borderRadius: "50%", border: `4px solid ${ac}20` }} />
+              <div style={{ 
+                background: "rgba(255, 255, 255, 0.03)", 
+                border: `2px solid ${ac}40`, 
+                borderRadius: 24, 
+                padding: 12, 
+                boxShadow: `0 20px 40px rgba(0, 0, 0, 0.3), 0 0 20px ${ac}20`,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                width: "fit-content"
+              }}>
+                <img src={u.avatar} alt={u.name} style={{ 
+                  maxWidth: "100%", 
+                  maxHeight: 240, 
+                  width: "auto",
+                  height: "auto",
+                  objectFit: "contain", 
+                  borderRadius: 16 
+                }} />
+              </div>
             </div>
           )}
         </div>
