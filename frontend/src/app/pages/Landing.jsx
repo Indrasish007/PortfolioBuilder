@@ -74,22 +74,7 @@ function Hero() {
 
   return (
     <section className="relative pt-20 pb-24 overflow-hidden">
-      <div className="absolute inset-0 hero-bg pointer-events-none" 
-           style={{
-             maskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)',
-             WebkitMaskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)'
-           }}
-      />
-
-      {/* Bottom transition blend to About section (radial + linear gradient) */}
-      <div className="absolute bottom-0 left-0 right-0 h-[300px] pointer-events-none"
-           style={{
-             background: `
-               radial-gradient(circle at 50% 100%, rgba(168, 85, 247, 0.18), rgba(59, 130, 246, 0.12), transparent 70%),
-               linear-gradient(180deg, transparent, rgba(124, 58, 237, 0.08))
-             `
-           }}
-      />
+      <div className="absolute inset-0 hero-bg pointer-events-none" />
       <div className="absolute inset-0 grid-pattern opacity-60 pointer-events-none" />
 
       {/* Floating Light Particles */}
