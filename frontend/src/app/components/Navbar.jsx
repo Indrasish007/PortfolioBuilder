@@ -111,7 +111,7 @@ export default function Navbar() {
         backdropFilter: useTransform(blur, (b) => `blur(${Math.max(b, 8)}px) saturate(160%)`),
         WebkitBackdropFilter: "blur(12px) saturate(160%)"
       }}
-      className="fixed top-0 md:top-4 inset-x-0 md:inset-x-auto md:w-[calc(100%-2.5rem)] md:max-w-5xl md:left-1/2 md:-translate-x-1/2 z-50 border-b md:border border-border/50 bg-background/35 md:rounded-full md:shadow-lg transition-all duration-300"
+      className="fixed top-3 md:top-4 inset-x-3 md:inset-x-auto md:w-[calc(100%-2.5rem)] md:max-w-5xl md:left-1/2 md:-translate-x-1/2 z-50 border border-border/30 bg-background/45 rounded-2xl md:rounded-full shadow-glow transition-all duration-300"
     >
       <div className="max-w-7xl mx-auto h-14 md:h-16 px-4 md:px-6 flex items-center justify-between">
         <motion.div 
@@ -187,7 +187,7 @@ export default function Navbar() {
       </div>
 
       {open && (
-        <div className="md:hidden border-t border-border/50 bg-background/95 backdrop-blur-2xl rounded-b-2xl">
+        <div className="md:hidden border-t border-border/30 bg-background/90 backdrop-blur-xl rounded-b-2xl">
           <div className="px-4 py-3 flex flex-col gap-1.5">
             {navItems.map((item) => {
               const Component = item.isAnchor ? "a" : Link;

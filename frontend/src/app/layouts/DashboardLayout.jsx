@@ -402,7 +402,7 @@ export default function DashboardLayout() {
 
       {/* ── Main content ── */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="sticky top-0 z-[1000] border-b border-border/60 bg-background/95 backdrop-blur-md shadow-sm transition-all duration-200">
+        <header className="sticky top-4 mx-4 sm:mx-6 lg:mx-8 z-[1000] rounded-2xl border border-border/30 bg-background/45 backdrop-blur-xl shadow-glow transition-all duration-200">
           <div className="h-[var(--header-height)] px-4 lg:px-6 flex items-center gap-3">
             {/* Hamburger trigger + Back / Title */}
             <div className="flex items-center gap-2">
