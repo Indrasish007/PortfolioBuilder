@@ -209,7 +209,7 @@ function BrutalistLayoutSections({ p, t, id }) {
       {p.education?.length > 0 && (
         <div style={{ marginBottom: 120 }}>
           <h2 style={titleStyle}>Academic Pathway</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 32 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(280px, 100%), 1fr))", gap: 32 }}>
             {p.education.map((edu, i) => (
               <div key={i} className={cardClass} style={cardStyle}>
                 <span style={{ fontSize: 12, color: id === "monochrome" ? "#666" : t.fg, opacity: id === "monochrome" ? 1 : 0.6, fontWeight: "bold" }}>{edu.period}</span>
@@ -225,7 +225,7 @@ function BrutalistLayoutSections({ p, t, id }) {
       {p.services?.length > 0 && (
         <div style={{ marginBottom: 120 }}>
           <h2 style={titleStyle}>Capabilities & Services</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 32 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(260px, 100%), 1fr))", gap: 32 }}>
             {p.services.map((s, i) => (
               <div key={i} className={cardClass} style={cardStyle}>
                 <h3 style={{ fontSize: 18, fontWeight: 900, textTransform: "uppercase", margin: "0 0 6px" }}>{s.name}</h3>
@@ -241,7 +241,7 @@ function BrutalistLayoutSections({ p, t, id }) {
       {p.testimonials?.length > 0 && (
         <div style={{ marginBottom: 120 }}>
           <h2 style={titleStyle}>Client Remarks</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 32 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(280px, 100%), 1fr))", gap: 32 }}>
             {p.testimonials.map((tt, i) => (
               <div key={i} className={cardClass} style={{ ...cardStyle, fontStyle: "italic" }}>
                 "{tt.quote}"
@@ -256,7 +256,7 @@ function BrutalistLayoutSections({ p, t, id }) {
       {p.blogs?.length > 0 && (
         <div style={{ marginBottom: 120 }}>
           <h2 style={titleStyle}>Selected Writings</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 32 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(280px, 100%), 1fr))", gap: 32 }}>
             {p.blogs.map((b, i) => (
               <div key={i} className={cardClass} style={cardStyle}>
                 {b.date && <div style={{ fontSize: 12, color: id === "monochrome" ? "#666" : t.fg, opacity: id === "monochrome" ? 1 : 0.6, marginBottom: 6, fontWeight: "bold" }}>{b.date}</div>}
@@ -421,7 +421,7 @@ function MonochromeTemplate({ p, t, id, portfolioId }) {
         {p.projects?.length > 0 && (
           <div id="projects" style={{ marginBottom: 120 }}>
             <h2 style={{ fontSize: 26, fontWeight: 900, textTransform: "uppercase", letterSpacing: "-0.02em", borderBottom: `2px solid ${t.fg || "#111"}`, paddingBottom: 12, marginBottom: 48 }}>Selected Works</h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(290px, 1fr))", gap: 32 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(290px, 100%), 1fr))", gap: 32 }}>
               {p.projects.map((proj, i) => (
                 <m.div key={i} className="mono-project-card" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1 }}>
                   {proj.image && (
@@ -535,7 +535,7 @@ function BrutalistTemplate({ p, t, id, portfolioId }) {
         {p.projects?.length > 0 && (
           <div id="projects" style={{ marginBottom: 40 }}>
             <h2 style={{ fontSize: 28, fontWeight: 900, textTransform: "uppercase", marginBottom: 24 }}>Projects</h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 24 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(260px, 100%), 1fr))", gap: 24 }}>
               {p.projects.map((proj, i) => (
                 <div key={i} style={{ border: border, padding: 24, background: t.bg, boxShadow: `6px 6px 0px ${ac}` }}>
                   <h3 style={{ fontSize: 18, fontWeight: 900, textTransform: "uppercase", margin: "0 0 12px" }}>{proj.title}</h3>

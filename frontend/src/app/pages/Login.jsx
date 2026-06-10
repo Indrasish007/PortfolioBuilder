@@ -36,12 +36,19 @@ export default function Login() {
       
       <form onSubmit={submit} className="space-y-4">
         <Input label="Email" type="email" icon={Mail} placeholder="you@company.com" value={email} onChange={(e) => setEmail(e.target.value)} />
-        <div className="relative">
-          <Input label="Password" type={show ? "text" : "password"} icon={Lock} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} />
-          <button type="button" onClick={() => setShow((s) => !s)} className="absolute right-3 top-[34px] text-muted-foreground hover:text-foreground">
-            {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-          </button>
-        </div>
+        <Input
+          label="Password"
+          type={show ? "text" : "password"}
+          icon={Lock}
+          placeholder="••••••••"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          rightElement={
+            <button type="button" onClick={() => setShow((s) => !s)} className="text-muted-foreground hover:text-foreground cursor-pointer">
+              {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          }
+        />
         <div className="flex items-center justify-between text-sm">
           <label className="flex items-center gap-2"><input type="checkbox" className="accent-[var(--brand)]" /> Remember me</label>
           <Link to="/forgot-password" className="text-brand hover:underline">Forgot password?</Link>

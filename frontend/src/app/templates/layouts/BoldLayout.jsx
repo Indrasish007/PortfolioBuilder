@@ -306,7 +306,7 @@ function BoldLayoutSections({ p, t, id }) {
           <h2 style={titleStyle} className={titleClassName}>
             {id === "cyberpunk" ? "// EDUCATION_LOGS" : id === "space" ? "ACADEMIC VECTOR" : id === "retro" ? "STUDY TIMELINE" : id === "neon" ? "ACADEMIC ARCHIVE" : "EDUCATION_NODES"}
           </h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 24 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(280px, 100%), 1fr))", gap: 24 }}>
             {p.education.map((edu, i) => (
               <div key={i} className={cardClass}>
                 <span style={{ fontSize: 12, opacity: 0.5 }}>{edu.period}</span>
@@ -324,7 +324,7 @@ function BoldLayoutSections({ p, t, id }) {
           <h2 style={titleStyle} className={titleClassName}>
             {id === "cyberpunk" ? "// SERVICE_PLUGINS" : id === "space" ? "SYSTEM SERVICES" : id === "retro" ? "ARCADE CAPABILITIES" : id === "neon" ? "SERVICE SHELLS" : "CAPABILITY_MATRICES"}
           </h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 24 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(260px, 100%), 1fr))", gap: 24 }}>
             {p.services.map((s, i) => (
               <div key={i} className={cardClass}>
                 <h3 style={{ fontSize: 18, fontWeight: 900, margin: "0 0 6px", textTransform: id === "cyberpunk" ? "uppercase" : "none" }}>{s.name}</h3>
@@ -342,7 +342,7 @@ function BoldLayoutSections({ p, t, id }) {
           <h2 style={titleStyle} className={titleClassName}>
             {id === "cyberpunk" ? "// CLIENT_FEEDBACK" : id === "space" ? "BEACON SIGNALS" : id === "retro" ? "GRID REFLECTIONS" : id === "neon" ? "CITIZEN REPORTS" : "FEEDBACK_VECTORS"}
           </h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 24 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(280px, 100%), 1fr))", gap: 24 }}>
             {p.testimonials.map((tt, i) => (
               <div key={i} className={cardClass} style={{ fontStyle: "italic" }}>
                 "{tt.quote}"
@@ -359,7 +359,7 @@ function BoldLayoutSections({ p, t, id }) {
           <h2 style={titleStyle} className={titleClassName}>
             {id === "cyberpunk" ? "// TERMINAL_LOGS" : id === "space" ? "MISSION JOURNALS" : id === "retro" ? "DATA DISPATCHES" : id === "neon" ? "SLATE RECORDS" : "JOURNAL_STREAMS"}
           </h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 24 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(280px, 100%), 1fr))", gap: 24 }}>
             {p.blogs.map((b, i) => (
               <div key={i} className={cardClass}>
                 {b.date && <div style={{ fontSize: 12, opacity: 0.4, marginBottom: 6 }}>{b.date}</div>}
@@ -549,7 +549,7 @@ function CyberpunkTemplate({ p, t, id, portfolioId }) {
         {p.projects?.length > 0 && (
           <div id="projects" style={{ marginBottom: 100 }}>
             <h2 style={{ fontSize: 24, letterSpacing: "0.1em", marginBottom: 36, borderLeft: "4px solid #ec4899", paddingLeft: 12 }}>// ACTIVE_MISSIONS</h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(290px, 1fr))", gap: 24 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(290px, 100%), 1fr))", gap: 24 }}>
               {p.projects.map((proj, i) => (
                 <m.div key={i} className="cyber-panel" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1 }} style={{ display: "flex", flexDirection: "column" }}>
                   {proj.image && (
@@ -710,7 +710,7 @@ function SpaceTemplate({ p, t, id, portfolioId }) {
         {p.projects?.length > 0 && (
           <div id="projects" style={{ marginBottom: 120 }}>
             <h2 style={{ fontSize: 24, fontWeight: 900, marginBottom: 48, textAlign: "center", letterSpacing: "0.1em" }}>ACTIVE MISSION FILES</h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(290px, 1fr))", gap: 28 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(290px, 100%), 1fr))", gap: 28 }}>
               {p.projects.map((proj, i) => (
                 <m.div key={i} className="space-card" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1 }} style={{ display: "flex", flexDirection: "column" }}>
                   {proj.image && (
@@ -890,7 +890,7 @@ function RetroTemplate({ p, t, id, portfolioId }) {
         {p.projects?.length > 0 && (
           <div id="projects" style={{ marginBottom: 120 }}>
             <h2 className="retro-header" style={{ fontSize: 28, fontWeight: 900, marginBottom: 48, textAlign: "center" }}>ARCADE SYSTEMS & JOBS</h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(290px, 1fr))", gap: 32 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(290px, 100%), 1fr))", gap: 32 }}>
               {p.projects.map((proj, i) => (
                 <m.div key={i} className="retro-card" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1 }} style={{ display: "flex", flexDirection: "column" }}>
                   {proj.image && (
@@ -1046,7 +1046,7 @@ function NeonTemplate({ p, t, id, portfolioId }) {
         {p.projects?.length > 0 && (
           <div id="projects" style={{ marginBottom: 120 }}>
             <h2 style={{ fontSize: 24, fontWeight: 900, marginBottom: 48, textAlign: "center", letterSpacing: "0.2em", textShadow: "0 0 8px #22d3ee" }}>DECENTRALIZED DATABASE</h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(290px, 1fr))", gap: 32 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(290px, 100%), 1fr))", gap: 32 }}>
               {p.projects.map((proj, i) => (
                 <m.div key={i} className="neon-card" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1 }} style={{ display: "flex", flexDirection: "column" }}>
                   {proj.image && (
@@ -1203,7 +1203,7 @@ function QuantumTemplate({ p, t, id, portfolioId }) {
         {p.projects?.length > 0 && (
           <div id="projects" style={{ marginBottom: 120 }}>
             <h2 style={{ fontSize: 24, fontWeight: 900, marginBottom: 48, textAlign: "center", letterSpacing: "0.1em", color: "#fff" }}>RESEARCH NODES</h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(290px, 1fr))", gap: 28 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(290px, 100%), 1fr))", gap: 28 }}>
               {p.projects.map((proj, i) => (
                 <m.div key={i} className="quantum-card" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1 }} style={{ display: "flex", flexDirection: "column" }}>
                   {proj.image && (

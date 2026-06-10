@@ -15,6 +15,7 @@ export default function Messages() {
   const [stats, setStats] = useState({ total: 0, unread: 0, this_month: 0, portfolios_receiving: 0 });
   const [portfolios, setPortfolios] = useState([]);
   const [selectedMessage, setSelectedMessage] = useState(null);
+  const [mobileView, setMobileView] = useState("list");
   
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -245,7 +246,10 @@ export default function Messages() {
         setSelectedMessage(prev => {
           const index = messages.findIndex(m => m.id === msg.id);
           const remaining = messages.filter(m => m.id !== msg.id);
-          if (remaining.length === 0) return null;
+          if (remaining.length === 0) {
+            setMobileView("list");
+            return null;
+          }
           return remaining[Math.min(index, remaining.length - 1)];
         });
         toast({ title: "Message Deleted", description: "Message deleted permanently.", type: "success" });
@@ -281,6 +285,7 @@ export default function Messages() {
       setMessages(prev => prev.filter(m => !selectedIds.includes(m.id)));
       if (selectedMessage && selectedIds.includes(selectedMessage.id)) {
         setSelectedMessage(null);
+        setMobileView("list");
       }
     }
 
@@ -465,7 +470,7 @@ export default function Messages() {
 
         {/* Split pane list and detail panels */}
         <div className="flex-1 flex flex-col md:flex-row min-h-0">
-          <div className="w-full md:w-[360px] border-r border-border/30 flex flex-col min-h-0 bg-background/25">
+          <div className={`w-full md:w-[360px] border-r border-border/30 flex flex-col min-h-0 bg-background/25 ${mobileView === "list" ? "block" : "hidden md:flex"}`}>
             <div 
               onScroll={handleListScroll}
               className="flex-1 overflow-y-auto p-2 space-y-2 min-h-0 max-h-[500px] md:max-h-none"
@@ -509,7 +514,7 @@ export default function Messages() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95 }}
                         transition={{ duration: 0.2 }}
-                        onClick={() => setSelectedMessage(msg)}
+                        onClick={() => { setSelectedMessage(msg); setMobileView("detail"); }}
                         className={`p-3 rounded-xl border transition-all cursor-pointer relative group flex gap-3 ${
                           selectedMessage?.id === msg.id ? "bg-brand/10 border-brand/50 shadow-sm" : "bg-card/5 hover:bg-card/25 border-border/20"
                         } ${!msg.is_read ? "font-semibold text-foreground" : "text-muted-foreground"}`}
@@ -565,10 +570,17 @@ export default function Messages() {
           </div>
 
           {/* Right Pane Detail Panel */}
-          <div className="flex-1 flex flex-col bg-background/5 min-h-[300px]">
+          <div className={`flex-1 flex flex-col bg-background/5 min-h-[300px] ${mobileView === "detail" ? "block" : "hidden md:flex"}`}>
             {selectedMessage ? (
               <div className="flex-1 flex flex-col min-h-0">
                 <div className="p-5 border-b border-border/30 flex items-start justify-between gap-4 flex-wrap bg-card/5">
+                  {/* Back button on mobile */}
+                  <button 
+                    onClick={() => setMobileView("list")}
+                    className="md:hidden w-full mb-3 py-2 px-4 rounded-xl border border-border/30 bg-background hover:bg-accent text-xs font-semibold flex items-center justify-center gap-2 transition"
+                  >
+                    ← Back to Inbox
+                  </button>
                   <div className="flex gap-3 items-start">
                     <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center text-white font-bold text-sm shadow-md">
                       {selectedMessage.sender_name?.[0]?.toUpperCase() || "V"}

@@ -299,6 +299,7 @@ export default function DashboardLayout() {
         sessionStorage.setItem("pendingParsedCV", JSON.stringify(parsedCV));
         setHasPendingCV(true);
         toast({ title: "CV Parsed!", description: "Review your details before importing.", type: "success" });
+        setSidebarOpen(false);
         navigate("/cv-preview", {
           state: { parsedCV },
         });

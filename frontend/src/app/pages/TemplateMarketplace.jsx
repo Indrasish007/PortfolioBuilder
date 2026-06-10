@@ -138,15 +138,21 @@ const DemoStrips = memo(function DemoStrips({ t }) {
 function TemplatePopup({ t, anchorRect, onSelect, onClose }) {
   const navigate = useNavigate();
 
+  const winW = window.innerWidth;
+  const isMobile = winW < 768;
+
   // Position popup to the right of the card (or left if near edge)
   const GAP = 16;
   const POPUP_W = 340;
-  const winW = window.innerWidth;
   const preferRight = anchorRect.right + GAP + POPUP_W < winW;
-  const left = preferRight
-    ? anchorRect.right + GAP
-    : anchorRect.left - GAP - POPUP_W;
-  const top = Math.max(16, Math.min(anchorRect.top, window.innerHeight - 520));
+  const left = isMobile
+    ? Math.max(16, (winW - Math.min(POPUP_W, winW - 32)) / 2)
+    : preferRight
+      ? anchorRect.right + GAP
+      : anchorRect.left - GAP - POPUP_W;
+  const top = isMobile
+    ? Math.max(16, (window.innerHeight - 500) / 2)
+    : Math.max(16, Math.min(anchorRect.top, window.innerHeight - 520));
 
   const handleSelect = () => {
     onSelect(t.id, t);
@@ -155,13 +161,13 @@ function TemplatePopup({ t, anchorRect, onSelect, onClose }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.94, x: preferRight ? -12 : 12 }}
-      animate={{ opacity: 1, scale: 1, x: 0 }}
-      exit={{ opacity: 0, scale: 0.92, x: preferRight ? -8 : 8 }}
+      initial={isMobile ? { opacity: 0, scale: 0.94, y: 20 } : { opacity: 0, scale: 0.94, x: preferRight ? -12 : 12 }}
+      animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
+      exit={isMobile ? { opacity: 0, scale: 0.92, y: 20 } : { opacity: 0, scale: 0.92, x: preferRight ? -8 : 8 }}
       transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed z-[200] w-[340px]"
-      style={{ top, left }}
-      onMouseLeave={onClose}
+      className="fixed z-[200]"
+      style={{ top, left, width: isMobile ? "calc(100vw - 32px)" : POPUP_W }}
+      onMouseLeave={isMobile ? undefined : onClose}
     >
       <div
         className="rounded-2xl overflow-hidden shadow-2xl"
@@ -635,7 +641,7 @@ export default function TemplateMarketplace() {
           </button>
         </motion.div>
       ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
           {filtered.map((t, i) => (
             <TemplateCard
               key={t.id}
@@ -650,13 +656,18 @@ export default function TemplateMarketplace() {
         </div>
       )}
 
-      {/* Floating popup */}
       <AnimatePresence>
         {popup && (
           <div
             key={popup.t.id}
-            style={{ position: "fixed", inset: 0, zIndex: 199, pointerEvents: "none" }}
+            style={{ position: "fixed", inset: 0, zIndex: 199, pointerEvents: window.innerWidth < 768 ? "auto" : "none" }}
           >
+            {window.innerWidth < 768 && (
+              <div 
+                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[198]" 
+                onClick={() => setPopup(null)}
+              />
+            )}
             <div style={{ pointerEvents: "auto" }} onMouseEnter={keepPopup} onMouseLeave={() => setPopup(null)}>
               <TemplatePopup
                 t={popup.t}

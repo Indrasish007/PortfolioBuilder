@@ -20,12 +20,18 @@ export default function ResetPassword() {
         onSubmit={(e) => { e.preventDefault(); toast({ title: "Password updated" }); navigate("/login"); }}
         className="mt-6 space-y-4"
       >
-        <div className="relative">
-          <Input label="New password" type={show ? "text" : "password"} icon={Lock} value={pw} onChange={(e) => setPw(e.target.value)} />
-          <button type="button" onClick={() => setShow((s) => !s)} className="absolute right-3 top-[34px] text-muted-foreground hover:text-foreground">
-            {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-          </button>
-        </div>
+        <Input
+          label="New password"
+          type={show ? "text" : "password"}
+          icon={Lock}
+          value={pw}
+          onChange={(e) => setPw(e.target.value)}
+          rightElement={
+            <button type="button" onClick={() => setShow((s) => !s)} className="text-muted-foreground hover:text-foreground cursor-pointer">
+              {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          }
+        />
         <Input label="Confirm password" type="password" icon={Lock} value={pw2} onChange={(e) => setPw2(e.target.value)} error={pw && pw2 && pw !== pw2 ? "Passwords don't match" : ""} />
         <Button type="submit" className="w-full" size="lg">Update password</Button>
       </form>

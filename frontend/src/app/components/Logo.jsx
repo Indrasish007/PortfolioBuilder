@@ -34,7 +34,7 @@ export default function Logo({ className = "", to = "/" }) {
             e.stopPropagation();
             setLogoPopupOpen(true);
           }}
-          className="tracking-tight md:hidden lg:inline hover:opacity-90 transition"
+          className="tracking-tight md:hidden lg:inline hover:opacity-90 transition whitespace-nowrap"
         >
           Portfolio<span className="gradient-text">Builder</span>
         </Link>

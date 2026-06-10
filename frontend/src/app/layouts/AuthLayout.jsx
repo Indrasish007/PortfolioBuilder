@@ -22,7 +22,10 @@ export default function AuthLayout() {
       <div className="flex flex-col">
         <div className="flex items-center justify-between p-5 lg:hidden">
           <Logo />
-          <ThemeToggle />
+          <div className="flex items-center gap-4">
+            <Link to="/" className="text-sm text-muted-foreground hover:text-foreground whitespace-nowrap">← Back home</Link>
+            <ThemeToggle />
+          </div>
         </div>
         <div className="hidden lg:flex items-center justify-end p-5 gap-3">
           <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">← Back home</Link>

@@ -65,12 +65,19 @@ export default function Signup() {
       <form onSubmit={submit} className="space-y-4">
         <Input label="Full name" icon={User} placeholder="Alex Carter" value={name} onChange={(e) => setName(e.target.value)} />
         <Input label="Email" type="email" icon={Mail} placeholder="you@company.com" value={email} onChange={(e) => setEmail(e.target.value)} />
-        <div className="relative">
-          <Input label="Password" type={show ? "text" : "password"} icon={Lock} placeholder="At least 8 characters" value={password} onChange={(e) => setPassword(e.target.value)} />
-          <button type="button" onClick={() => setShow((s) => !s)} className="absolute right-3 top-[34px] text-muted-foreground hover:text-foreground">
-            {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-          </button>
-        </div>
+        <Input
+          label="Password"
+          type={show ? "text" : "password"}
+          icon={Lock}
+          placeholder="At least 8 characters"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          rightElement={
+            <button type="button" onClick={() => setShow((s) => !s)} className="text-muted-foreground hover:text-foreground cursor-pointer">
+              {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          }
+        />
         <div className="flex gap-1">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className={`h-1 flex-1 rounded-full ${i < strength ? "gradient-bg" : "bg-border"}`} />

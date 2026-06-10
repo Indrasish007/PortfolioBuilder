@@ -218,7 +218,7 @@ function BizLayoutSections({ p, t, id }) {
       {p.education?.length > 0 && (
         <div style={{ marginBottom: 100 }}>
           <h2 style={titleStyle}>Academic Credentials</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 24 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(280px, 100%), 1fr))", gap: 24 }}>
             {p.education.map((edu, i) => (
               <div key={i} className={cardClass} style={{ ...cardStyle, textAlign: "left" }}>
                 <span style={{ fontSize: 12, opacity: 0.5 }}>{edu.period}</span>
@@ -234,7 +234,7 @@ function BizLayoutSections({ p, t, id }) {
       {p.services?.length > 0 && (
         <div style={{ marginBottom: 100 }}>
           <h2 style={titleStyle}>Service Offerings</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 24 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(260px, 100%), 1fr))", gap: 24 }}>
             {p.services.map((s, i) => (
               <div key={i} className={cardClass} style={{ ...cardStyle, textAlign: "left" }}>
                 <h3 style={{ fontSize: 18, fontWeight: 800, margin: "0 0 6px" }}>{s.name}</h3>
@@ -250,7 +250,7 @@ function BizLayoutSections({ p, t, id }) {
       {p.testimonials?.length > 0 && (
         <div style={{ marginBottom: 100 }}>
           <h2 style={titleStyle}>Customer Success Reviews</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 24 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(280px, 100%), 1fr))", gap: 24 }}>
             {p.testimonials.map((tt, i) => (
               <div key={i} className={cardClass} style={{ ...cardStyle, fontStyle: "italic", textAlign: "left" }}>
                 "{tt.quote}"
@@ -265,7 +265,7 @@ function BizLayoutSections({ p, t, id }) {
       {p.blogs?.length > 0 && (
         <div style={{ marginBottom: 100 }}>
           <h2 style={titleStyle}>Insights & Articles</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 24 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(280px, 100%), 1fr))", gap: 24 }}>
             {p.blogs.map((b, i) => (
               <div key={i} className={id === "startup" ? "startup-project-card" : ""} style={id !== "startup" ? cardStyle : {}}>
                 <div style={{ padding: 24, display: "flex", flexDirection: "column", height: "100%", boxSizing: "border-box" }}>
@@ -463,7 +463,7 @@ function StartupPitchTemplate({ p, t, id, portfolioId }) {
         </div>
 
         {/* KPI Stats Grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 24, marginBottom: 100 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(180px, 100%), 1fr))", gap: 24, marginBottom: 100 }}>
           {metrics.map((metric, i) => (
             <m.div key={i} className="startup-kpi-card" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.08 }}>
               <div className="kpi-num" style={{ fontSize: 36, fontWeight: 900, marginBottom: 8 }}>{metric.value}</div>
@@ -476,7 +476,7 @@ function StartupPitchTemplate({ p, t, id, portfolioId }) {
         {p.projects?.length > 0 && (
           <div id="projects" style={{ marginBottom: 100 }}>
             <h2 style={{ fontSize: 28, fontWeight: 900, marginBottom: 48, textAlign: "center", letterSpacing: "-0.02em" }}>Product & Engineering Features</h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(290px, 1fr))", gap: 32 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(290px, 100%), 1fr))", gap: 32 }}>
               {p.projects.map((proj, i) => (
                 <m.div key={i} className="startup-project-card" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1 }} style={{ display: "flex", flexDirection: "column" }}>
                   {proj.image && (
@@ -598,7 +598,7 @@ function ClassicTemplate({ p, t, id, portfolioId }) {
         {p.projects?.length > 0 && (
           <div id="projects" style={{ marginBottom: 60 }}>
             <h2 style={{ fontSize: 20, fontWeight: 800, borderBottom: `2px solid ${ac}`, paddingBottom: 6, marginBottom: 24 }}>Selected Work</h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 20 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(260px, 100%), 1fr))", gap: 20 }}>
               {p.projects.map((proj, i) => (
                 <div key={i} style={{ border: `1px solid ${ac}25`, borderRadius: 8, padding: 20, background: `${ac}04` }}>
                   <h3 style={{ fontSize: 16, fontWeight: 700, margin: "0 0 8px" }}>{proj.title}</h3>

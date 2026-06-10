@@ -323,7 +323,7 @@ export function GalleryAlbum({ images, fg }) {
 
   return (
     <>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: "12px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(120px, 100%), 1fr))", gap: "12px" }}>
         {images.map((img, i) => (
           <div key={i} onClick={() => setSelected(img)} style={{ aspectRatio: "1/1", cursor: "pointer", borderRadius: "8px", overflow: "hidden", border: `1px solid ${fg}20` }}>
             <img src={img} alt={`Gallery item ${i + 1}`} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.3s" }} onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.05)"} onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"} />

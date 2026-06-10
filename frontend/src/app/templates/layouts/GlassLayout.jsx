@@ -186,7 +186,7 @@ export default function GlassLayout({ p, t, id, portfolioId }) {
           <ScrollReveal>
             <div style={{ marginBottom: 48 }}>
               {lbl("Projects")}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 16 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(280px,100%),1fr))", gap: 16 }}>
                 {p.projects.map((proj, i) => (
                   <div
                     key={i}
@@ -239,7 +239,7 @@ export default function GlassLayout({ p, t, id, portfolioId }) {
           <ScrollReveal>
             <div style={{ marginBottom: 48 }}>
               {lbl("Blogs")}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 16 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(280px,100%),1fr))", gap: 16 }}>
                 {p.blogs.map((b, i) => (
                   <div key={i} style={{
                     ...card,
@@ -305,7 +305,7 @@ export default function GlassLayout({ p, t, id, portfolioId }) {
           <ScrollReveal>
             <div style={{ marginBottom: 48 }}>
               {lbl("Services")}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))", gap: 16 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(240px,100%),1fr))", gap: 16 }}>
                 {p.services.map((s, i) => (
                   <div key={i} style={{ ...card, padding: 22, transition: "all 0.3s ease" }}
                     onMouseEnter={(e) => {
@@ -332,7 +332,7 @@ export default function GlassLayout({ p, t, id, portfolioId }) {
           <ScrollReveal>
             <div style={{ marginBottom: 48 }}>
               {lbl("Testimonials")}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(260px,1fr))", gap: 16 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(260px,100%),1fr))", gap: 16 }}>
                 {p.testimonials.map((tt, i) => (
                   <blockquote key={i} style={{ ...card, padding: 22, margin: 0, fontStyle: "italic", fontSize: 14, lineHeight: 1.8, transition: "all 0.3s ease" }}
                     onMouseEnter={(e) => {

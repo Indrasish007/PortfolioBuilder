@@ -183,7 +183,7 @@ function CustomContactForm({ u, t, templateId, portfolioId }) {
           tabIndex="-1" 
           autoComplete="off" 
         />
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 20 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(200px, 100%), 1fr))", gap: 20 }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             <label style={{ fontSize: 11, textTransform: "uppercase", opacity: 0.5, letterSpacing: "0.1em" }}>Name</label>
             <input
@@ -415,7 +415,7 @@ function MinimalTemplate({ p, t, id, portfolioId }) {
         {p.services?.length > 0 && (
           <div className="minimal-section">
             <span className="minimal-title-label">04 / Services</span>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 20 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(220px, 100%), 1fr))", gap: 20 }}>
               {p.services.map((s, i) => (
                 <div key={i} style={{ border: `1px solid ${t.fg}10`, padding: 20, borderRadius: 0 }}>
                   <h4 style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 500 }}>{s.name}</h4>
@@ -431,7 +431,7 @@ function MinimalTemplate({ p, t, id, portfolioId }) {
         {p.testimonials?.length > 0 && (
           <div className="minimal-section">
             <span className="minimal-title-label">05 / Kind Words</span>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: 20 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(250px, 100%), 1fr))", gap: 20 }}>
               {p.testimonials.map((tt, i) => (
                 <blockquote key={i} style={{ borderLeft: `2px solid ${t.fg}`, paddingLeft: 16, margin: 0, fontStyle: "italic", fontSize: 14 }}>
                   "{tt.quote}"
@@ -446,7 +446,7 @@ function MinimalTemplate({ p, t, id, portfolioId }) {
         {p.blogs?.length > 0 && (
           <div className="minimal-section">
             <span className="minimal-title-label">06 / Dispatch & Writing</span>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: 24 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(250px, 100%), 1fr))", gap: 24 }}>
               {p.blogs.map((b, i) => (
                 <div key={i} style={{ borderBottom: `1px solid ${t.fg}10`, paddingBottom: 16 }}>
                   <h4 style={{ fontSize: 15, fontWeight: 500, margin: "0 0 6px" }}>{b.title}</h4>
@@ -625,7 +625,7 @@ function ScandinavianTemplate({ p, t, id, portfolioId }) {
               <h2 className="scand-title" style={{ marginBottom: 0 }}>Featured Projects</h2>
               <span style={{ fontSize: 14, opacity: 0.5 }}>Selected Work</span>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 24 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(280px, 100%), 1fr))", gap: 24 }}>
               {p.projects.map((proj, i) => (
                 <m.div key={i} className="scand-card" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1 }}>
                   {proj.image && (
@@ -669,7 +669,7 @@ function ScandinavianTemplate({ p, t, id, portfolioId }) {
         {p.education?.length > 0 && (
           <div className="scand-section">
             <h2 className="scand-title">Education</h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 20 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(280px, 100%), 1fr))", gap: 20 }}>
               {p.education.map((edu, i) => (
                 <div key={i} className="scand-card">
                   <span style={{ fontSize: 12, opacity: 0.5 }}>{edu.period}</span>
@@ -685,7 +685,7 @@ function ScandinavianTemplate({ p, t, id, portfolioId }) {
         {p.services?.length > 0 && (
           <div className="scand-section">
             <h2 className="scand-title">Services</h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 20 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(260px, 100%), 1fr))", gap: 20 }}>
               {p.services.map((s, i) => (
                 <div key={i} className="scand-card">
                   <h3 style={{ fontSize: 17, fontWeight: 700, margin: "0 0 6px" }}>{s.name}</h3>
@@ -701,7 +701,7 @@ function ScandinavianTemplate({ p, t, id, portfolioId }) {
         {p.testimonials?.length > 0 && (
           <div className="scand-section">
             <h2 className="scand-title">Kind Words</h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 20 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(280px, 100%), 1fr))", gap: 20 }}>
               {p.testimonials.map((tt, i) => (
                 <div key={i} className="scand-card" style={{ fontStyle: "italic" }}>
                   "{tt.quote}"
@@ -716,7 +716,7 @@ function ScandinavianTemplate({ p, t, id, portfolioId }) {
         {p.blogs?.length > 0 && (
           <div className="scand-section">
             <h2 className="scand-title">Dispatch & Articles</h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 24 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(280px, 100%), 1fr))", gap: 24 }}>
               {p.blogs.map((b, i) => (
                 <div key={i} className="scand-card">
                   {b.date && <div style={{ fontSize: 12, opacity: 0.4, marginBottom: 6 }}>{b.date}</div>}

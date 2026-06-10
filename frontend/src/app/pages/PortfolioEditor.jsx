@@ -75,6 +75,75 @@ function FramePreview({ children, className, style, bg, fg }) {
   );
 }
 
+function ScalablePreview({ device, bg, fg, children }) {
+  const containerRef = useRef(null);
+  const [scale, setScale] = useState(1);
+  const [containerHeight, setContainerHeight] = useState("100%");
+
+  const targetWidths = {
+    desktop: 1200,
+    tablet: 768,
+    mobile: 390
+  };
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const updateScale = () => {
+      const parent = containerRef.current.parentElement;
+      if (!parent) return;
+      const parentRect = parent.getBoundingClientRect();
+      const parentWidth = parentRect.width;
+      const parentHeight = parentRect.height;
+      const targetWidth = targetWidths[device];
+
+      if (parentWidth < targetWidth) {
+        const s = parentWidth / targetWidth;
+        setScale(s);
+        setContainerHeight(parentHeight / s);
+      } else {
+        setScale(1);
+        setContainerHeight("100%");
+      }
+    };
+
+    updateScale();
+    const observer = new ResizeObserver(updateScale);
+    if (containerRef.current.parentElement) {
+      observer.observe(containerRef.current.parentElement);
+    }
+    window.addEventListener("resize", updateScale);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", updateScale);
+    };
+  }, [device]);
+
+  const targetWidth = targetWidths[device];
+
+  return (
+    <div 
+      ref={containerRef}
+      className="w-full h-full flex items-center justify-center overflow-hidden"
+    >
+      <div
+        style={{
+          width: targetWidth,
+          height: containerHeight,
+          transform: `scale(${scale})`,
+          transformOrigin: "center center",
+          transition: "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), width 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+          willChange: "transform, width"
+        }}
+        className="flex-shrink-0 relative"
+      >
+        <FramePreview className="w-full h-full" bg={bg} fg={fg}>
+          {children}
+        </FramePreview>
+      </div>
+    </div>
+  );
+}
+
 const sectionTypes = ["About", "Skills", "Experience", "Education", "Projects", "Services", "Languages", "Awards", "Certifications", "Volunteer", "Testimonials", "References", "Blogs", "Gallery", "Videos", "Music", "FAQ", "Contact", "Custom"];
 
 export default function PortfolioEditor() {
@@ -514,15 +583,9 @@ export default function PortfolioEditor() {
           </div>
           {/* Preview content */}
           <div className="flex-1 overflow-hidden flex items-start justify-center bg-muted/30">
-            <motion.div
-              animate={{ width: { desktop: "100%", tablet: "768px", mobile: "390px" }[device] }}
-              transition={{ duration: 0.25 }}
-              className="h-full w-full max-w-full bg-background shadow-2xl overflow-hidden"
-            >
-              <FramePreview className="w-full h-full" bg={bg} fg={fg}>
-                <LivePortfolio portfolio={portfolio} template={template} themeName={themeName} />
-              </FramePreview>
-            </motion.div>
+            <ScalablePreview device={device} bg={bg} fg={fg}>
+              <LivePortfolio portfolio={portfolio} template={template} themeName={themeName} />
+            </ScalablePreview>
           </div>
         </motion.div>
       )}
@@ -861,15 +924,9 @@ export default function PortfolioEditor() {
         </GlassCard>
 
         <div className="flex-1 rounded-2xl glass overflow-hidden flex items-center justify-center">
-          <motion.div
-            animate={{ width: widths[device] }}
-            transition={{ duration: 0.3 }}
-            className="h-full w-full max-w-full rounded-xl border border-border bg-background shadow-card overflow-hidden"
-          >
-            <FramePreview className="w-full h-full" bg={bg} fg={fg}>
-              <LivePortfolio portfolio={portfolio} template={template} themeName={themeName} />
-            </FramePreview>
-          </motion.div>
+          <ScalablePreview device={device} bg={bg} fg={fg}>
+            <LivePortfolio portfolio={portfolio} template={template} themeName={themeName} />
+          </ScalablePreview>
         </div>
       </div>
     </div>

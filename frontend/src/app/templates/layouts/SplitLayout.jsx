@@ -273,7 +273,7 @@ function SplitLayoutSections({ p, t, id }) {
       {p.education?.length > 0 && (
         <div style={{ marginBottom: 100 }}>
           <h2 style={titleStyle}>{id === "creative" ? "Education Nodes" : id === "sakura" ? "Academic Pathway" : id === "coral" ? "Marine Studies" : "Academic Milestones"}</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 24 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(280px, 100%), 1fr))", gap: 24 }}>
             {p.education.map((edu, i) => (
               <div key={i} className={cardClass}>
                 <span style={{ fontSize: 12, opacity: 0.5 }}>{edu.period}</span>
@@ -289,7 +289,7 @@ function SplitLayoutSections({ p, t, id }) {
       {p.services?.length > 0 && (
         <div style={{ marginBottom: 100 }}>
           <h2 style={titleStyle}>{id === "creative" ? "Capabilities" : id === "sakura" ? "Artistic Offerings" : id === "coral" ? "Service Blueprints" : "Professional Packages"}</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 24 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(260px, 100%), 1fr))", gap: 24 }}>
             {p.services.map((s, i) => (
               <div key={i} className={cardClass}>
                 <h3 style={{ fontSize: 18, fontWeight: 800, margin: "0 0 6px" }}>{s.name}</h3>
@@ -305,7 +305,7 @@ function SplitLayoutSections({ p, t, id }) {
       {p.testimonials?.length > 0 && (
         <div style={{ marginBottom: 100 }}>
           <h2 style={titleStyle}>{id === "creative" ? "Endorsements" : id === "sakura" ? "Kind Reflections" : id === "coral" ? "Deep Resonance" : "Client Voicing"}</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 24 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(280px, 100%), 1fr))", gap: 24 }}>
             {p.testimonials.map((tt, i) => (
               <div key={i} className={cardClass} style={{ fontStyle: "italic" }}>
                 "{tt.quote}"
@@ -320,7 +320,7 @@ function SplitLayoutSections({ p, t, id }) {
       {p.blogs?.length > 0 && (
         <div style={{ marginBottom: 100 }}>
           <h2 style={titleStyle}>{id === "creative" ? "Broadcast Journal" : id === "sakura" ? "Paper Scrolls" : id === "coral" ? "Tidal Writing" : "Sunlit Archives"}</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 24 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(280px, 100%), 1fr))", gap: 24 }}>
             {p.blogs.map((b, i) => (
               <div key={i} className={cardClass}>
                 {b.date && <div style={{ fontSize: 12, opacity: 0.4, marginBottom: 6 }}>{b.date}</div>}
@@ -513,7 +513,7 @@ function CreativeDarkTemplate({ p, t, id, portfolioId }) {
         {p.projects?.length > 0 && (
           <div id="projects" style={{ marginBottom: 120 }}>
             <h2 style={{ fontSize: 32, fontWeight: 900, letterSpacing: "-0.03em", marginBottom: 48 }}>Selected Cases</h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 32 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(320px, 100%), 1fr))", gap: 32 }}>
               {p.projects.map((proj, i) => (
                 <m.div key={i} className="creative-glass" initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: i * 0.1 }} style={{ display: "flex", flexDirection: "column" }}>
                   {proj.image && (
@@ -713,7 +713,7 @@ function SakuraTemplate({ p, t, id, portfolioId }) {
         {p.projects?.length > 0 && (
           <div id="projects" style={{ marginBottom: 100 }}>
             <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 36, textAlign: "center" }}>Selected Works</h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 24 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(280px, 100%), 1fr))", gap: 24 }}>
               {p.projects.map((proj, i) => (
                 <m.div key={i} className="sakura-card" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.08 }}>
                   {proj.image && (
@@ -872,7 +872,7 @@ function CoralTemplate({ p, t, id, portfolioId }) {
         {p.projects?.length > 0 && (
           <div id="projects" style={{ marginBottom: 120 }}>
             <h2 style={{ fontSize: 28, fontWeight: 900, marginBottom: 48, textAlign: "center" }}>Creative Projects</h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(290px, 1fr))", gap: 32 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(290px, 100%), 1fr))", gap: 32 }}>
               {p.projects.map((proj, i) => (
                 <m.div key={i} className="coral-pebble-card" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1 }} style={{ display: "flex", flexDirection: "column" }}>
                   {proj.image && (
@@ -1032,7 +1032,7 @@ function DuskTemplate({ p, t, id, portfolioId }) {
         {p.projects?.length > 0 && (
           <div id="projects" style={{ marginBottom: 120 }}>
             <h2 style={{ fontSize: 26, fontWeight: 900, marginBottom: 40, textAlign: "center" }}>Sunset Showcase</h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(290px, 1fr))", gap: 24 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(290px, 100%), 1fr))", gap: 24 }}>
               {p.projects.map((proj, i) => (
                 <m.div key={i} className="dusk-card" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1 }} style={{ display: "flex", flexDirection: "column" }}>
                   {proj.image && (
