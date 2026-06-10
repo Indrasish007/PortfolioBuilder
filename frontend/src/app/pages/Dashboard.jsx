@@ -111,25 +111,31 @@ export default function Dashboard() {
 
   useEffect(() => {
     async function load() {
-      // Load portfolios and stats independently so one failure doesn't block the other
-      try {
-        const portRes = await api.get('/portfolios/');
-        setPortfolios(portRes.data);
-      } catch (err) {
-        console.error('Failed to load portfolios:', err);
-      } finally {
-        setLoading(false);
-      }
+      // Load portfolios and stats concurrently to parallelize requests
+      const portPromise = api.get('/portfolios/')
+        .then((res) => {
+          setPortfolios(res.data);
+        })
+        .catch((err) => {
+          console.error('Failed to load portfolios:', err);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
 
       setStatsLoading(true);
-      try {
-        const statsRes = await api.get('/portfolios/stats/dashboard/');
-        setStatsData(statsRes.data);
-      } catch (err) {
-        console.error('Failed to load dashboard stats:', err);
-      } finally {
-        setStatsLoading(false);
-      }
+      const statsPromise = api.get('/portfolios/stats/dashboard/')
+        .then((res) => {
+          setStatsData(res.data);
+        })
+        .catch((err) => {
+          console.error('Failed to load dashboard stats:', err);
+        })
+        .finally(() => {
+          setStatsLoading(false);
+        });
+
+      await Promise.all([portPromise, statsPromise]);
     }
     load();
   }, []);

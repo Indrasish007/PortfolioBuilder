@@ -283,7 +283,7 @@ function CreativeDarkTemplate({ p, t, id, portfolioId }) {
       <div style={{ maxWidth: 1000, margin: "0 auto", position: "relative", zIndex: 1 }}>
         {/* Nav */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 80 }}>
-          <div style={{ fontWeight: 800, fontSize: 20, letterSpacing: "-0.05em" }}>CREATIVE<span className="grad-text">.</span></div>
+          <div style={{ fontWeight: 800, fontSize: 20, letterSpacing: "-0.05em" }}>{(u.name || "CREATIVE").toUpperCase()}<span className="grad-text">.</span></div>
           <div className="creative-nav" style={{ display: "flex", gap: 24 }}>
             <a href="#about" onClick={e => handleScrollToSection(e, "about")}>About</a>
             {p.projects?.length > 0 && <a href="#projects" onClick={e => handleScrollToSection(e, "projects")}>Projects</a>}
@@ -295,10 +295,15 @@ function CreativeDarkTemplate({ p, t, id, portfolioId }) {
         {/* Hero */}
         <div id="about" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 48, marginBottom: 120 }} className="md:grid-cols-2-override">
           <m.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8 }} style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 20 }}>
-            <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: "0.3em", color: "#d946ef", fontWeight: 700 }}>PREMIUM CREATIVE AGENCY</span>
+            <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: "0.3em", color: "#d946ef", fontWeight: 700 }}>
+              {u.name ? `CREATIVE WORK BY ${u.name.toUpperCase()}` : "PREMIUM CREATIVE AGENCY"}
+            </span>
             <h1 style={{ fontSize: "clamp(38px, 6vw, 64px)", fontWeight: 900, lineHeight: 1.0, letterSpacing: "-0.04em", margin: 0 }}>
               Designing the <span className="grad-text">Digital Futures</span>
             </h1>
+            {u.title && (
+              <h2 style={{ fontSize: 18, color: "#fb923c", margin: "4px 0 0", fontWeight: 600 }}>{u.title}</h2>
+            )}
             
             {/* Address and Contact Details */}
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap", fontSize: 13, opacity: 0.6, margin: "4px 0" }}>

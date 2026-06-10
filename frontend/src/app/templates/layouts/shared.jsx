@@ -348,10 +348,17 @@ export function ContactSection({ u, t, id, portfolioId }) {
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
+    let ticking = false;
     const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 300);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          setShowScrollTop(window.scrollY > 300);
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -679,14 +686,14 @@ export function ContactSection({ u, t, id, portfolioId }) {
           <div className="contact-form-container">
             <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
               {/* Invisible Honeypot input */}
-              <input 
-                type="text" 
-                name="website_url" 
-                value={websiteUrl} 
-                onChange={e => setWebsiteUrl(e.target.value)} 
-                style={{ display: 'none' }} 
-                tabIndex="-1" 
-                autoComplete="off" 
+              <input
+                type="text"
+                name="website_url"
+                value={websiteUrl}
+                onChange={e => setWebsiteUrl(e.target.value)}
+                style={{ display: 'none' }}
+                tabIndex="-1"
+                autoComplete="off"
               />
               <div className="contact-form-row">
                 <div className="contact-form-group">

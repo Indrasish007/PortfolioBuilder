@@ -78,6 +78,15 @@ function CountingNumber({ value, suffix = "" }) {
 }
 
 export default function AboutSection() {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -201,36 +210,38 @@ export default function AboutSection() {
       </div>
 
       {/* Floating Light Particles matching Hero */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden -z-10">
-        {[
-          { size: 12, top: "15%", left: "80%", delay: 1 },
-          { size: 16, top: "45%", left: "15%", delay: 3.5 },
-          { size: 10, top: "75%", left: "75%", delay: 2 },
-          { size: 14, top: "85%", left: "25%", delay: 0.5 }
-        ].map((p, idx) => (
-          <motion.div
-            key={idx}
-            className="absolute rounded-full bg-brand/25 blur-sm"
-            style={{
-              width: p.size,
-              height: p.size,
-              top: p.top,
-              left: p.left,
-            }}
-            animate={{
-              y: [0, -40, 0],
-              x: [0, 20, 0],
-              opacity: [0.2, 0.6, 0.2],
-            }}
-            transition={{
-              duration: 10 + idx * 4,
-              repeat: Infinity,
-              delay: p.delay,
-              ease: "easeInOut"
-            }}
-          />
-        ))}
-      </div>
+      {!isMobile && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden -z-10">
+          {[
+            { size: 12, top: "15%", left: "80%", delay: 1 },
+            { size: 16, top: "45%", left: "15%", delay: 3.5 },
+            { size: 10, top: "75%", left: "75%", delay: 2 },
+            { size: 14, top: "85%", left: "25%", delay: 0.5 }
+          ].map((p, idx) => (
+            <motion.div
+              key={idx}
+              className="absolute rounded-full bg-brand/25 blur-sm"
+              style={{
+                width: p.size,
+                height: p.size,
+                top: p.top,
+                left: p.left,
+              }}
+              animate={{
+                y: [0, -40, 0],
+                x: [0, 20, 0],
+                opacity: [0.2, 0.6, 0.2],
+              }}
+              transition={{
+                duration: 10 + idx * 4,
+                repeat: Infinity,
+                delay: p.delay,
+                ease: "easeInOut"
+              }}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Background radial gradient glow for a premium look */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-brand/5 to-transparent pointer-events-none -z-10" />

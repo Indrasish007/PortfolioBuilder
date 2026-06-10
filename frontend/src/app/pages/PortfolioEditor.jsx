@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, memo } from "react";
 import { createPortal } from "react-dom";
 import { motion, Reorder, AnimatePresence } from "framer-motion";
 import { Undo2, Redo2, RotateCcw, Save, Eye, EyeOff, Smartphone, Tablet, Monitor, Plus, GripVertical, Image as ImageIcon, Sparkles, Trash2, Github, Globe, Linkedin, Twitter, Facebook, Instagram, Type, Palette, Settings2, CheckCircle2, Loader2, ChevronDown, ChevronUp, ArrowUp, ArrowDown, FileText, X, Calendar, ExternalLink, Check, AlertTriangle, RefreshCw, Share2 } from "lucide-react";
@@ -1030,7 +1030,7 @@ function DebouncedTextarea({ value: externalValue, onChange, className, ...props
   );
 }
 
-function Field({ label, value, onChange, multiline, hint }) {
+const Field = memo(function Field({ label, value, onChange, multiline, hint }) {
   return (
     <div className="mb-3">
       <div className="text-xs text-muted-foreground mb-1">{label}</div>
@@ -1044,9 +1044,9 @@ function Field({ label, value, onChange, multiline, hint }) {
       {hint && <div className="text-[10px] text-muted-foreground mt-1">{hint}</div>}
     </div>
   );
-}
+});
 
-function SkillsEditor({ skills, updateField }) {
+const SkillsEditor = memo(function SkillsEditor({ skills, updateField }) {
   return (
     <div>
       <DebouncedInput 
@@ -1057,9 +1057,9 @@ function SkillsEditor({ skills, updateField }) {
       />
     </div>
   );
-}
+});
 
-function ExperienceEditor({ experience, updateField }) {
+const ExperienceEditor = memo(function ExperienceEditor({ experience, updateField }) {
   const updateItem = (i, field, val) => {
     const newArr = [...experience];
     newArr[i] = { ...newArr[i], [field]: val };
@@ -1154,9 +1154,9 @@ function ExperienceEditor({ experience, updateField }) {
       ))}
     </div>
   );
-}
+});
 
-function EducationEditor({ education, updateField }) {
+const EducationEditor = memo(function EducationEditor({ education, updateField }) {
   const updateItem = (i, field, val) => {
     const newArr = [...education];
     newArr[i] = { ...newArr[i], [field]: val };
@@ -1249,9 +1249,9 @@ function EducationEditor({ education, updateField }) {
       ))}
     </div>
   );
-}
+});
 
-function ProjectsEditor({ projects, updateField }) {
+const ProjectsEditor = memo(function ProjectsEditor({ projects, updateField }) {
   const [rewritingIdx, setRewritingIdx] = useState(null); // which project is rewriting
   const [originalDescs, setOriginalDescs] = useState({}); // { [i]: original description }
   const { toast } = useToast();
@@ -1436,9 +1436,9 @@ function ProjectsEditor({ projects, updateField }) {
       ))}
     </div>
   );
-}
+});
 
-function AboutEditor({ bio, resume, updateField }) {
+const AboutEditor = memo(function AboutEditor({ bio, resume, updateField }) {
   const [isRewriting, setIsRewriting] = useState(false);
   const [originalBio, setOriginalBio] = useState(null); // for undo
   const { toast } = useToast();
@@ -1614,10 +1614,10 @@ function ProjectsEditor({ projects, updateField }) {
       </div>
     </div>
   );
-}
+});
 
 
-function ContactEditor({ email, phone, location, updateField }) {
+const ContactEditor = memo(function ContactEditor({ email, phone, location, updateField }) {
   return (
     <div>
       <Field label="Email Address" value={email || ""} onChange={(v) => updateField("user.email", v)} />
@@ -1625,9 +1625,9 @@ function ContactEditor({ email, phone, location, updateField }) {
       <Field label="Location / Address" value={location || ""} onChange={(v) => updateField("user.location", v)} />
     </div>
   );
-}
+});
 
-function TestimonialsEditor({ testimonials, updateField }) {
+const TestimonialsEditor = memo(function TestimonialsEditor({ testimonials, updateField }) {
   const updateItem = (i, field, val) => {
     const newArr = [...testimonials];
     newArr[i] = { ...newArr[i], [field]: val };
@@ -1642,7 +1642,7 @@ function TestimonialsEditor({ testimonials, updateField }) {
         <div key={i} className="group mb-4 last:mb-0 border-l-2 border-brand/30 pl-3">
            <div className="flex items-center justify-between">
             <DebouncedInput value={t.name} onChange={(v) => updateItem(i, "name", v)} className="w-full bg-transparent text-sm font-semibold focus:outline-none" placeholder="Name" />
-            <button onClick={() => updateField("testimonials", testimonials.filter((_, idx) => idx !== i))} className="text-muted-foreground hover:text-destructive"><Trash2 className="w-3 h-3" /></button>
+            <button onClick={() => updateField("testimonials", testimonials.filter((_, idx) => idx !== i))} className="text-muted-foreground hover:text-destructive"><Trash2 className="w-3.5 h-3.5" /></button>
           </div>
           <DebouncedInput value={t.role} onChange={(v) => updateItem(i, "role", v)} className="w-full bg-transparent text-xs mb-2 focus:outline-none" placeholder="Role (e.g. CEO at Acme)" />
           <DebouncedTextarea value={t.quote} onChange={(v) => updateItem(i, "quote", v)} rows={2} className="w-full bg-input/40 border border-border rounded p-2 text-xs focus:outline-none resize-none" placeholder="Quote" />
@@ -1650,9 +1650,9 @@ function TestimonialsEditor({ testimonials, updateField }) {
       ))}
     </div>
   );
-}
+});
 
-function CertificationsEditor({ certifications, updateField }) {
+const CertificationsEditor = memo(function CertificationsEditor({ certifications, updateField }) {
   const formatMonth = (val) => {
     if (!val) return "";
     const [year, month] = val.split('-');
@@ -1681,7 +1681,7 @@ function CertificationsEditor({ certifications, updateField }) {
         <div key={i} className="group mb-4 last:mb-0 border-l-2 border-brand/30 pl-3">
           <div className="flex items-center justify-between">
             <DebouncedInput value={c.name || ""} onChange={(v) => updateItem(i, "name", v)} className="w-full bg-transparent text-sm font-semibold focus:outline-none" placeholder="Certification Name" />
-            <button onClick={() => updateField("certifications", certifications.filter((_, idx) => idx !== i))} className="text-muted-foreground hover:text-destructive"><Trash2 className="w-3 h-3" /></button>
+            <button onClick={() => updateField("certifications", certifications.filter((_, idx) => idx !== i))} className="text-muted-foreground hover:text-destructive"><Trash2 className="w-3.5 h-3.5" /></button>
           </div>
           <DebouncedInput value={c.issuer || ""} onChange={(v) => updateItem(i, "issuer", v)} className="w-full bg-transparent text-xs mb-2 focus:outline-none" placeholder="Issuer" />
           
@@ -1696,9 +1696,9 @@ function CertificationsEditor({ certifications, updateField }) {
       ))}
     </div>
   );
-}
+});
 
-function BlogsEditor({ blogs, updateField }) {
+const BlogsEditor = memo(function BlogsEditor({ blogs, updateField }) {
   const updateItem = (i, field, val) => {
     const newArr = [...blogs];
     newArr[i] = { ...newArr[i], [field]: val };
@@ -1730,7 +1730,7 @@ function BlogsEditor({ blogs, updateField }) {
         <div key={i} className="group mb-4 last:mb-0 border-l-2 border-brand/30 pl-3 space-y-1">
           <div className="flex items-center justify-between">
             <DebouncedInput value={b.title} onChange={(v) => updateItem(i, "title", v)} className="w-full bg-transparent text-sm font-semibold focus:outline-none" placeholder="Post Title" />
-            <button onClick={() => updateField("blogs", blogs.filter((_, idx) => idx !== i))} className="text-muted-foreground hover:text-destructive"><Trash2 className="w-3 h-3" /></button>
+            <button onClick={() => updateField("blogs", blogs.filter((_, idx) => idx !== i))} className="text-muted-foreground hover:text-destructive"><Trash2 className="w-3.5 h-3.5" /></button>
           </div>
           
           <div className="flex flex-wrap items-center gap-2 py-1">
@@ -1759,9 +1759,9 @@ function BlogsEditor({ blogs, updateField }) {
       ))}
     </div>
   );
-}
+});
 
-function SimpleListEditor({ title, fieldKey, items, updateField }) {
+const SimpleListEditor = memo(function SimpleListEditor({ title, fieldKey, items, updateField }) {
   return (
     <div>
       <DebouncedTextarea 
@@ -1773,9 +1773,10 @@ function SimpleListEditor({ title, fieldKey, items, updateField }) {
       />
     </div>
   );
-}
+});
 
-function GalleryEditor({ gallery, updateField }) {
+const GalleryEditor = memo(function GalleryEditor({ gallery, updateField }) {
+  const { toast } = useToast();
   return (
     <div>
       <div className="flex justify-between items-center mb-3">
@@ -1816,8 +1817,9 @@ function GalleryEditor({ gallery, updateField }) {
       </div>
     </div>
   );
-}
-function VideosEditor({ videos, updateField }) {
+});
+
+const VideosEditor = memo(function VideosEditor({ videos, updateField }) {
   const updateItem = (i, val) => {
     const newArr = [...videos];
     newArr[i] = val;
@@ -1838,9 +1840,9 @@ function VideosEditor({ videos, updateField }) {
       ))}
     </div>
   );
-}
+});
 
-function MusicEditor({ music, updateField }) {
+const MusicEditor = memo(function MusicEditor({ music, updateField }) {
   const updateItem = (i, val) => {
     const newArr = [...music];
     newArr[i] = val;
@@ -1861,16 +1863,16 @@ function MusicEditor({ music, updateField }) {
       ))}
     </div>
   );
-}
+});
 
-function CustomEditor({ custom, updateField }) {
+const CustomEditor = memo(function CustomEditor({ custom, updateField }) {
   return (
     <div>
       <Field label="Section Title" value={custom.title || ""} onChange={(v) => updateField("custom.title", v)} />
       <Field label="Content" multiline value={custom.content || ""} onChange={(v) => updateField("custom.content", v)} />
     </div>
   );
-}
+});
 
 function moveItem(array, index, direction, updateField, fieldKey) {
   const newArr = [...array];
@@ -1912,7 +1914,7 @@ function CollapsibleSection({ title, isActive, onToggle, children }) {
   );
 }
 
-function ServicesEditor({ services, updateField }) {
+const ServicesEditor = memo(function ServicesEditor({ services, updateField }) {
   const updateItem = (i, field, val) => {
     const newArr = [...services];
     newArr[i] = { ...newArr[i], [field]: val };
@@ -1935,9 +1937,9 @@ function ServicesEditor({ services, updateField }) {
       ))}
     </div>
   );
-}
+});
 
-function LanguagesEditor({ languages, updateField }) {
+const LanguagesEditor = memo(function LanguagesEditor({ languages, updateField }) {
   const updateItem = (i, field, val) => {
     const newArr = [...languages];
     newArr[i] = { ...newArr[i], [field]: val };
@@ -1959,9 +1961,9 @@ function LanguagesEditor({ languages, updateField }) {
       ))}
     </div>
   );
-}
+});
 
-function VolunteerEditor({ volunteer, updateField }) {
+const VolunteerEditor = memo(function VolunteerEditor({ volunteer, updateField }) {
   const updateItem = (i, field, val) => {
     const newArr = [...volunteer];
     newArr[i] = { ...newArr[i], [field]: val };
@@ -1985,9 +1987,9 @@ function VolunteerEditor({ volunteer, updateField }) {
       ))}
     </div>
   );
-}
+});
 
-function AwardsEditor({ awards, updateField }) {
+const AwardsEditor = memo(function AwardsEditor({ awards, updateField }) {
   const formatMonth = (val) => {
     if (!val) return "";
     const [year, month] = val.split('-');
@@ -2031,9 +2033,9 @@ function AwardsEditor({ awards, updateField }) {
       ))}
     </div>
   );
-}
+});
 
-function ReferencesEditor({ references, updateField }) {
+const ReferencesEditor = memo(function ReferencesEditor({ references, updateField }) {
   const updateItem = (i, field, val) => {
     const newArr = [...references];
     newArr[i] = { ...newArr[i], [field]: val };
@@ -2056,9 +2058,9 @@ function ReferencesEditor({ references, updateField }) {
       ))}
     </div>
   );
-}
+});
 
-function FAQEditor({ faqs, updateField }) {
+const FAQEditor = memo(function FAQEditor({ faqs, updateField }) {
   const updateItem = (i, field, val) => {
     const newArr = [...faqs];
     newArr[i] = { ...newArr[i], [field]: val };
@@ -2080,4 +2082,4 @@ function FAQEditor({ faqs, updateField }) {
       ))}
     </div>
   );
-}
+});

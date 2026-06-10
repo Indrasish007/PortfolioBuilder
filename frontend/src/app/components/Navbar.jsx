@@ -18,38 +18,51 @@ export default function Navbar() {
   const user = useAuthStore((s) => s.user);
 
   useEffect(() => {
-    const handleScroll = () => {
-      const aboutEl = document.getElementById("about");
-      const showcaseEl = document.getElementById("showcase");
-      const contactEl = document.getElementById("contact");
-      
-      const threshold = 160; // scroll offset threshold
+    const aboutEl = document.getElementById("about");
+    const showcaseEl = document.getElementById("showcase");
+    const contactEl = document.getElementById("contact");
 
-      if (aboutEl) {
-        const rect = aboutEl.getBoundingClientRect();
-        setIsAboutActive(rect.top <= threshold && rect.bottom >= threshold);
-      } else {
-        setIsAboutActive(false);
-      }
-
-      if (showcaseEl) {
-        const rect = showcaseEl.getBoundingClientRect();
-        setIsShowcaseActive(rect.top <= threshold && rect.bottom >= threshold);
-      } else {
-        setIsShowcaseActive(false);
-      }
-
-      if (contactEl) {
-        const rect = contactEl.getBoundingClientRect();
-        setIsContactActive(rect.top <= threshold && rect.bottom >= threshold);
-      } else {
-        setIsContactActive(false);
-      }
+    const observerOptions = {
+      root: null,
+      rootMargin: "-160px 0px -40% 0px",
+      threshold: 0,
     };
 
-    window.addEventListener("scroll", handleScroll);
-    handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
+    const observerCallback = (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const id = entry.target.id;
+          if (id === "about") {
+            setIsAboutActive(true);
+            setIsShowcaseActive(false);
+            setIsContactActive(false);
+          } else if (id === "showcase") {
+            setIsAboutActive(false);
+            setIsShowcaseActive(true);
+            setIsContactActive(false);
+          } else if (id === "contact") {
+            setIsAboutActive(false);
+            setIsShowcaseActive(false);
+            setIsContactActive(true);
+          }
+        } else {
+          const id = entry.target.id;
+          if (id === "about") setIsAboutActive(false);
+          else if (id === "showcase") setIsShowcaseActive(false);
+          else if (id === "contact") setIsContactActive(false);
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(observerCallback, observerOptions);
+
+    if (aboutEl) observer.observe(aboutEl);
+    if (showcaseEl) observer.observe(showcaseEl);
+    if (contactEl) observer.observe(contactEl);
+
+    return () => {
+      observer.disconnect();
+    };
   }, [location.pathname]);
 
   const handleAboutClick = (e) => {
@@ -107,21 +120,21 @@ export default function Navbar() {
       initial={{ opacity: 0, y: -24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-      style={{ 
+      style={{
         backdropFilter: useTransform(blur, (b) => `blur(${Math.max(b, 8)}px) saturate(160%)`),
         WebkitBackdropFilter: "blur(12px) saturate(160%)"
       }}
       className="fixed top-3 md:top-4 inset-x-3 md:inset-x-auto md:w-[calc(100%-2.5rem)] md:max-w-5xl md:left-1/2 md:-translate-x-1/2 z-50 border border-border/30 bg-background/45 rounded-2xl md:rounded-full shadow-glow transition-all duration-300"
     >
       <div className="max-w-7xl mx-auto h-14 md:h-16 px-4 md:px-6 flex items-center justify-between">
-        <motion.div 
-          whileHover={{ scale: 1.02 }} 
+        <motion.div
+          whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           className="flex items-center"
         >
           <Logo />
         </motion.div>
-        
+
         {/* Navigation links with sliding active tab pill */}
         <nav className="hidden md:flex items-center gap-1 bg-accent/20 p-1 rounded-full border border-border/30">
           {navItems.map((item) => {
@@ -132,9 +145,8 @@ export default function Navbar() {
                 to={!item.isAnchor ? item.to : undefined}
                 href={item.isAnchor ? item.to : undefined}
                 onClick={item.clickHandler}
-                className={`relative px-4 py-1.5 text-xs font-semibold rounded-full transition-colors duration-200 z-10 cursor-pointer ${
-                  item.active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-                }`}
+                className={`relative px-4 py-1.5 text-xs font-semibold rounded-full transition-colors duration-200 z-10 cursor-pointer ${item.active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                  }`}
               >
                 {item.active && (
                   <motion.div
@@ -178,8 +190,8 @@ export default function Navbar() {
           )}
         </div>
 
-        <button 
-          onClick={() => setOpen((o) => !o)} 
+        <button
+          onClick={() => setOpen((o) => !o)}
           className="md:hidden inline-flex w-8.5 h-8.5 items-center justify-center rounded-full glass"
         >
           {open ? <X className="w-3.5 h-3.5" /> : <Menu className="w-3.5 h-3.5" />}
@@ -197,9 +209,8 @@ export default function Navbar() {
                   to={!item.isAnchor ? item.to : undefined}
                   href={item.isAnchor ? item.to : undefined}
                   onClick={item.clickHandler}
-                  className={`px-3 py-2 text-sm rounded-xl text-left transition ${
-                    item.active ? "text-foreground bg-accent/40 font-semibold" : "text-muted-foreground hover:bg-accent/20"
-                  }`}
+                  className={`px-3 py-2 text-sm rounded-xl text-left transition ${item.active ? "text-foreground bg-accent/40 font-semibold" : "text-muted-foreground hover:bg-accent/20"
+                    }`}
                 >
                   {item.label}
                 </Component>

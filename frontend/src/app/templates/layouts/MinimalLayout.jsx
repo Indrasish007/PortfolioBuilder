@@ -347,7 +347,7 @@ function ScandinavianTemplate({ p, t, id, portfolioId }) {
 
       {/* Nordic Nav */}
       <div style={{ maxWidth: 900, margin: "0 auto 80px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div style={{ fontWeight: 700, fontSize: 18, letterSpacing: "-0.02em" }}>{u.name?.split(" ")[0]}</div>
+        <div style={{ fontWeight: 700, fontSize: 18, letterSpacing: "-0.02em" }}>{u.name}</div>
         <div className="scand-nav">
           <a href="#about" onClick={(e) => handleScrollToSection(e, "about")}>About</a>
           {p.projects?.length > 0 && <a href="#projects" onClick={(e) => handleScrollToSection(e, "projects")}>Projects</a>}
@@ -360,7 +360,7 @@ function ScandinavianTemplate({ p, t, id, portfolioId }) {
         {/* Hero Section */}
         <m.div id="about" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} style={{ display: "grid", gridTemplateColumns: "1fr", gap: 48, marginBottom: 80 }} className="md:grid-cols-2-override">
           <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 24 }}>
-            <span style={{ fontSize: 13, textTransform: "uppercase", letterSpacing: "0.1em", color: t.ac, fontWeight: 600 }}>Hello, I'm {u.name?.split(" ")[0]}</span>
+            <span style={{ fontSize: 13, textTransform: "uppercase", letterSpacing: "0.1em", color: t.ac, fontWeight: 600 }}>Hello, I'm {u.name}</span>
             <h1 style={{ fontSize: "clamp(36px, 6vw, 54px)", fontWeight: 800, letterSpacing: "-0.03em", margin: 0, lineHeight: 1.1 }}>{u.title}</h1>
             
             {/* Address Details */}

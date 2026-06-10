@@ -291,10 +291,12 @@
 
   .animate-float {
     animation: float 6s ease-in-out infinite;
+    will-change: transform;
   }
 
   .animate-glow-pulse {
     animation: glow-pulse 3s ease-in-out infinite;
+    will-change: box-shadow;
   }
 
   .animate-shimmer {
@@ -523,9 +525,11 @@ textarea:focus {
   .sm\:grid-cols-2-override {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
+
   .sm\:grid-cols-3-override {
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   }
+
   .sm\:grid-cols-4-override {
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
   }
@@ -535,10 +539,22 @@ textarea:focus {
   .md\:grid-cols-2-override {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
+
   .md\:grid-cols-3-override {
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   }
+
   .md\:grid-cols-4-override {
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Mobile Performance Animation Reductions */
+@media (max-width: 768px) {
+  body:not(.public-portfolio)::after {
+    animation: none !important;
+  }
+  .animate-float {
+    animation: none !important;
   }
 }

@@ -49,6 +49,14 @@ export default function Landing() {
 
 function Hero() {
   const [arrowHovered, setArrowHovered] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const titleContainer = {
     hidden: { opacity: 0 },
@@ -95,36 +103,38 @@ function Hero() {
       <div className="absolute inset-0 grid-pattern opacity-60 pointer-events-none" />
 
       {/* Floating Light Particles */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {[
-          { size: 14, top: "20%", left: "12%", delay: 0 },
-          { size: 10, top: "55%", left: "85%", delay: 2 },
-          { size: 18, top: "12%", left: "70%", delay: 1.5 },
-          { size: 12, top: "65%", left: "18%", delay: 3 }
-        ].map((p, idx) => (
-          <motion.div
-            key={idx}
-            className="absolute rounded-full bg-brand/30 blur-md"
-            style={{
-              width: p.size,
-              height: p.size,
-              top: p.top,
-              left: p.left,
-            }}
-            animate={{
-              y: [0, -35, 0],
-              x: [0, 15, 0],
-              opacity: [0.3, 0.7, 0.3],
-            }}
-            transition={{
-              duration: 9 + idx * 3,
-              repeat: Infinity,
-              delay: p.delay,
-              ease: "easeInOut"
-            }}
-          />
-        ))}
-      </div>
+      {!isMobile && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {[
+            { size: 14, top: "20%", left: "12%", delay: 0 },
+            { size: 10, top: "55%", left: "85%", delay: 2 },
+            { size: 18, top: "12%", left: "70%", delay: 1.5 },
+            { size: 12, top: "65%", left: "18%", delay: 3 }
+          ].map((p, idx) => (
+            <motion.div
+              key={idx}
+              className="absolute rounded-full bg-brand/30 blur-md"
+              style={{
+                width: p.size,
+                height: p.size,
+                top: p.top,
+                left: p.left,
+              }}
+              animate={{
+                y: [0, -35, 0],
+                x: [0, 15, 0],
+                opacity: [0.3, 0.7, 0.3],
+              }}
+              transition={{
+                duration: 9 + idx * 3,
+                repeat: Infinity,
+                delay: p.delay,
+                ease: "easeInOut"
+              }}
+            />
+          ))}
+        </div>
+      )}
 
       <div className="relative max-w-7xl mx-auto px-5 text-center z-10">
         <motion.div
