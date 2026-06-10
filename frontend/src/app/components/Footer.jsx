@@ -43,9 +43,9 @@ export default function Footer() {
         ))}
       </div>
       <div className="border-t border-border/60">
-        <div className="max-w-7xl mx-auto px-5 h-14 flex flex-wrap items-center justify-between text-xs text-muted-foreground">
+        <div className="max-w-7xl mx-auto px-5 py-4 sm:py-0 min-h-14 flex flex-col sm:flex-row gap-4 items-center justify-between text-xs text-muted-foreground text-center sm:text-left">
           <div>© {new Date().getFullYear()} PortfolioBuilder. All rights reserved.</div>
-          <div className="flex gap-4"><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Cookies</a></div>
+          <div className="flex gap-4"><a href="#" className="hover:text-foreground transition">Privacy</a><a href="#" className="hover:text-foreground transition">Terms</a><a href="#" className="hover:text-foreground transition">Cookies</a></div>
         </div>
       </div>
     </footer>

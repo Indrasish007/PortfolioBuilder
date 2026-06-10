@@ -30,6 +30,7 @@ export default function Landing() {
     }
   }, []);
 
+
   return (
     <div className="relative">
       <Hero />
@@ -74,21 +75,21 @@ function Hero() {
 
   return (
     <section className="relative pt-20 pb-24 overflow-hidden">
-      <div className="absolute inset-0 hero-bg pointer-events-none" 
-           style={{
-             maskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)',
-             WebkitMaskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)'
-           }}
+      <div className="absolute inset-0 hero-bg pointer-events-none"
+        style={{
+          maskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)'
+        }}
       />
 
       {/* Bottom transition blend to About section (radial + linear gradient) */}
       <div className="absolute bottom-0 left-0 right-0 h-[300px] pointer-events-none"
-           style={{
-             background: `
+        style={{
+          background: `
                radial-gradient(circle at 50% 100%, rgba(168, 85, 247, 0.18), rgba(59, 130, 246, 0.12), transparent 70%),
                linear-gradient(180deg, transparent, rgba(124, 58, 237, 0.08))
              `
-           }}
+        }}
       />
 
       <div className="absolute inset-0 grid-pattern opacity-60 pointer-events-none" />
@@ -142,19 +143,22 @@ function Hero() {
           variants={titleContainer}
           initial="hidden"
           animate="show"
-          className="mt-6 text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold tracking-tight leading-[1.05] max-w-4xl mx-auto"
+          className="mt-8 sm:mt-10 text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold tracking-tight leading-[1.15] max-w-5xl mx-auto text-center"
         >
-          {"The portfolio you'd build,".split(" ").map((word, i) => (
-            <motion.span key={i} variants={titleWord} className="inline-block mr-2.5 sm:mr-3.5">
-              {word}
-            </motion.span>
-          ))}
-          <br />
-          {"if you had time.".split(" ").map((word, i) => (
-            <motion.span key={i} variants={titleWord} className="inline-block mr-2.5 sm:mr-3.5 gradient-text">
-              {word}
-            </motion.span>
-          ))}
+          <span className="flex justify-center items-center gap-x-2.5 sm:gap-x-3.5 flex-wrap md:flex-nowrap">
+            {"Welcome to Portfolio Builder".split(" ").map((word, i) => (
+              <motion.span key={i} variants={titleWord} className="inline-block">
+                {word}
+              </motion.span>
+            ))}
+          </span>
+          <span className="flex justify-center items-center gap-x-2.5 sm:gap-x-3.5 flex-wrap md:flex-nowrap mt-3 sm:mt-5">
+            {"Where Talent Meets Presentation.".split(" ").map((word, i) => (
+              <motion.span key={i} variants={titleWord} className="inline-block gradient-text">
+                {word}
+              </motion.span>
+            ))}
+          </span>
         </motion.h1>
 
         <motion.p
@@ -207,7 +211,7 @@ function Hero() {
           transition={{ duration: 1, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
           className="relative mt-16 max-w-5xl mx-auto"
         >
-          <div className="absolute -inset-4 bg-gradient-to-r from-brand/25 via-brand-3/15 to-brand-2/25 blur-3xl rounded-3xl" />
+          <div className="absolute -inset-2 sm:-inset-4 bg-gradient-to-r from-brand/25 via-brand-3/15 to-brand-2/25 blur-3xl rounded-3xl" />
           <GlassCard className="relative p-2 rounded-3xl" glow>
             <div className="rounded-2xl border border-border bg-background/80 overflow-hidden">
               <div className="h-9 px-4 flex items-center gap-2 border-b border-border/60 bg-background/60">
@@ -217,13 +221,13 @@ function Hero() {
                 <div className="ml-3 text-xs text-muted-foreground">portfolio.ai/u/alexcarter</div>
               </div>
               <div className="grid md:grid-cols-[1fr_320px]">
-                <div className="p-8 text-left">
+                <div className="p-4 sm:p-8 text-left">
                   <div className="text-xs text-muted-foreground font-medium">Senior Product Designer</div>
                   <h3 className="text-3xl md:text-4xl font-bold mt-1">Hi, I'm <span className="gradient-text">Alex.</span></h3>
                   <p className="text-sm text-muted-foreground mt-3 max-w-md">
                     I design human-centered products at the intersection of AI, design systems and motion.
                   </p>
-                  <div className="grid grid-cols-2 gap-3 mt-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6">
                     {["NebulaUI", "PromptForge", "Cartograph", "Lumen Notes"].map((p, i) => (
                       <motion.div key={p}
                         initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 + i * 0.1 }}
@@ -287,9 +291,9 @@ function ShowcaseSection() {
               <div className="text-[10px] text-brand mb-1">AFTER</div>
               "Led payments UX for 4M+ merchants at Stripe, shipping 12 cross-functional flows in two years."
             </div>
-            <div className="grid grid-cols-3 gap-2 pt-2">
+            <div className="flex flex-col sm:flex-row gap-2 pt-2">
               {["Concise", "Confident", "Outcome-led"].map((t) => (
-                <button key={t} className="glass text-xs py-2 rounded-lg hover:bg-accent">{t}</button>
+                <button key={t} className="glass flex-1 text-xs py-2 px-3 rounded-lg hover:bg-accent cursor-pointer">{t}</button>
               ))}
             </div>
           </div>
@@ -390,7 +394,7 @@ function TemplatesCarousel() {
 
 function Stats() {
   const stats = [
-    { v: "240k+", l: "Portfolios shipped" },
+    { v: "300+", l: "Portfolios created" },
     { v: "4.9★", l: "Average rating" },
     { v: "<5min", l: "From blank to live" },
     { v: "98%", l: "Would recommend" },
@@ -398,7 +402,7 @@ function Stats() {
   return (
     <section className="py-20">
       <div className="max-w-7xl mx-auto px-5">
-        <div className="rounded-3xl glass p-8 md:p-12 grid grid-cols-2 md:grid-cols-4 gap-6 text-center shadow-card">
+        <div className="rounded-3xl glass p-5 sm:p-8 md:p-12 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 text-center shadow-card">
           {stats.map((s) => (
             <div key={s.l}>
               <div className="text-3xl md:text-5xl font-bold gradient-text">{s.v}</div>
@@ -448,10 +452,10 @@ function CTA() {
   return (
     <section className="py-24">
       <div className="max-w-5xl mx-auto px-5">
-        <div className="relative overflow-hidden rounded-3xl glass p-10 md:p-16 text-center shadow-card">
+        <div className="relative overflow-hidden rounded-3xl glass p-6 sm:p-10 md:p-16 text-center shadow-card">
           <div className="absolute inset-0 hero-bg opacity-90" />
           <div className="relative">
-            <h2 className="text-4xl md:text-6xl font-bold tracking-tight">Your portfolio,<br /><span className="gradient-text">shipped today.</span></h2>
+            <h2 className="text-3xl sm:text-4xl md:text-6xl font-bold tracking-tight">Your portfolio,<br /><span className="gradient-text">shipped today.</span></h2>
             <p className="text-muted-foreground mt-4 max-w-xl mx-auto">Pick a template, let the AI co-pilot refine your copy, and go live.</p>
             <div className="mt-7 flex justify-center gap-3 flex-wrap">
               <Button as={Link} to="/signup" size="lg">Start free <ArrowRight className="w-4 h-4" /></Button>

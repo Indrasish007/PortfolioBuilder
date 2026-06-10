@@ -1,236 +1,8 @@
 import { useState, useEffect } from "react";
 import { Mail, Phone, MapPin, Send, ArrowUp, Download, ChevronUp, ChevronDown, Github, ExternalLink, Globe, Linkedin, Twitter, Facebook, Instagram } from "lucide-react";
 import { m, AnimatePresence } from "framer-motion";
-import { Tags, FAQList, VideoEmbed, MusicEmbed, GalleryAlbum, trackProjectClick, handleResumeDownload, handleScrollToSection, sn } from "./shared.jsx";
+import { Tags, FAQList, VideoEmbed, MusicEmbed, GalleryAlbum, trackProjectClick, handleResumeDownload, handleScrollToSection, sn, ContactSection } from "./shared.jsx";
 import api from "../../services/api.js";
-
-// --- CUSTOM CONTACT FORM FOR PREMIUM LOOK ---
-function CustomContactForm({ u, t, templateId, portfolioId }) {
-  const [formData, setFormData] = useState({ name: "", email: "", message: "" });
-  const [websiteUrl, setWebsiteUrl] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) return;
-
-    setIsSubmitting(true);
-    try {
-      const base = (api.defaults.baseURL || 'http://localhost:8000/api').replace(/\/$/, '');
-      const response = await fetch(`${base}/portfolios/public/${portfolioId}/message/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sender_name: formData.name,
-          sender_email: formData.email,
-          message: formData.message,
-          subject: "",
-          website_url: websiteUrl
-        })
-      });
-      if (response.ok) {
-        setIsSubmitted(true);
-        setFormData({ name: "", email: "", message: "" });
-        setWebsiteUrl("");
-        setTimeout(() => setIsSubmitted(false), 5000);
-      } else {
-        const errData = await response.json();
-        throw new Error(errData.error || "Failed to submit message");
-      }
-    } catch (err) {
-      console.error("Failed to submit message", err);
-      alert(err.message || "Failed to submit message. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const fg = t?.fg || "#f8fafc";
-  const bg = t?.bg || "#0b0f1a";
-  const ac = t?.ac || "#7c3aed";
-
-  let containerStyle = {};
-  let inputStyle = {};
-  let buttonStyle = {};
-
-  if (templateId === "minimal") {
-    containerStyle = {
-      background: "transparent",
-      borderTop: `1px solid ${fg}15`,
-      paddingTop: 40,
-      maxWidth: 600,
-      margin: "0 auto"
-    };
-    inputStyle = {
-      background: "transparent",
-      border: "none",
-      borderBottom: `1px solid ${fg}20`,
-      color: fg,
-      borderRadius: 0,
-      padding: "12px 4px",
-      fontSize: 14,
-      transition: "border-color 0.3s ease",
-      width: "100%"
-    };
-    buttonStyle = {
-      background: fg,
-      color: bg,
-      border: "none",
-      borderRadius: 0,
-      padding: "12px 30px",
-      fontSize: 13,
-      fontWeight: 600,
-      cursor: "pointer",
-      transition: "opacity 0.2s ease"
-    };
-  } else if (templateId === "scandinavian") {
-    containerStyle = {
-      background: `color-mix(in srgb, ${fg} 3%, ${bg})`,
-      border: `1px solid ${fg}08`,
-      borderRadius: 24,
-      padding: "36px",
-      boxShadow: "0 10px 40px rgba(0,0,0,0.02)",
-      maxWidth: 650,
-      margin: "0 auto"
-    };
-    inputStyle = {
-      background: bg,
-      border: `1px solid ${fg}10`,
-      color: fg,
-      borderRadius: 12,
-      padding: "14px 16px",
-      fontSize: 14,
-      transition: "all 0.3s ease",
-      width: "100%"
-    };
-    buttonStyle = {
-      background: ac,
-      color: "#fff",
-      border: "none",
-      borderRadius: 12,
-      padding: "14px 28px",
-      fontSize: 14,
-      fontWeight: 600,
-      cursor: "pointer",
-      transition: "transform 0.2s ease"
-    };
-  } else if (templateId === "typewriter") {
-    containerStyle = {
-      background: "transparent",
-      border: `1px dashed ${fg}40`,
-      padding: "32px",
-      maxWidth: 600,
-      margin: "0 auto"
-    };
-    inputStyle = {
-      background: "transparent",
-      border: "none",
-      borderBottom: `1px dashed ${fg}40`,
-      color: fg,
-      borderRadius: 0,
-      padding: "8px 2px",
-      fontSize: 14,
-      fontFamily: "Courier New, Courier, monospace",
-      width: "100%"
-    };
-    buttonStyle = {
-      background: "transparent",
-      color: fg,
-      border: `1px solid ${fg}`,
-      borderRadius: 0,
-      padding: "10px 24px",
-      fontSize: 13,
-      fontFamily: "Courier New, Courier, monospace",
-      cursor: "pointer"
-    };
-  } else {
-    containerStyle = {
-      background: `color-mix(in srgb, ${fg} 5%, ${bg})`,
-      borderRadius: 8,
-      padding: 24
-    };
-    inputStyle = {
-      background: bg,
-      border: `1px solid ${fg}15`,
-      color: fg,
-      borderRadius: 4,
-      padding: "10px 12px",
-      fontSize: 14,
-      width: "100%"
-    };
-    buttonStyle = {
-      background: ac,
-      color: bg,
-      border: "none",
-      borderRadius: 4,
-      padding: "10px 20px",
-      fontSize: 14,
-      fontWeight: 600,
-      cursor: "pointer"
-    };
-  }
-
-  return (
-    <div style={containerStyle}>
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-        <input 
-          type="text" 
-          name="website_url" 
-          value={websiteUrl} 
-          onChange={e => setWebsiteUrl(e.target.value)} 
-          style={{ display: 'none' }} 
-          tabIndex="-1" 
-          autoComplete="off" 
-        />
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(200px, 100%), 1fr))", gap: 20 }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <label style={{ fontSize: 11, textTransform: "uppercase", opacity: 0.5, letterSpacing: "0.1em" }}>Name</label>
-            <input
-              type="text"
-              required
-              placeholder="Your name"
-              value={formData.name}
-              onChange={e => setFormData({ ...formData, name: e.target.value })}
-              style={inputStyle}
-              className="custom-input"
-            />
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <label style={{ fontSize: 11, textTransform: "uppercase", opacity: 0.5, letterSpacing: "0.1em" }}>Email</label>
-            <input
-              type="email"
-              required
-              placeholder="Your email"
-              value={formData.email}
-              onChange={e => setFormData({ ...formData, email: e.target.value })}
-              style={inputStyle}
-              className="custom-input"
-            />
-          </div>
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <label style={{ fontSize: 11, textTransform: "uppercase", opacity: 0.5, letterSpacing: "0.1em" }}>Message</label>
-          <textarea
-            required
-            rows={4}
-            placeholder="Tell me about your project..."
-            value={formData.message}
-            onChange={e => setFormData({ ...formData, message: e.target.value })}
-            style={{ ...inputStyle, resize: "none" }}
-            className="custom-input"
-          />
-        </div>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
-          <button type="submit" disabled={isSubmitting || isSubmitted} style={buttonStyle}>
-            {isSubmitting ? "Sending..." : isSubmitted ? "Sent!" : "Send Message"}
-          </button>
-          {isSubmitted && <span style={{ fontSize: 13, color: ac }}>Thanks! I will get back to you shortly.</span>}
-        </div>
-      </form>
-    </div>
-  );
-}
 
 // --- FLOATING SOCIAL LINKS WITH DETAILS ---
 function MiniSoc({ user, fg, portfolioId }) {
@@ -519,8 +291,7 @@ function MinimalTemplate({ p, t, id, portfolioId }) {
 
         {/* Contact */}
         <div id="contact" style={{ marginBottom: 60 }}>
-          <span className="minimal-title-label">13 / Say Hello</span>
-          <CustomContactForm u={u} t={t} templateId="minimal" portfolioId={portfolioId} />
+          <ContactSection u={u} t={t} id={id} portfolioId={portfolioId} />
         </div>
       </div>
     </div>
@@ -790,9 +561,7 @@ function ScandinavianTemplate({ p, t, id, portfolioId }) {
 
         {/* Contact Section */}
         <div id="contact" style={{ marginBottom: 40 }}>
-          <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 12, textAlign: "center" }}>Get In Touch</h2>
-          <p style={{ fontSize: 15, opacity: 0.6, textAlign: "center", marginBottom: 40, maxWidth: 500, margin: "0 auto 40px" }}>I'm always open to discussing new designs, architecture, or interesting collaborations.</p>
-          <CustomContactForm u={u} t={t} templateId="scandinavian" portfolioId={portfolioId} />
+          <ContactSection u={u} t={t} id={id} portfolioId={portfolioId} />
         </div>
       </div>
     </div>
@@ -1057,10 +826,8 @@ function TypewriterTemplate({ p, t, id, portfolioId }) {
         )}
 
         {/* Contact */}
-        <div id="contact" className="typewriter-section">
-          <h2 style={{ fontSize: "18px", fontWeight: "bold", marginBottom: 16 }}>XIV. INBOX DESK</h2>
-          <p style={{ fontSize: 13, opacity: 0.6, marginBottom: 24 }}>Leave a letter below, and a response will be dispatched.</p>
-          <CustomContactForm u={u} t={t} templateId="typewriter" portfolioId={portfolioId} />
+        <div id="contact" className="typewriter-section" style={{ marginBottom: 40 }}>
+          <ContactSection u={u} t={t} id={id} portfolioId={portfolioId} />
         </div>
       </div>
     </div>
@@ -1269,9 +1036,8 @@ function PaperTemplate({ p, t, id, portfolioId }) {
         )}
 
         {/* Contact dispatch */}
-        <div>
-          <h2 style={{ fontSize: 20, fontWeight: 700, borderBottom: `2px solid ${t.fg}`, paddingBottom: 4, marginBottom: 20, textTransform: "uppercase" }}>Contact Office</h2>
-          <CustomContactForm u={u} t={t} templateId="paper" portfolioId={portfolioId} />
+        <div id="contact" style={{ marginTop: 40 }}>
+          <ContactSection u={u} t={t} id={id} portfolioId={portfolioId} />
         </div>
       </div>
     </div>

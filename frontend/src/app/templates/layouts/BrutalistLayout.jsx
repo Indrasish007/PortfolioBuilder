@@ -1,150 +1,8 @@
 import { useState } from "react";
 import { Mail, Phone, MapPin, Send, ArrowUp, Download, Github, ExternalLink, Globe, Linkedin, Twitter, Facebook, Instagram } from "lucide-react";
 import { m, AnimatePresence } from "framer-motion";
-import { Tags, FAQList, VideoEmbed, MusicEmbed, GalleryAlbum, trackProjectClick, handleResumeDownload, handleScrollToSection, sn } from "./shared.jsx";
+import { Tags, FAQList, VideoEmbed, MusicEmbed, GalleryAlbum, trackProjectClick, handleResumeDownload, handleScrollToSection, sn, ContactSection } from "./shared.jsx";
 import api from "../../services/api.js";
-
-// --- CUSTOM CONTACT FORM FOR BRUTALIST/MONOCHROME FAMILY ---
-function BrutalistContactForm({ u, t, templateId, portfolioId }) {
-  const [formData, setFormData] = useState({ name: "", email: "", message: "" });
-  const [websiteUrl, setWebsiteUrl] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) return;
-
-    setIsSubmitting(true);
-    try {
-      const base = (api.defaults.baseURL || 'http://localhost:8000/api').replace(/\/$/, '');
-      const response = await fetch(`${base}/portfolios/public/${portfolioId}/message/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sender_name: formData.name,
-          sender_email: formData.email,
-          message: formData.message,
-          subject: "",
-          website_url: websiteUrl
-        })
-      });
-      if (response.ok) {
-        setIsSubmitted(true);
-        setFormData({ name: "", email: "", message: "" });
-        setWebsiteUrl("");
-        setTimeout(() => setIsSubmitted(false), 5000);
-      } else {
-        const errData = await response.json();
-        throw new Error(errData.error || "Failed to submit message");
-      }
-    } catch (err) {
-      console.error("Failed to submit message", err);
-      alert(err.message || "Failed to submit message. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const ac = t?.ac || "#7c3aed";
-  const fg = t?.fg || "#f8fafc";
-  const bg = t?.bg || "#0b0f1a";
-
-  const isMono = templateId === "monochrome";
-
-  const containerStyle = {
-    background: isMono ? (t.bg || "#ffffff") : bg,
-    border: isMono ? `4px solid ${t.fg || "#111111"}` : `3px solid ${ac}`,
-    padding: 32,
-    color: isMono ? (t.fg || "#111111") : fg,
-    boxShadow: isMono ? `12px 12px 0px ${t.fg || "#111111"}` : `6px 6px 0px ${ac}`
-  };
-
-  const inputStyle = {
-    background: isMono ? (t.bg || "#fafafa") : bg,
-    border: isMono ? `2px solid ${t.fg || "#111"}` : `2px solid ${fg}`,
-    color: isMono ? (t.fg || "#111") : fg,
-    borderRadius: 0,
-    padding: "12px 14px",
-    fontSize: 14,
-    width: "100%",
-    boxSizing: "border-box",
-    fontFamily: isMono ? "Georgia, serif" : "inherit"
-  };
-
-  const buttonStyle = {
-    background: isMono ? (t.fg || "#111") : ac,
-    color: isMono ? (t.bg || "#fff") : bg,
-    border: isMono ? `2px solid ${t.fg || "#111"}` : `3px solid ${fg}`,
-    padding: "12px 24px",
-    fontSize: 14,
-    fontWeight: 900,
-    textTransform: "uppercase",
-    cursor: "pointer",
-    borderRadius: 0,
-    boxShadow: isMono ? "none" : `4px 4px 0px ${fg}`,
-  };
-
-  return (
-    <div style={containerStyle}>
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-        <input 
-          type="text" 
-          name="website_url" 
-          value={websiteUrl} 
-          onChange={e => setWebsiteUrl(e.target.value)} 
-          style={{ display: 'none' }} 
-          tabIndex="-1" 
-          autoComplete="off" 
-        />
-        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }} className="sm:grid-cols-2-override">
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <label style={{ fontSize: 11, textTransform: "uppercase", fontWeight: "bold", opacity: 0.6, letterSpacing: "0.15em" }}>Name</label>
-            <input
-              type="text"
-              required
-              value={formData.name}
-              onChange={e => setFormData({ ...formData, name: e.target.value })}
-              style={inputStyle}
-              placeholder="Jane Doe"
-              className="brutalist-input-field"
-            />
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <label style={{ fontSize: 11, textTransform: "uppercase", fontWeight: "bold", opacity: 0.6, letterSpacing: "0.15em" }}>Email</label>
-            <input
-              type="email"
-              required
-              value={formData.email}
-              onChange={e => setFormData({ ...formData, email: e.target.value })}
-              style={inputStyle}
-              placeholder="jane@company.com"
-              className="brutalist-input-field"
-            />
-          </div>
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <label style={{ fontSize: 11, textTransform: "uppercase", fontWeight: "bold", opacity: 0.6, letterSpacing: "0.15em" }}>Message</label>
-          <textarea
-            required
-            rows={4}
-            value={formData.message}
-            onChange={e => setFormData({ ...formData, message: e.target.value })}
-            style={{ ...inputStyle, resize: "none" }}
-            placeholder="Write details..."
-            className="brutalist-input-field"
-          />
-        </div>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
-          <button type="submit" disabled={isSubmitting || isSubmitted} style={buttonStyle}>
-            {isSubmitting ? "SENDING..." : isSubmitted ? "SUBMITTED!" : "DISPATCH"}
-          </button>
-          {isSubmitted && <span style={{ fontSize: 13, fontWeight: "bold", color: isMono ? "#111" : ac }}>Thank you. Received.</span>}
-        </div>
-      </form>
-    </div>
-  );
-}
 
 // --- FLOATING SOCIAL LINKS ---
 function BrutalistSoc({ user, fg, portfolioId, isMono = false }) {
@@ -469,8 +327,7 @@ function MonochromeTemplate({ p, t, id, portfolioId }) {
 
         {/* Contact Form */}
         <div id="contact">
-          <h2 style={{ fontSize: 26, fontWeight: 900, textTransform: "uppercase", letterSpacing: "-0.02em", borderBottom: `2px solid ${t.fg || "#111"}`, paddingBottom: 12, marginBottom: 48 }}>Inquire Desk</h2>
-          <BrutalistContactForm u={u} t={t} templateId="monochrome" portfolioId={portfolioId} />
+          <ContactSection u={u} t={t} id={id} portfolioId={portfolioId} />
         </div>
       </div>
     </div>
@@ -552,8 +409,7 @@ function BrutalistTemplate({ p, t, id, portfolioId }) {
 
         {/* Contact Form */}
         <div id="contact">
-          <h2 style={{ fontSize: 28, fontWeight: 900, textTransform: "uppercase", marginBottom: 24 }}>Contact</h2>
-          <BrutalistContactForm u={u} t={t} templateId="brutalist" portfolioId={portfolioId} />
+          <ContactSection u={u} t={t} id={id} portfolioId={portfolioId} />
         </div>
       </div>
     </div>

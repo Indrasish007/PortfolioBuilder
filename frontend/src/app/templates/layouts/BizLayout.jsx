@@ -1,148 +1,8 @@
 import { useState } from "react";
 import { Mail, Phone, MapPin, Send, ArrowUp, Download, Github, ExternalLink, Globe, Linkedin, Twitter, Facebook, Instagram } from "lucide-react";
 import { m, AnimatePresence } from "framer-motion";
-import { Tags, FAQList, VideoEmbed, MusicEmbed, GalleryAlbum, trackProjectClick, handleResumeDownload, handleScrollToSection, sn } from "./shared.jsx";
+import { Tags, FAQList, VideoEmbed, MusicEmbed, GalleryAlbum, trackProjectClick, handleResumeDownload, handleScrollToSection, sn, ContactSection } from "./shared.jsx";
 import api from "../../services/api.js";
-
-// --- CUSTOM CONTACT FORM FOR BIZ FAMILY ---
-function BizContactForm({ u, t, templateId, portfolioId }) {
-  const [formData, setFormData] = useState({ name: "", email: "", message: "" });
-  const [websiteUrl, setWebsiteUrl] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) return;
-
-    setIsSubmitting(true);
-    try {
-      const base = (api.defaults.baseURL || 'http://localhost:8000/api').replace(/\/$/, '');
-      const response = await fetch(`${base}/portfolios/public/${portfolioId}/message/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sender_name: formData.name,
-          sender_email: formData.email,
-          message: formData.message,
-          subject: "",
-          website_url: websiteUrl
-        })
-      });
-      if (response.ok) {
-        setIsSubmitted(true);
-        setFormData({ name: "", email: "", message: "" });
-        setWebsiteUrl("");
-        setTimeout(() => setIsSubmitted(false), 5000);
-      } else {
-        const errData = await response.json();
-        throw new Error(errData.error || "Failed to submit message");
-      }
-    } catch (err) {
-      console.error("Failed to submit message", err);
-      alert(err.message || "Failed to submit message. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const ac = t?.ac || "#7c3aed";
-  const fg = t?.fg || "#f8fafc";
-  const bg = t?.bg || "#0b0f1a";
-
-  const isStartup = templateId === "startup";
-  
-  const containerStyle = {
-    background: isStartup ? "rgba(255, 255, 255, 0.02)" : `color-mix(in srgb, ${fg} 4%, ${bg})`,
-    border: `1px solid ${isStartup ? "rgba(255, 255, 255, 0.06)" : `${ac}20`}`,
-    borderRadius: isStartup ? 16 : 8,
-    padding: 32,
-    backdropFilter: isStartup ? "blur(20px)" : "none"
-  };
-
-  const inputStyle = {
-    background: isStartup ? "rgba(0, 0, 0, 0.2)" : bg,
-    border: `1px solid ${isStartup ? "rgba(255, 255, 255, 0.08)" : `${fg}15`}`,
-    color: fg,
-    borderRadius: isStartup ? 8 : 4,
-    padding: "12px 14px",
-    fontSize: 14,
-    width: "100%",
-    boxSizing: "border-box",
-    transition: "border-color 0.3s"
-  };
-
-  const buttonStyle = {
-    background: `linear-gradient(135deg, ${ac}, color-mix(in srgb, ${ac} 80%, #fff))`,
-    color: "#fff",
-    border: "none",
-    borderRadius: isStartup ? 8 : 4,
-    padding: "12px 24px",
-    fontSize: 14,
-    fontWeight: 700,
-    cursor: "pointer",
-  };
-
-  return (
-    <div style={containerStyle}>
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-        <input 
-          type="text" 
-          name="website_url" 
-          value={websiteUrl} 
-          onChange={e => setWebsiteUrl(e.target.value)} 
-          style={{ display: 'none' }} 
-          tabIndex="-1" 
-          autoComplete="off" 
-        />
-        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }} className="sm:grid-cols-2-override">
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <label style={{ fontSize: 11, textTransform: "uppercase", opacity: 0.6, letterSpacing: "0.1em" }}>Name</label>
-            <input
-              type="text"
-              required
-              value={formData.name}
-              onChange={e => setFormData({ ...formData, name: e.target.value })}
-              style={inputStyle}
-              placeholder="Jane Doe"
-              className="biz-input-field"
-            />
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <label style={{ fontSize: 11, textTransform: "uppercase", opacity: 0.6, letterSpacing: "0.1em" }}>Email</label>
-            <input
-              type="email"
-              required
-              value={formData.email}
-              onChange={e => setFormData({ ...formData, email: e.target.value })}
-              style={inputStyle}
-              placeholder="jane@company.com"
-              className="biz-input-field"
-            />
-          </div>
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <label style={{ fontSize: 11, textTransform: "uppercase", opacity: 0.6, letterSpacing: "0.1em" }}>Message</label>
-          <textarea
-            required
-            rows={4}
-            value={formData.message}
-            onChange={e => setFormData({ ...formData, message: e.target.value })}
-            style={{ ...inputStyle, resize: "none" }}
-            placeholder="Tell us about your project..."
-            className="biz-input-field"
-          />
-        </div>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
-          <button type="submit" disabled={isSubmitting || isSubmitted} style={buttonStyle}>
-            {isSubmitting ? "Sending..." : isSubmitted ? "Submitted!" : "Get In Touch"}
-          </button>
-          {isSubmitted && <span style={{ fontSize: 13, color: ac }}>Thanks! We'll reply shortly.</span>}
-        </div>
-      </form>
-    </div>
-  );
-}
 
 // --- FLOATING SOCIAL LINKS ---
 function BizSoc({ user, fg, portfolioId }) {
@@ -523,9 +383,7 @@ function StartupPitchTemplate({ p, t, id, portfolioId }) {
 
         {/* Contact Form */}
         <div id="contact">
-          <h2 style={{ fontSize: 28, fontWeight: 900, marginBottom: 12, textAlign: "center", letterSpacing: "-0.02em" }}>Request Client Consultation</h2>
-          <p style={{ fontSize: 15, opacity: 0.6, textAlign: "center", marginBottom: 40, maxWidth: 450, margin: "0 auto 40px" }}>Send a project proposal request. We answer client inquiries in less than 24 hours.</p>
-          <BizContactForm u={u} t={t} templateId="startup" portfolioId={portfolioId} />
+          <ContactSection u={u} t={t} id={id} portfolioId={portfolioId} />
         </div>
       </div>
     </div>
@@ -619,8 +477,7 @@ function ClassicTemplate({ p, t, id, portfolioId }) {
 
         {/* Contact form */}
         <div id="contact">
-          <h2 style={{ fontSize: 20, fontWeight: 800, borderBottom: `2px solid ${ac}`, paddingBottom: 6, marginBottom: 24 }}>Get In Touch</h2>
-          <BizContactForm u={u} t={t} templateId="classic" portfolioId={portfolioId} />
+          <ContactSection u={u} t={t} id={id} portfolioId={portfolioId} />
         </div>
       </div>
     </div>
@@ -698,9 +555,8 @@ function ForestTemplate({ p, t, id, portfolioId }) {
         {/* Additional Sections */}
         <BizLayoutSections p={p} t={t} id={id} />
 
-        <div style={{ marginTop: 40 }}>
-          <h2 style={{ fontSize: 18, color: ac }}>Send Message</h2>
-          <BizContactForm u={u} t={t} templateId="forest" portfolioId={portfolioId} />
+        <div id="contact" style={{ marginTop: 40 }}>
+          <ContactSection u={u} t={t} id={id} portfolioId={portfolioId} />
         </div>
       </div>
     </div>
@@ -778,9 +634,8 @@ function OceanicTemplate({ p, t, id, portfolioId }) {
         {/* Additional Sections */}
         <BizLayoutSections p={p} t={t} id={id} />
 
-        <div style={{ marginTop: 32 }}>
-          <h2>Get In Touch</h2>
-          <BizContactForm u={u} t={t} templateId="oceanic" portfolioId={portfolioId} />
+        <div id="contact" style={{ marginTop: 32 }}>
+          <ContactSection u={u} t={t} id={id} portfolioId={portfolioId} />
         </div>
       </div>
     </div>

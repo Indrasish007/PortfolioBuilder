@@ -86,6 +86,8 @@ export default {
     try {
       const url = new URL(request.url);
 
+
+
       // ── robots.txt handler ────────────────────────────────
       if (url.pathname === "/robots.txt") {
         const origin = url.origin;

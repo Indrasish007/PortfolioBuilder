@@ -155,11 +155,11 @@ export default function AboutSection() {
   const stats = [
     { value: "25", label: "Templates Available", suffix: "+", icon: Palette },
     { value: "120", label: "Countries Reached", suffix: "+", icon: Globe },
-    { value: "240", label: "Portfolios Created", suffix: "k+", icon: Star }
+    { value: "300", label: "Portfolios Created", suffix: "+", icon: Star }
   ];
 
   return (
-    <section id="about" className="relative py-24 border-b border-border/50">
+    <section id="about" className="relative py-24 border-b border-border/50 overflow-hidden">
       {/* Translucent background with top fade out to allow hero glows to flow behind */}
       <div className="absolute inset-0 bg-gradient-to-b from-background/50 to-background/50 pointer-events-none -z-20"
            style={{

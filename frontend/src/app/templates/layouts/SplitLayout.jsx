@@ -1,194 +1,8 @@
 import { useState, useEffect } from "react";
 import { Mail, Phone, MapPin, Send, ArrowUp, Download, Github, ExternalLink, Globe, Linkedin, Twitter, Facebook, Instagram } from "lucide-react";
 import { m, AnimatePresence } from "framer-motion";
-import { Tags, FAQList, VideoEmbed, MusicEmbed, GalleryAlbum, trackProjectClick, handleResumeDownload, handleScrollToSection, sn } from "./shared.jsx";
+import { Tags, FAQList, VideoEmbed, MusicEmbed, GalleryAlbum, trackProjectClick, handleResumeDownload, handleScrollToSection, sn, ContactSection } from "./shared.jsx";
 import api from "../../services/api.js";
-
-// --- CUSTOM CONTACT FORM FOR SPLIT TEMPLATES ---
-function SplitContactForm({ u, t, templateId, portfolioId }) {
-  const [formData, setFormData] = useState({ name: "", email: "", message: "" });
-  const [websiteUrl, setWebsiteUrl] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) return;
-
-    setIsSubmitting(true);
-    try {
-      const base = (api.defaults.baseURL || 'http://localhost:8000/api').replace(/\/$/, '');
-      const response = await fetch(`${base}/portfolios/public/${portfolioId}/message/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sender_name: formData.name,
-          sender_email: formData.email,
-          message: formData.message,
-          subject: "",
-          website_url: websiteUrl
-        })
-      });
-      if (response.ok) {
-        setIsSubmitted(true);
-        setFormData({ name: "", email: "", message: "" });
-        setWebsiteUrl("");
-        setTimeout(() => setIsSubmitted(false), 5000);
-      } else {
-        const errData = await response.json();
-        throw new Error(errData.error || "Failed to submit message");
-      }
-    } catch (err) {
-      console.error("Failed to submit message", err);
-      alert(err.message || "Failed to submit message. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const ac = t?.ac || "#7c3aed";
-  const fg = t?.fg || "#f8fafc";
-  const bg = t?.bg || "#0b0f1a";
-
-  let inputClass = "split-form-input";
-  let containerStyle = {};
-  let buttonStyle = {};
-
-  if (templateId === "creative") {
-    containerStyle = {
-      background: "rgba(255, 255, 255, 0.02)",
-      backdropFilter: "blur(20px)",
-      border: `1px solid rgba(255, 255, 255, 0.08)`,
-      borderRadius: 20,
-      padding: 32,
-    };
-    buttonStyle = {
-      background: `linear-gradient(135deg, ${ac}, #d946ef)`,
-      color: "#fff",
-      border: "none",
-      borderRadius: 10,
-      padding: "14px 28px",
-      fontSize: 14,
-      fontWeight: 700,
-      cursor: "pointer",
-      boxShadow: `0 8px 20px -6px ${ac}`
-    };
-  } else if (templateId === "sakura") {
-    containerStyle = {
-      background: "rgba(255, 240, 243, 0.6)",
-      backdropFilter: "blur(12px)",
-      border: `1px solid rgba(251, 113, 133, 0.25)`,
-      borderRadius: 24,
-      padding: 32,
-    };
-    buttonStyle = {
-      background: "#fb7185",
-      color: "#fff",
-      border: "none",
-      borderRadius: 20,
-      padding: "12px 28px",
-      fontSize: 14,
-      fontWeight: 600,
-      cursor: "pointer",
-      boxShadow: "0 8px 20px -6px rgba(251, 113, 133, 0.4)"
-    };
-  } else if (templateId === "coral") {
-    containerStyle = {
-      background: "rgba(10, 30, 45, 0.4)",
-      backdropFilter: "blur(20px)",
-      border: `2px solid rgba(249, 115, 22, 0.3)`,
-      borderRadius: "30px 10px 30px 10px",
-      padding: 32,
-    };
-    buttonStyle = {
-      background: "linear-gradient(135deg, #f97316, #ef4444)",
-      color: "#fff",
-      border: "none",
-      borderRadius: 30,
-      padding: "14px 28px",
-      fontSize: 14,
-      fontWeight: 700,
-      cursor: "pointer",
-    };
-  } else {
-    // Dusk
-    containerStyle = {
-      background: "rgba(26, 10, 0, 0.3)",
-      backdropFilter: "blur(16px)",
-      border: `1px solid rgba(245, 158, 11, 0.25)`,
-      borderRadius: 16,
-      padding: 32,
-    };
-    buttonStyle = {
-      background: "linear-gradient(135deg, #f59e0b, #f43f5e)",
-      color: "#fff",
-      border: "none",
-      borderRadius: 8,
-      padding: "14px 28px",
-      fontSize: 14,
-      fontWeight: 700,
-      cursor: "pointer",
-    };
-  }
-
-  return (
-    <div style={containerStyle}>
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-        <input 
-          type="text" 
-          name="website_url" 
-          value={websiteUrl} 
-          onChange={e => setWebsiteUrl(e.target.value)} 
-          style={{ display: 'none' }} 
-          tabIndex="-1" 
-          autoComplete="off" 
-        />
-        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }} className="sm:grid-cols-2-override">
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <label style={{ fontSize: 11, textTransform: "uppercase", opacity: 0.6, letterSpacing: "0.1em" }}>Your Name</label>
-            <input
-              type="text"
-              required
-              value={formData.name}
-              onChange={e => setFormData({ ...formData, name: e.target.value })}
-              className={inputClass}
-              placeholder="Jane Doe"
-            />
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <label style={{ fontSize: 11, textTransform: "uppercase", opacity: 0.6, letterSpacing: "0.1em" }}>Your Email</label>
-            <input
-              type="email"
-              required
-              value={formData.email}
-              onChange={e => setFormData({ ...formData, email: e.target.value })}
-              className={inputClass}
-              placeholder="jane@company.com"
-            />
-          </div>
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <label style={{ fontSize: 11, textTransform: "uppercase", opacity: 0.6, letterSpacing: "0.1em" }}>Message</label>
-          <textarea
-            required
-            rows={4}
-            value={formData.message}
-            onChange={e => setFormData({ ...formData, message: e.target.value })}
-            className={inputClass}
-            placeholder="Tell me about your thoughts..."
-            style={{ resize: "none" }}
-          />
-        </div>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
-          <button type="submit" disabled={isSubmitting || isSubmitted} style={buttonStyle}>
-            {isSubmitting ? "Sending..." : isSubmitted ? "Dispatched!" : "Get In Touch"}
-          </button>
-          {isSubmitted && <span style={{ fontSize: 14, color: ac, fontWeight: 600 }}>Message dispatched successfully!</span>}
-        </div>
-      </form>
-    </div>
-  );
-}
 
 // --- SHARED SOCIAL RENDERING ---
 function SplitSoc({ user, fg, size = 16, portfolioId }) {
@@ -560,9 +374,7 @@ function CreativeDarkTemplate({ p, t, id, portfolioId }) {
 
         {/* Contact Form */}
         <div id="contact">
-          <h2 style={{ fontSize: 32, fontWeight: 900, letterSpacing: "-0.03em", marginBottom: 16, textAlign: "center" }}>Start A Project</h2>
-          <p style={{ fontSize: 16, opacity: 0.5, textAlign: "center", marginBottom: 48, maxWidth: 500, margin: "0 auto 48px" }}>Let's collaborate to build stunning visual products that stand out.</p>
-          <SplitContactForm u={u} t={t} templateId="creative" portfolioId={portfolioId} />
+          <ContactSection u={u} t={t} id={id} portfolioId={portfolioId} />
         </div>
       </div>
     </div>
@@ -758,9 +570,7 @@ function SakuraTemplate({ p, t, id, portfolioId }) {
 
         {/* Contact Form */}
         <div id="contact">
-          <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 12, textAlign: "center" }}>Send An Inquiry</h2>
-          <p style={{ fontSize: 15, opacity: 0.7, textAlign: "center", marginBottom: 36, maxWidth: 450, margin: "0 auto 36px" }}>Please reach out for inquiries, design proposals, or creative requests.</p>
-          <SplitContactForm u={u} t={t} templateId="sakura" portfolioId={portfolioId} />
+          <ContactSection u={u} t={t} id={id} portfolioId={portfolioId} />
         </div>
       </div>
     </div>
@@ -917,9 +727,7 @@ function CoralTemplate({ p, t, id, portfolioId }) {
 
         {/* Contact Form */}
         <div id="contact">
-          <h2 style={{ fontSize: 28, fontWeight: 900, marginBottom: 12, textAlign: "center" }}>Dive Into Contact</h2>
-          <p style={{ fontSize: 15, opacity: 0.6, textAlign: "center", marginBottom: 48, maxWidth: 450, margin: "0 auto 48px" }}>Get in touch to bring marine depth and vibrant design to your next venture.</p>
-          <SplitContactForm u={u} t={t} templateId="coral" portfolioId={portfolioId} />
+          <ContactSection u={u} t={t} id={id} portfolioId={portfolioId} />
         </div>
       </div>
     </div>
@@ -1077,9 +885,7 @@ function DuskTemplate({ p, t, id, portfolioId }) {
 
         {/* Contact Form */}
         <div id="contact">
-          <h2 style={{ fontSize: 26, fontWeight: 900, marginBottom: 12, textAlign: "center" }}>Reach Out</h2>
-          <p style={{ fontSize: 15, opacity: 0.6, textAlign: "center", marginBottom: 40, maxWidth: 450, margin: "0 auto 40px" }}>Let's share ideas under the warm dusk light. Get in touch below.</p>
-          <SplitContactForm u={u} t={t} templateId="dusk" portfolioId={portfolioId} />
+          <ContactSection u={u} t={t} id={id} portfolioId={portfolioId} />
         </div>
       </div>
     </div>
