@@ -180,7 +180,7 @@ const TrafficSourcesChart = memo(function TrafficSourcesChart({ portfolioId, tot
             <span className="text-lg font-black tabular-nums" style={{ color: "var(--foreground)" }}>
               {totalVisits}
             </span>
-            <span className="text-[8px] uppercase tracking-wider text-muted-foreground font-semibold -mt-0.5">Visits</span>
+            <span className="text-[8px] uppercase tracking-wider text-muted-foreground font-semibold -mt-0.5">VIEWS</span>
           </div>
         </div>
 
